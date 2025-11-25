@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+/*
+    All Generic themes will be here ya pierre enta w omar !!!
+    Don't forget to add the light/dark modes here
+
+*/
+
+/*
+    Colors
+*/
+
+@theme {
+    --color-bg-primary: #F9FAFB;
+}
+
+.dark {
+    --color-bg-primary: #10121A;
+}
+
+/*
+    Fonts
+*/
+
+
+/*
+    Buttons
+*/
+
+
+/*
+    Spaces
+*/
+
