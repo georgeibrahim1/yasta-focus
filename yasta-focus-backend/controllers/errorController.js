@@ -1,21 +1,28 @@
-import AppError from '../utils/appError';
+import AppError from '../utils/appError.js';
 
-const handleCastErrorDB = err => {
-  const message = `Invalid ${err.path}: ${err.value}.`;
-  return new AppError(message, 400);
-};
-
+// unique constraint violation
 const handleDuplicateFieldsDB = err => {
-  const value = err.errmsg.match(/(["'])(\\?.)*?\1/)[0];
-
-  const message = `Duplicate field value: ${value}. Please use another value!`;
+  const field = err.constraint?.replace('_key', '').replace('users_', '');
+  const message = `${field || 'Field'} already exists. Please use another value!`;
   return new AppError(message, 400);
 };
 
-const handleValidationErrorDB = err => {
-  const errors = Object.values(err.errors).map(el => el.message);
+// invalid input syntax
+const handleInvalidInputDB = err => {
+  const message = `Invalid input data: ${err.message}`;
+  return new AppError(message, 400);
+};
 
-  const message = `Invalid input data. ${errors.join('. ')}`;
+// foreign key violation
+const handleForeignKeyViolationDB = err => {
+  const message = 'Referenced record does not exist.';
+  return new AppError(message, 400);
+};
+
+// NOT NULL violation
+const handleNotNullViolationDB = err => {
+  const field = err.column || 'field';
+  const message = `${field} is required.`;
   return new AppError(message, 400);
 };
 
@@ -83,7 +90,6 @@ const sendErrorProd = (err, req, res) => {
 };
 
 export default (err, req, res, next) => {
-  // console.log(err.stack);
 
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
@@ -94,10 +100,13 @@ export default (err, req, res, next) => {
     let error = { ...err };
     error.message = err.message;
 
-    if (error.name === 'CastError') error = handleCastErrorDB(error);
-    if (error.code === 11000) error = handleDuplicateFieldsDB(error);
-    if (error.name === 'ValidationError')
-      error = handleValidationErrorDB(error);
+    // PostgreSQL error codes
+    if (error.code === '23505') error = handleDuplicateFieldsDB(error);
+    if (error.code === '22P02') error = handleInvalidInputDB(error);
+    if (error.code === '23503') error = handleForeignKeyViolationDB(error);
+    if (error.code === '23502') error = handleNotNullViolationDB(error);
+    
+    // JWT errors
     if (error.name === 'JsonWebTokenError') error = handleJWTError();
     if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
 
