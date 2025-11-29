@@ -35,10 +35,6 @@ export default [
       'prefer-const': 'error',
       'no-var': 'error',
       'eqeqeq': ['error', 'always'],
-      'indent': ['error', 2],
-      'arrow-spacing': ['error', { before: true, after: true }],
-      'object-curly-spacing': ['error', 'always'],
-      'array-bracket-spacing': ['error', 'never']
     }
   }
 ]
