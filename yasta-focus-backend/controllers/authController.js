@@ -152,6 +152,22 @@ export const isLoggedIn = async (req, res, next) => {
 
 
 
+export const getMe = (req, res, next) => {
+  const user = { ...req.user };
+  delete user.password_hash;
+  delete user.password_reset_token;
+  delete user.password_reset_expires;
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      user
+    }
+  });
+};
+
+
+
 export const restrictTo = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {

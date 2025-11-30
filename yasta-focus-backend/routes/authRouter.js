@@ -12,6 +12,7 @@ router.patch('/resetPassword/:token', authController.resetPassword);
 
 router.use(authController.protect);
 
+router.get('/me', authController.getMe);
 router.patch('/updateMyPassword', authController.updatePassword);
 
 export default router;
