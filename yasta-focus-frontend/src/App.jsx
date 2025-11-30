@@ -1,7 +1,14 @@
-import React from 'react'
+import AuthPage from '../pages/authPage'
+import MainLayout from './layouts/mainLayout'
+import { Route , Routes } from 'react-router'
+
 
 export default function App() {
   return (
-    <div>App</div>
+    <Routes>
+      <Route path="/auth" element={<AuthPage/>}/>
+      <Route path="/" element={<MainLayout/>}>
+      </Route>
+    </Routes>
   )
 }
