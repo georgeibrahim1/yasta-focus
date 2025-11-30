@@ -1,9 +1,9 @@
-import express from 'express';
 import env from 'dotenv';
+env.config({ path:"./config.env"});
+
+import express from 'express';
 import app from './app.js';
 import './db.js';
-
-env.config({ path:"./config.env"});
 
 const PORT = process.env.PORT || 3000;
 
