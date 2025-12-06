@@ -19,7 +19,7 @@ export default function MainLayout() {
           <nav className="flex flex-col bg-slate-800/30 rounded-2xl border border-slate-700/50 overflow-hidden">
             <SidebarButton icon="/icons/blackboard-icon.svg" label="Dashboard" link="/dashboard" />
             <SidebarButton icon="/icons/alarm-icon.svg" label="Timer" link="/timer" />
-            <SidebarButton icon="/icons/notebook-icon.svg" label="Notes" link="/notes" />
+            <SidebarButton icon="/icons/notebook-icon.svg" label="Subjects" link="/notes" />
             <SidebarButton icon="/icons/globes-icon.svg" label="Explore" link="/explore" />
             <SidebarButton icon="/icons/win-cup-icon.svg" label="Achievements" link="/achievements" />
             <SidebarButton icon="/icons/circle-crown-icon.svg" label="Premium" link="/premium" />
