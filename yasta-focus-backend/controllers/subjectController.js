@@ -1,0 +1,126 @@
+import db from '../db.js';
+import catchAsync from '../utils/catchAsync.js';
+import AppError from '../utils/appError.js';
+
+// Get all subjects for the logged-in user
+export const getAllSubjects = catchAsync(async (req, res, next) => {
+  const userId = req.user.user_id;
+
+  const query = `
+    SELECT subject_name, user_id, description, photo
+    FROM subject
+    WHERE user_id = $1
+    ORDER BY subject_name ASC
+  `;
+
+  const result = await db.query(query, [userId]);
+
+  res.status(200).json({
+    status: 'success',
+    results: result.rows.length,
+    data: {
+      subjects: result.rows
+    }
+  });
+});
+
+// Get a single subject
+export const getSubject = catchAsync(async (req, res, next) => {
+  const userId = req.user.user_id;
+  const { subjectName } = req.params;
+
+  const query = `
+    SELECT subject_name, user_id, description, photo
+    FROM subject
+    WHERE user_id = $1 AND subject_name = $2
+  `;
+
+  const result = await db.query(query, [userId, subjectName]);
+
+  if (result.rows.length === 0) {
+    return next(new AppError('Subject not found', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      subject: result.rows[0]
+    }
+  });
+});
+
+// Create a new subject
+export const createSubject = catchAsync(async (req, res, next) => {
+  const userId = req.user.user_id;
+  const { subject_name, description, photo } = req.body;
+
+  if (!subject_name) {
+    return next(new AppError('Subject name is required', 400));
+  }
+
+  const query = `
+    INSERT INTO subject (subject_name, user_id, description, photo)
+    VALUES ($1, $2, $3, $4)
+    RETURNING subject_name, user_id, description, photo
+  `;
+
+  const result = await db.query(query, [subject_name, userId, description || null, photo || null]);
+
+  res.status(201).json({
+    status: 'success',
+    data: {
+      subject: result.rows[0]
+    }
+  });
+});
+
+// Update a subject
+export const updateSubject = catchAsync(async (req, res, next) => {
+  const userId = req.user.user_id;
+  const { subjectName } = req.params;
+  const { description, photo } = req.body;
+
+  const query = `
+    UPDATE subject
+    SET description = COALESCE($1, description),
+        photo = COALESCE($2, photo)
+    WHERE user_id = $3 AND subject_name = $4
+    RETURNING subject_name, user_id, description, photo
+  `;
+
+  const result = await db.query(query, [description, photo, userId, subjectName]);
+
+  if (result.rows.length === 0) {
+    return next(new AppError('Subject not found', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      subject: result.rows[0]
+    }
+  });
+});
+
+// Delete a subject
+export const deleteSubject = catchAsync(async (req, res, next) => {
+  const userId = req.user.user_id;
+  const { subjectName } = req.params;
+
+  const query = `
+    DELETE FROM subject
+    WHERE user_id = $1 AND subject_name = $2
+    RETURNING subject_name
+  `;
+
+  const result = await db.query(query, [userId, subjectName]);
+
+  if (result.rows.length === 0) {
+    return next(new AppError('Subject not found', 404));
+  }
+
+  res.status(204).json({
+    status: 'success',
+    data: null
+  });
+});
