@@ -91,7 +91,7 @@ export const createTask = catchAsync(async (req, res, next) => {
     subjectName,
     userId,
     description || null,
-    status || 'Pending',
+    status || 'Not Started',
     deadline || null
   ]);
 
@@ -140,9 +140,8 @@ export const toggleTaskStatus = catchAsync(async (req, res, next) => {
   const query = `
     UPDATE task
     SET status = CASE 
-      WHEN status = 'Pending' THEN 'Completed'
-      WHEN status = 'Completed' THEN 'Pending'
-      ELSE 'Pending'
+      WHEN status = 'Done' THEN 'Not Started'
+      ELSE 'Done'
     END
     WHERE user_id = $1 AND subject_name = $2 AND task_title = $3
     RETURNING task_title, subject_name, user_id, description, status, deadline

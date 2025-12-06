@@ -32,18 +32,9 @@ export default function NoteModal({ isOpen, onClose, onSubmit, formData, setForm
             onChange={(e) => setFormData({ ...formData, note_title: e.target.value })}
             required
           />
-          <div className="w-full">
-            <label className="block mb-1.5 text-sm text-slate-400">
-              Note Content <span className="text-red-500 ml-0.5">*</span>
-            </label>
-            <textarea
-              placeholder="Write your note content here..."
-              value={formData.note_text}
-              onChange={(e) => setFormData({ ...formData, note_text: e.target.value })}
-              required
-              className="w-full px-4 py-2.5 rounded-lg bg-slate-800/50 border border-slate-600 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors min-h-[150px]"
-            />
-          </div>
+          <p className="text-sm text-slate-400">
+            You can edit the note content after creating it by clicking the edit button.
+          </p>
           <div className="flex gap-3 pt-2">
             <button
               type="button"

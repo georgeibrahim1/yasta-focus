@@ -1,7 +1,7 @@
 import { X } from 'lucide-react'
 import Input from './Input'
 
-export default function TaskModal({ isOpen, onClose, onSubmit, formData, setFormData, isLoading }) {
+export default function TaskModal({ isOpen, onClose, onSubmit, formData, setFormData, isLoading, isEditing = false }) {
   if (!isOpen) return null
 
   const handleSubmit = (e) => {
@@ -19,7 +19,9 @@ export default function TaskModal({ isOpen, onClose, onSubmit, formData, setForm
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">Create New Task</h2>
+          <h2 className="text-2xl font-bold text-white">
+            {isEditing ? 'Edit Task' : 'Create New Task'}
+          </h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white transition-colors">
             <X size={24} />
           </button>
@@ -38,10 +40,35 @@ export default function TaskModal({ isOpen, onClose, onSubmit, formData, setForm
             </label>
             <textarea
               placeholder="Additional task details..."
-              value={formData.description}
+              value={formData.description || ''}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full px-4 py-2.5 rounded-lg bg-slate-800/50 border border-slate-600 text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors min-h-[100px]"
             />
+          </div>
+          <div className="w-full">
+            <label className="block mb-1.5 text-sm text-slate-400">
+              Deadline (Optional)
+            </label>
+            <input
+              type="datetime-local"
+              value={formData.deadline ? new Date(formData.deadline).toISOString().slice(0, 16) : ''}
+              onChange={(e) => setFormData({ ...formData, deadline: e.target.value ? new Date(e.target.value).toISOString() : null })}
+              className="w-full px-4 py-2.5 rounded-lg bg-slate-800/50 border border-slate-600 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+            />
+          </div>
+          <div className="w-full">
+            <label className="block mb-1.5 text-sm text-slate-400">
+              Status
+            </label>
+            <select
+              value={formData.status || 'Not Started'}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              className="w-full px-4 py-2.5 rounded-lg bg-slate-800/50 border border-slate-600 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+            >
+              <option value="Not Started">Not Started</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Done">Done</option>
+            </select>
           </div>
           <div className="flex gap-3 pt-2">
             <button
@@ -56,7 +83,7 @@ export default function TaskModal({ isOpen, onClose, onSubmit, formData, setForm
               disabled={isLoading}
               className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 disabled:opacity-50 text-white font-medium rounded-xl transition-all"
             >
-              {isLoading ? 'Creating...' : 'Create Task'}
+              {isLoading ? (isEditing ? 'Updating...' : 'Creating...') : (isEditing ? 'Update Task' : 'Create Task')}
             </button>
           </div>
         </form>
