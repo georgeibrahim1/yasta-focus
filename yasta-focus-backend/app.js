@@ -10,6 +10,8 @@ import taskRouter from './routes/taskRouter.js';
 import sessionRouter from './routes/sessionRouter.js';
 import deckRouter from './routes/deckRouter.js';
 import flashcardRouter from './routes/flashcardRouter.js';
+import communityRouter from './routes/communityRouter.js';
+
 
 const app = express();
 
@@ -27,6 +29,8 @@ app.use('/api/tasks', taskRouter);
 app.use('/api/sessions', sessionRouter);
 app.use('/api/decks', deckRouter);
 app.use('/api/flashcards', flashcardRouter);
+app.use('/api/communities', communityRouter);
+
 
 app.use((req, res, next) => {
   next(new AppError(`${req.originalUrl} isn't in the server!`, 404));
