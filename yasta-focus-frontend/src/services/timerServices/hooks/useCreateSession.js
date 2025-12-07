@@ -7,8 +7,12 @@ export const useCreateSession = () => {
 
   return useMutation({
     mutationFn: (sessionData) => timerService.createSession(sessionData),
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['sessions'] })
+      // Invalidate tasks if a task was associated (status might have changed to In Progress)
+      if (variables.task_title && variables.subject_name) {
+        queryClient.invalidateQueries({ queryKey: ['tasks', variables.subject_name] })
+      }
       toast.success('Session created successfully!')
       return data
     },

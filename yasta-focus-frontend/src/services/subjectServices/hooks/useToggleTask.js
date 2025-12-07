@@ -7,8 +7,8 @@ export const useToggleTask = () => {
 
   return useMutation({
     mutationFn: ({ subjectName, taskTitle }) => taskService.toggleTask(subjectName, taskTitle),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['tasks'] })
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['tasks', variables.subjectName] })
     },
     onError: (error) => {
       const message = error.response?.data?.message || 'Failed to update task'

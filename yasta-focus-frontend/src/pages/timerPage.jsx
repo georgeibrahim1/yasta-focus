@@ -14,7 +14,7 @@ export default function TimerPage() {
   const [selectedSubject, setSelectedSubject] = useState('')
 
   const { data: subjectsData, isLoading: subjectsLoading } = useGetSubjects()
-  const { data: tasksData } = useGetTasks(selectedSubject, { enabled: !!selectedSubject })
+  const { data: tasksData, refetch: refetchTasks } = useGetTasks(selectedSubject, { enabled: !!selectedSubject })
   const createSession = useCreateSession()
 
   const { register, handleSubmit, formState: { errors }, reset, watch, setValue } = useForm({
@@ -61,9 +61,11 @@ export default function TimerPage() {
   }))
 
   const tasks = tasksData?.data?.tasks || []
-  const taskOptions = tasks.map(t => ({
+  // Filter to show only Not Started and In Progress tasks
+  const filteredTasks = tasks.filter(t => t.status === 'Not Started' || t.status === 'In Progress')
+  const taskOptions = filteredTasks.map(t => ({
     value: t.task_title,
-    label: t.task_title
+    label: `${t.task_title} (${t.status})`
   }))
 
   const onSubmit = (data) => {
@@ -81,6 +83,10 @@ export default function TimerPage() {
     try {
       // Save session to backend when user ends it
       await createSession.mutateAsync(sessionData)
+      // Refetch tasks to show updated status
+      if (sessionData.task_title && sessionData.subject_name) {
+        await refetchTasks()
+      }
       setIsSessionActive(false)
       setSessionConfig(null)
       reset()

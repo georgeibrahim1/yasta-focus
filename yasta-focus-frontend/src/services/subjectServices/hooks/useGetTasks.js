@@ -6,7 +6,7 @@ export const useGetTasks = (subjectName, options = {}) => {
     queryKey: ['tasks', subjectName],
     queryFn: () => taskService.getTasks(subjectName),
     enabled: !!subjectName,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 0, // Always refetch on invalidation
     ...options
   })
 }

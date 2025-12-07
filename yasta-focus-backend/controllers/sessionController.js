@@ -89,12 +89,20 @@ export const createSession = catchAsync(async (req, res, next) => {
   // If task_title is provided, verify it exists (requires subject_name and task_title)
   if (task_title && subject_name) {
     const taskCheck = await db.query(
-      'SELECT task_title FROM task WHERE user_id = $1 AND subject_name = $2 AND task_title = $3',
+      'SELECT task_title, status FROM task WHERE user_id = $1 AND subject_name = $2 AND task_title = $3',
       [userId, subject_name, task_title]
     );
 
     if (taskCheck.rows.length === 0) {
       return next(new AppError('Task not found', 404));
+    }
+
+    // Update task status to 'In Progress' if it's 'Not Started'
+    if (taskCheck.rows[0].status === 'Not Started') {
+      await db.query(
+        'UPDATE task SET status = $1 WHERE user_id = $2 AND subject_name = $3 AND task_title = $4',
+        ['In Progress', userId, subject_name, task_title]
+      );
     }
   }
 
