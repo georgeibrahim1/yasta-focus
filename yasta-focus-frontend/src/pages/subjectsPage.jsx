@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Search, Plus, Trash2, Edit2 } from 'lucide-react'
 import { useGetSubjects, useGetNotes, useGetNote, useUpdateNote, useDeleteNote, useGetTasks, useUpdateTask, useToggleTask, useDeleteTask, useCreateSubject, useCreateNote } from '../services/subjectServices'
 import { useGetDecks, useDeleteDeck, useCreateDeck } from '../services/deckServices'
@@ -10,6 +11,7 @@ import TaskModal from '../components/TaskModal'
 import DeckModal from '../components/DeckModal'
 
 export default function SubjectsPage() {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('notes')
   const [selectedSubject, setSelectedSubject] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -557,6 +559,7 @@ export default function SubjectsPage() {
               filteredDecks.map(deck => (
                 <div
                   key={deck.deck_title}
+                  onClick={() => navigate(`/decks/${encodeURIComponent(selectedSubject)}/${encodeURIComponent(deck.deck_title)}`)}
                   className="p-6 bg-slate-800/50 border border-slate-700 rounded-xl hover:border-indigo-500 transition-colors cursor-pointer group"
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -576,14 +579,19 @@ export default function SubjectsPage() {
                   {deck.deck__desc && (
                     <p className="text-slate-400 text-sm mb-4">{deck.deck__desc}</p>
                   )}
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">
+                  <div className="space-y-2 text-sm">
+                    <div className="text-slate-500">
                       Last reviewed: {deck.last_review_date ? new Date(deck.last_review_date).toLocaleDateString() : 'Never'}
-                    </span>
+                    </div>
+                    {deck.last_round_time && (
+                      <div className="text-slate-500">
+                        Last review time: {Math.floor(deck.last_round_time / 60)}m {deck.last_round_time % 60}s
+                      </div>
+                    )}
                     {deck.reminder_by && (
-                      <span className="text-yellow-400">
-                        Reminder: {new Date(deck.reminder_by).toLocaleDateString()}
-                      </span>
+                      <div className="text-yellow-400">
+                        📅 Review in {deck.reminder_by} day{deck.reminder_by !== 1 ? 's' : ''}
+                      </div>
                     )}
                   </div>
                 </div>

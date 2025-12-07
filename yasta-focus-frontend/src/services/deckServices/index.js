@@ -1,5 +1,6 @@
 export { deckService, flashcardService } from './service'
 export { useGetDecks } from './hooks/useGetDecks'
+export { useGetDeck } from './hooks/useGetDeck'
 export { useCreateDeck } from './hooks/useCreateDeck'
 export { useUpdateDeck } from './hooks/useUpdateDeck'
 export { useDeleteDeck } from './hooks/useDeleteDeck'

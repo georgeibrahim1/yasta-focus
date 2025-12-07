@@ -3,6 +3,7 @@ import { Route , Routes } from 'react-router'
 import AuthPage from './pages/authPage'
 import TimerPage from './pages/timerPage'
 import SubjectsPage from './pages/subjectsPage'
+import DeckDetailPage from './pages/deckDetailPage'
 
 
 export default function App() {
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="timer" element={<TimerPage/>}/>
         <Route path="subjects" element={<SubjectsPage/>}/>
         <Route path="notes" element={<SubjectsPage/>}/>
+        <Route path="decks/:subjectName/:deckTitle" element={<DeckDetailPage/>}/>
       </Route>
     </Routes>
   )

@@ -44,8 +44,10 @@ export default function DeckModal({ isOpen, onClose, onSubmit, formData, setForm
             />
           </div>
           <Input
-            label="Reminder Date (Optional)"
-            type="date"
+            label="Reminder (Days from now)"
+            type="number"
+            placeholder="e.g., 7 for one week"
+            min="1"
             value={formData.reminder_by}
             onChange={(e) => setFormData({ ...formData, reminder_by: e.target.value })}
           />

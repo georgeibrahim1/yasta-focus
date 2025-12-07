@@ -128,10 +128,10 @@ export const updateFlashcard = catchAsync(async (req, res, next) => {
 export const updateFlashcardConfidence = catchAsync(async (req, res, next) => {
   const userId = req.user.user_id;
   const { subjectName, deckTitle, question } = req.params;
-  const { confidence } = req.body; // 0=again, 1=hard, 2=good, 3=easy
+  const { confidence } = req.body; // 0=again, 1=hard, 2=good, 3=easy, 4=very easy, 5=perfect
 
-  if (confidence === undefined || confidence < 0 || confidence > 3) {
-    return next(new AppError('Confidence must be between 0 and 3', 400));
+  if (confidence === undefined || confidence < 0 || confidence > 5) {
+    return next(new AppError('Confidence must be between 0 and 5', 400));
   }
 
   // Get current status
@@ -148,7 +148,7 @@ export const updateFlashcardConfidence = catchAsync(async (req, res, next) => {
   const currentStatus = currentResult.rows[0].status;
   let newStatus = currentStatus;
 
-  // Update status based on confidence
+  // Update status based on confidence (spaced repetition)
   if (confidence === 0) {
     // Again - reset to 0
     newStatus = 0;
@@ -157,10 +157,16 @@ export const updateFlashcardConfidence = catchAsync(async (req, res, next) => {
     newStatus = Math.max(0, currentStatus - 1);
   } else if (confidence === 2) {
     // Good - increase by 1
-    newStatus = currentStatus + 1;
+    newStatus = Math.min(5, currentStatus + 1);
   } else if (confidence === 3) {
     // Easy - increase by 2
-    newStatus = currentStatus + 2;
+    newStatus = Math.min(5, currentStatus + 2);
+  } else if (confidence === 4) {
+    // Very Easy - increase by 2
+    newStatus = Math.min(5, currentStatus + 2);
+  } else if (confidence === 5) {
+    // Perfect - set to max (5)
+    newStatus = 5;
   }
 
   const updateQuery = `

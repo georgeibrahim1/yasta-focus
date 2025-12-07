@@ -10,7 +10,7 @@ export const useUpdateDeck = () => {
       deckService.updateDeck(subjectName, deckTitle, updateData),
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['decks', variables.subjectName] })
-      toast.success('Deck updated successfully')
+      queryClient.invalidateQueries({ queryKey: ['deck', variables.subjectName, variables.deckTitle] })
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to update deck')
