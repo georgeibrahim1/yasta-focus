@@ -203,11 +203,6 @@ export default function Timer({ sessionConfig, onSessionEnd, onSessionCancel }) 
               <p className="text-sm text-slate-400">Session Type</p>
               <p className="text-lg font-semibold text-white capitalize">{type}</p>
             </div>
-            <button className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-slate-400">
-                <path d="M19 9l-7 7-7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </button>
           </div>
         </div>
 
@@ -222,11 +217,6 @@ export default function Timer({ sessionConfig, onSessionEnd, onSessionCancel }) 
                 <p className="text-sm text-slate-400">Current Subject</p>
                 <p className="text-lg font-semibold text-white">{subject_name}</p>
               </div>
-              <button className="p-2 hover:bg-slate-700/50 rounded-lg transition-colors">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-slate-400">
-                  <path d="M19 9l-7 7-7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
             </div>
           </div>
         )}
