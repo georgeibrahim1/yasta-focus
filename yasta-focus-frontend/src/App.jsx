@@ -4,6 +4,7 @@ import AuthPage from './pages/authPage'
 import TimerPage from './pages/timerPage'
 import SubjectsPage from './pages/subjectsPage'
 import DeckDetailPage from './pages/deckDetailPage'
+import CommunitiesPage from './pages/communitiesPage'
 
 
 export default function App() {
@@ -14,6 +15,7 @@ export default function App() {
         <Route path="timer" element={<TimerPage/>}/>
         <Route path="subjects" element={<SubjectsPage/>}/>
         <Route path="notes" element={<SubjectsPage/>}/>
+        <Route path="communities" element={<CommunitiesPage/>}/>
         <Route path="decks/:subjectName/:deckTitle" element={<DeckDetailPage/>}/>
       </Route>
     </Routes>

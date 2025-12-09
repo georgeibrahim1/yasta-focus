@@ -20,7 +20,8 @@ export default function MainLayout() {
             <SidebarButton icon="/icons/blackboard-icon.svg" label="Dashboard" link="/dashboard" />
             <SidebarButton icon="/icons/alarm-icon.svg" label="Timer" link="/timer" />
             <SidebarButton icon="/icons/notebook-icon.svg" label="Subjects" link="/notes" />
-            <SidebarButton icon="/icons/globes-icon.svg" label="Explore" link="/explore" />
+            <SidebarButton icon="/icons/globes-icon.svg" label="Communities" link="/communities" />
+
             <SidebarButton icon="/icons/win-cup-icon.svg" label="Achievements" link="/achievements" />
             <SidebarButton icon="/icons/circle-crown-icon.svg" label="Premium" link="/premium" />
             <SidebarButton icon="/icons/chart-icon.svg" label="Statistics" link="/statistics" />
