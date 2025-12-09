@@ -12,10 +12,10 @@ export const communityService = {
     return response.data.data
   },
 
-  getCommunity: async (id) => {
-    const response = await api.get(`/api/communities/${encodeURIComponent(id)}`)
-    return response.data.data
-  },
+  // getCommunity: async (id) => {
+  //   const response = await api.get(`/api/communities/${encodeURIComponent(id)}`)
+  //   return response.data.data
+  // },
 
   createCommunity: async (data) => {
     const response = await api.post(`/api/communities`, data)
@@ -25,6 +25,13 @@ export const communityService = {
   requestJoin: async (communityId, payload) => {
     const response = await api.post(`/api/communities/${encodeURIComponent(communityId)}/join-request`, payload)
     return response.data.data
+  },
+
+  getTags: async (communityId) => {
+    // console.log('🔵 Service - Getting tags for:', communityId);
+  const response = await api.get(`/api/communities/${encodeURIComponent(communityId)}/tag`)  // match your route
+  // console.log('🔵 Service - Tags response:', response.data);
+  return response.data.data.tags
   },
 
   getCommunityRooms: async (communityId) => {

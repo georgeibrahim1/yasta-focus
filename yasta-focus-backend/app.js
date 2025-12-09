@@ -11,7 +11,8 @@ import sessionRouter from './routes/sessionRouter.js';
 import deckRouter from './routes/deckRouter.js';
 import flashcardRouter from './routes/flashcardRouter.js';
 import communityRouter from './routes/communityRouter.js';
-
+import eventRouter from './routes/eventRouter.js';
+import competitionRouter from './routes/competitionRouter.js';
 
 const app = express();
 
@@ -30,7 +31,8 @@ app.use('/api/sessions', sessionRouter);
 app.use('/api/decks', deckRouter);
 app.use('/api/flashcards', flashcardRouter);
 app.use('/api/communities', communityRouter);
-
+app.use('/api/events', eventRouter);
+app.use('/api/competitions', competitionRouter);
 
 app.use((req, res, next) => {
   next(new AppError(`${req.originalUrl} isn't in the server!`, 404));

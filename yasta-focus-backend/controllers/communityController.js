@@ -38,32 +38,56 @@ export const getAllCommunities = catchAsync(async (req, res, next) => {
       res.status(200).json({
         status: 'success',
         results: result.rows.length,
-        data: {
-          notes: result.rows
-        }
+        data: result.rows
       });
+});
 
+export const getJoinedCommunities = catchAsync(async (req, res, next) => {
+    const userId = req.user.user_id;
+    const query = `
+        SELECT DISTINCT c.* FROM community c
+        WHERE c.community_Creator = $1 
+        OR c.community_ID IN (SELECT community_ID FROM communityManagers WHERE moderator_ID = $1)
+    `;
+    const result = await db.query(query, [userId]);
+    
+    res.status(200).json({
+        status: 'success',
+        results: result.rows.length,
+        data: result.rows
+    });
 });
 
 export const createCommunity = catchAsync(async (req, res, next) => {
     const userId = req.user.user_id;
-    const { community_title, community_text } = req.body;
+    const { community_Name, community_Description, tags = [] } = req.body;
 
-    if (!community_title || community_title.trim() === '') {
-        return next(new AppError('Community title is required', 400));
+    if (!community_Name || community_Name.trim() === '') {
+        return next(new AppError('Community name is required', 400));
     }
-    if(!community_text || community_text.trim() === ''){
-        return next(new AppError('Community text is required', 400))
+    if(!community_Description || community_Description.trim() === ''){
+        return next(new AppError('Community description is required', 400))
     }
-    const query = `INSERT INTO community (community_Name,Community_Description,community_Creator) VALUES ($1,$2,$3) RETURNING community_ID,community_Name,Community_Description,community_Creator`; 
     
-    const result = await db.query(query, [community_title, community_text, userId]);
+    // Insert community
+    const query = `INSERT INTO community (community_Name, community_Description, community_Creator) VALUES ($1,$2,$3) RETURNING community_ID, community_Name, community_Description, community_Creator`; 
+    const result = await db.query(query, [community_Name, community_Description, userId]);
+    const communityData = result.rows[0];
+    const communityId = communityData.community_id;
+    
+    // Add creator as moderator
+    await db.query('INSERT INTO communityManagers (moderator_ID, community_ID) VALUES ($1, $2)', [userId, communityId]);
+    
+    // Add tags if provided
+    if (tags && tags.length > 0) {
+        for (const tag of tags) {
+            await db.query('INSERT INTO communityTag (tag, community_ID) VALUES ($1, $2)', [tag, communityId]);
+        }
+    }
     
     res.status(201).json({
         status: 'success',
-        data: {
-          note: result.rows[0]
-        }
+        data: communityData
       });
 });
 

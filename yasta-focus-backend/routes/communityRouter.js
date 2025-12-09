@@ -4,22 +4,20 @@ import * as communityController from '../controllers/communityController.js';
 
 const router = express.Router();
 
+// Public routes (no auth needed)
 router.get('/search', (req, res, next) => {
     res.send('Community search is working');// change later
 });
-router.route('/').get(communityController.getAllCommunities).post(communityController.createCommunity);
-router.route('/:communityID/tag').get(communityController.getTags).post(communityController.addTagtoCommunity);
 
-// Protect all routes
-router.use(protect);
-
-// Search available communities
-
-
-
-
-
-
-
+// Protected routes (auth required)
+router.post('/', protect, communityController.createCommunity);
+router.get('/', communityController.getAllCommunities);
+router.get('/joined', protect, communityController.getJoinedCommunities);
+router.get('/:communityID/tag', communityController.getTags);
+router.post('/:communityID/tag', protect, communityController.addTagtoCommunity);
 
 export default router;
+
+
+
+

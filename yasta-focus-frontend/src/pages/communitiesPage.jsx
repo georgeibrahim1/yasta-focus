@@ -4,11 +4,13 @@ import EventsPanel from '../components/EventsPanel'
 import JoinRequestModal from '../components/JoinRequestModal'
 import CompetitionJoinModal from '../components/CompetitionJoinModal'
 import CreateCommunityButton from '../components/CreateCommunityButton'
+import CreateCommunityModal from '../components/CreateCommunityModal'
 import Input from '../components/Input'
 import { useGetCommunities } from '../services/communityServices/hooks/useGetCommunities'
 import { useGetJoinedCommunities } from '../services/communityServices/hooks/useGetJoinedCommunities'
 import { useGetSubjects } from '../services/subjectServices/hooks/useGetSubjects'
 import { useJoinCompetition } from '../services/communityServices/hooks/useJoinCompetition'
+import { useCreateCommunity } from '../services/communityServices/hooks/useCreateCommunity'
 
 export default function CommunitiesPage() {
   const [search, setSearch] = useState('')
@@ -41,9 +43,11 @@ export default function CommunitiesPage() {
   }
 
   const handleCreateClick = () => {
-    // TODO: Open create community modal
-    console.log('Create community')
+    setShowCreateModal(true)
   }
+
+  // community creation mutation
+  const { mutateAsync: createCommunityMutateAsync } = useCreateCommunity()
 
   // competition join mutation
   const { mutateAsync: joinCompetitionMutateAsync, isLoading: joiningCompetition } = useJoinCompetition()
@@ -118,6 +122,14 @@ export default function CommunitiesPage() {
           setSelectedCompetitionToJoin(null)
         }}
         subjects={subjects}
+      />
+
+      <CreateCommunityModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSubmit={async (formData) => {
+          await createCommunityMutateAsync(formData)
+        }}
       />
     </>
   )
