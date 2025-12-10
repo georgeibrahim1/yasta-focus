@@ -54,7 +54,9 @@ export default function CompetitionJoinModal({ competition, isOpen = false, onCl
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-slate-800 rounded-2xl p-8 max-w-lg w-full border border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-white">{competition?.title || 'Competition'}</h2>
+          <h2 className="text-2xl font-bold text-white">
+            {competition?.comp_description?.split(' ').slice(0, 2).join(' ') || 'Competition'} Competition
+          </h2>
           <button onClick={onClose} className="text-slate-400 hover:text-white">
             <X size={24} />
           </button>
@@ -62,13 +64,15 @@ export default function CompetitionJoinModal({ competition, isOpen = false, onCl
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <h3 className="text-lg font-semibold text-white mb-4">Choose Subject</h3>
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Chosen Subject {addedSubjects.length + 1}
+            </h3>
             <select
               value={selectedSubjectId}
               onChange={(e) => setSelectedSubjectId(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-lg bg-slate-800/50 border border-slate-600 text-white focus:outline-none focus:border-indigo-500"
+              className="w-full px-4 py-2.5 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:border-indigo-500"
             >
-              <option value="">Select a subject...</option>
+              <option value="">Subject 1</option>
               {subjects && subjects.length > 0 ? (
                 subjects.map(s => (
                   <option key={s.id ?? s._id ?? s.subject_name} value={s.id ?? s._id ?? s.subject_name}>
@@ -88,7 +92,7 @@ export default function CompetitionJoinModal({ competition, isOpen = false, onCl
             type="button"
             onClick={handleAddSubject}
             disabled={!selectedSubjectId}
-            className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition text-lg"
+            className="w-full px-6 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition"
           >
             Add
           </button>
