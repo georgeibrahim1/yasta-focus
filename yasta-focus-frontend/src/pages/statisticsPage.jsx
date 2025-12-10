@@ -28,7 +28,7 @@ export default function StatisticsPage() {
   }
 
   // Prepare weekly data for bar chart with all days of the week
-  const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const daysOfWeek = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri']
   const weeklyDataMap = {}
   weeklyData.forEach(item => {
     weeklyDataMap[item.day] = Math.round(item.total_seconds / 60)
