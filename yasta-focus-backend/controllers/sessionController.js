@@ -68,11 +68,14 @@ export const getSession = catchAsync(async (req, res, next) => {
 // Create a new session
 export const createSession = catchAsync(async (req, res, next) => {
   const userId = req.user.user_id;
-  const { session_name, type, subject_name, task_title } = req.body;
+  const { session_name, type, subject_name, task_title, started_at, ended_at } = req.body;
 
   if (!session_name || !type) {
     return next(new AppError('Session name and type are required', 400));
   }
+
+  // Create unique session name by appending timestamp
+  const uniqueSessionName = `${session_name}_${Date.now()}`
 
   // If subject_name is provided, verify it exists
   if (subject_name) {
@@ -107,17 +110,19 @@ export const createSession = catchAsync(async (req, res, next) => {
   }
 
   const query = `
-    INSERT INTO session (session_name, user_id, type, subject_name, task_title)
-    VALUES ($1, $2, $3, $4, $5)
+    INSERT INTO session (session_name, user_id, type, subject_name, task_title, created_at, time_stamp)
+    VALUES ($1, $2, $3, $4, $5, $6, $7)
     RETURNING session_name, user_id, created_at, type, time_stamp, subject_name, task_title
   `;
 
   const result = await db.query(query, [
-    session_name,
+    uniqueSessionName,
     userId,
     type,
     subject_name || null,
-    task_title || null
+    task_title || null,
+    started_at || new Date().toISOString(),
+    ended_at || new Date().toISOString()
   ]);
 
   res.status(201).json({

@@ -13,14 +13,22 @@ export default function Timer({ sessionConfig, onSessionEnd, onSessionCancel }) 
   const intervalRef = useRef(null)
   const startTimeRef = useRef(null)
   const elapsedTimeRef = useRef(0)
+  const actualStudyTimeRef = useRef(0) // Track actual study time in seconds (excluding pauses)
 
   const handleSessionComplete = useCallback(() => {
+    // Calculate end time based on actual study time (excluding pauses)
+    const startTime = new Date()
+    const actualDurationMs = actualStudyTimeRef.current * 1000
+    const endTime = new Date(startTime.getTime() + actualDurationMs)
+
     // Prepare session data to save when timer completes
     const sessionData = {
       session_name,
       type,
       subject_name: subject_name || null,
-      task_title: task_title || null
+      task_title: task_title || null,
+      started_at: startTime.toISOString(),
+      ended_at: endTime.toISOString()
     }
     onSessionEnd(sessionData)
   }, [session_name, type, subject_name, task_title, onSessionEnd])
@@ -38,10 +46,12 @@ export default function Timer({ sessionConfig, onSessionEnd, onSessionCancel }) 
           clearInterval(intervalRef.current)
           setTimeLeft(0)
           setIsRunning(false)
+          actualStudyTimeRef.current = duration * 60 // Full duration completed
           handleSessionComplete()
         } else {
           setTimeLeft(remaining)
           elapsedTimeRef.current = elapsed
+          actualStudyTimeRef.current = elapsed // Track actual active time
         }
       }, 100)
     } else {
@@ -58,12 +68,18 @@ export default function Timer({ sessionConfig, onSessionEnd, onSessionCancel }) 
   }, [isRunning, isPaused, duration, handleSessionComplete])
 
   const handleEndSession = () => {
-    // User manually ends session - save it
+    // User manually ends session - save it with actual study time
+    const startTime = new Date()
+    const actualDurationMs = actualStudyTimeRef.current * 1000
+    const endTime = new Date(startTime.getTime() + actualDurationMs)
+
     const sessionData = {
       session_name,
       type,
       subject_name: subject_name || null,
-      task_title: task_title || null
+      task_title: task_title || null,
+      started_at: startTime.toISOString(),
+      ended_at: endTime.toISOString()
     }
     onSessionEnd(sessionData)
   }
