@@ -4,8 +4,14 @@ import AppError from '../utils/appError.js';
 
 export const getEvents = catchAsync(async (req, res, next) => {
     const query = `
-        SELECT * FROM event 
-        WHERE date >= NOW() 
+        SELECT 
+            *,
+            CASE 
+                WHEN date <= NOW() AND date >= NOW() - INTERVAL '2 hours' THEN true
+                ELSE false
+            END as is_live
+        FROM event 
+        WHERE date >= NOW() - INTERVAL '2 hours'
         ORDER BY date ASC
     `;
     const result = await db.query(query);
