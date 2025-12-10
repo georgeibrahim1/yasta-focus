@@ -23,7 +23,7 @@ export default function MainLayout() {
             <SidebarButton icon="/icons/globes-icon.svg" label="Communities" link="/communities" />
 
             <SidebarButton icon="/icons/win-cup-icon.svg" label="Achievements" link="/achievements" />
-            <SidebarButton icon="/icons/circle-crown-icon.svg" label="Premium" link="/premium" />
+            <SidebarButton icon="/icons/circle-crown-icon.svg" label="Leaderboard" link="/leaderboard" />
             <SidebarButton icon="/icons/chart-icon.svg" label="Statistics" link="/statistics" />
           </nav>
         </div>
