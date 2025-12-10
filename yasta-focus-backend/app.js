@@ -13,6 +13,7 @@ import flashcardRouter from './routes/flashcardRouter.js';
 import communityRouter from './routes/communityRouter.js';
 import eventRouter from './routes/eventRouter.js';
 import competitionRouter from './routes/competitionRouter.js';
+import leaderboardRouter from './routes/leaderboardRouter.js';
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use('/api/flashcards', flashcardRouter);
 app.use('/api/communities', communityRouter);
 app.use('/api/events', eventRouter);
 app.use('/api/competitions', competitionRouter);
+app.use('/api/leaderboard', leaderboardRouter);
 
 app.use((req, res, next) => {
   next(new AppError(`${req.originalUrl} isn't in the server!`, 404));
