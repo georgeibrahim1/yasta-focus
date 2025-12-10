@@ -4,6 +4,9 @@ import { communityService } from '../service'
 export const useGetCompetitions = () => {
   return useQuery({
     queryKey: ['competitions', 'all'],
-    queryFn: () => communityService.getCompetitions()
+    queryFn: async () => {
+      const response = await communityService.getCompetitions()
+      return response.data || []
+    }
   })
 }
