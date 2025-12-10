@@ -186,56 +186,120 @@ export const deleteSession = catchAsync(async (req, res, next) => {
   });
 });
 
-// Get session statistics
-export const getSessionStats = catchAsync(async (req, res, next) => {
+// Get weekly study time (bar chart)
+export const getWeeklyStudyTime = catchAsync(async (req, res, next) => {
   const userId = req.user.user_id;
-  const { period = 'week' } = req.query;
-
-  let dateFilter = '';
-  switch (period) {
-    case 'day':
-      dateFilter = "created_at >= NOW() - INTERVAL '1 day'";
-      break;
-    case 'week':
-      dateFilter = "created_at >= NOW() - INTERVAL '7 days'";
-      break;
-    case 'month':
-      dateFilter = "created_at >= NOW() - INTERVAL '30 days'";
-      break;
-    case 'year':
-      dateFilter = "created_at >= NOW() - INTERVAL '1 year'";
-      break;
-    default:
-      dateFilter = "created_at >= NOW() - INTERVAL '7 days'";
-  }
 
   const query = `
     SELECT 
-      COUNT(*) as total_sessions,
-      COUNT(DISTINCT subject_name) as subjects_studied,
-      type,
-      COUNT(*) as count_by_type
+      TO_CHAR(created_at, 'Dy') as day,
+      SUM(EXTRACT(EPOCH FROM (time_stamp - created_at))) as total_seconds
     FROM session
-    WHERE user_id = $1 AND ${dateFilter}
-    GROUP BY type
+    WHERE user_id = $1 
+    AND created_at >= CURRENT_DATE - INTERVAL '6 days'
+    GROUP BY TO_CHAR(created_at, 'Dy')
   `;
 
   const result = await db.query(query, [userId]);
 
-  const totalQuery = `
-    SELECT COUNT(*) as total_sessions
+  res.status(200).json({
+    status: 'success',
+    data: {
+      weeklyData: result.rows
+    }
+  });
+});
+
+// Get session trends (line chart)
+export const getSessionTrends = catchAsync(async (req, res, next) => {
+  const userId = req.user.user_id;
+
+  const query = `
+    SELECT 
+      TO_CHAR(created_at, 'Dy') as day,
+      COUNT(*) as session_count
     FROM session
-    WHERE user_id = $1 AND ${dateFilter}
+    WHERE user_id = $1 
+    AND created_at >= CURRENT_DATE - INTERVAL '6 days'
+    GROUP BY TO_CHAR(created_at, 'Dy')
   `;
 
-  const totalResult = await db.query(totalQuery, [userId]);
+  const result = await db.query(query, [userId]);
 
   res.status(200).json({
     status: 'success',
     data: {
-      period,
-      total_sessions: parseInt(totalResult.rows[0]?.total_sessions || 0),
-      by_type: result.rows
+      trendsData: result.rows
+    }
+  });
+});
+
+// Get subject statistics (bubble chart + details)
+export const getSubjectStats = catchAsync(async (req, res, next) => {
+  const userId = req.user.user_id;
+
+  // Get subjects with study time and session count
+  const query = `
+    SELECT 
+      s.subject_name,
+      COUNT(ses.session_name) as session_count,
+      COALESCE(SUM(EXTRACT(EPOCH FROM (ses.time_stamp - ses.created_at))), 0) as total_seconds,
+      COUNT(t.task_title) as task_count
+    FROM subject s
+    LEFT JOIN session ses ON s.subject_name = ses.subject_name AND s.user_id = ses.user_id
+    LEFT JOIN task t ON s.subject_name = t.subject_name AND s.user_id = t.user_id
+    WHERE s.user_id = $1
+    GROUP BY s.subject_name
+    ORDER BY total_seconds DESC
+  `;
+
+  const result = await db.query(query, [userId]);
+
+  // Find most and least studied
+  const subjects = result.rows;
+  const mostStudied = subjects[0] || null;
+  const leastStudied = subjects.length > 1 ? subjects[subjects.length - 1] : null;
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      subjects: result.rows,
+      mostStudied,
+      leastStudied,
+      totalSubjects: subjects.length,
+      totalStudyTime: subjects.reduce((sum, s) => sum + parseFloat(s.total_seconds), 0)
+    }
+  });
+});
+
+// Get heatmap data for current month
+export const getHeatmapData = catchAsync(async (req, res, next) => {
+  const userId = req.user.user_id;
+  const { year, month } = req.query;
+
+  const targetYear = year || new Date().getFullYear();
+  const targetMonth = month || new Date().getMonth() + 1;
+
+  const query = `
+    SELECT 
+      EXTRACT(DAY FROM created_at) as day,
+      COUNT(*) as session_count
+    FROM session
+    WHERE user_id = $1 
+    AND EXTRACT(YEAR FROM created_at) = $2
+    AND EXTRACT(MONTH FROM created_at) = $3
+    GROUP BY EXTRACT(DAY FROM created_at)
+    ORDER BY day
+  `;
+
+  const result = await db.query(query, [userId, targetYear, targetMonth]);
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      year: targetYear,
+      month: targetMonth,
+      heatmapData: result.rows
     }
   });
 });

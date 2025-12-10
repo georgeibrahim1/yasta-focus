@@ -6,6 +6,7 @@ import SubjectsPage from './pages/subjectsPage'
 import DeckDetailPage from './pages/deckDetailPage'
 import CommunitiesPage from './pages/communitiesPage'
 import LeaderboardPage from './pages/leaderboardPage'
+import StatisticsPage from './pages/statisticsPage'
 
 
 export default function App() {
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="notes" element={<SubjectsPage/>}/>
         <Route path="communities" element={<CommunitiesPage/>}/>
         <Route path="leaderboard" element={<LeaderboardPage/>}/>
+        <Route path="statistics" element={<StatisticsPage/>}/>
         <Route path="decks/:subjectName/:deckTitle" element={<DeckDetailPage/>}/>
       </Route>
     </Routes>

@@ -7,8 +7,11 @@ const router = express.Router();
 // Protect all routes
 router.use(protect);
 
-// Get session statistics
-router.get('/stats', sessionController.getSessionStats);
+// Statistics routes
+router.get('/stats/weekly', sessionController.getWeeklyStudyTime);
+router.get('/stats/trends', sessionController.getSessionTrends);
+router.get('/stats/subjects', sessionController.getSubjectStats);
+router.get('/stats/heatmap', sessionController.getHeatmapData);
 
 router
   .route('/')
