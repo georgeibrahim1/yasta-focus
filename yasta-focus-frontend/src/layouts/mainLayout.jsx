@@ -8,13 +8,7 @@ export default function MainLayout() {
     <div className="min-h-screen bg-[#10121A] flex">
         <div className="w-64 h-screen sticky top-0 flex flex-col p-3 gap-3 overflow-hidden">
           <header>
-            <ProfileStatus 
-              name="George Ibrahim"
-              level={0}
-              xp={70}
-              maxXp={100}
-              avatarUrl={null}
-            />
+            <ProfileStatus />
           </header>
           <nav className="flex-1 min-h-0 flex flex-col bg-slate-800/30 rounded-2xl border border-slate-700/50 overflow-hidden">
             <SidebarButton icon="/icons/blackboard-icon.svg" label="Dashboard" link="/dashboard" />

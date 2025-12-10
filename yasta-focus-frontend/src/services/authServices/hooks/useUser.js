@@ -5,7 +5,9 @@ export const useUser = () => {
   return useQuery({
     queryKey: ['user'],
     queryFn: authService.getMe,
-    retry: false,
+    retry: 1,
     staleTime: 1000 * 60 * 5,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   })
 }
