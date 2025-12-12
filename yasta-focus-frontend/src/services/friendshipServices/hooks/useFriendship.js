@@ -74,6 +74,7 @@ export const useGiveXPToFriend = () => {
     mutationFn: giveXPToFriend,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friends'] })
+      queryClient.invalidateQueries({ queryKey: ['checkInStatus'] })
     },
   })
 }

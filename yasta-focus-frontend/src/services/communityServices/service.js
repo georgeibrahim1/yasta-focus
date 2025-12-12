@@ -22,6 +22,12 @@ export const communityService = {
     return response.data
   },
 
+  // Get all members of a community
+  getCommunityMembers: async (communityId) => {
+    const response = await api.get(`/api/communities/${communityId}/members`)
+    return response.data.data
+  },
+
   // Join a community
   joinCommunity: async (communityId) => {
     const response = await api.post(`/api/communities/${communityId}/join`)
@@ -55,6 +61,90 @@ export const communityService = {
   // Join a competition
   joinCompetition: async (competitionId, payload) => {
     const response = await api.post(`/api/competitions/${competitionId}/join`, payload)
+    return response.data
+  },
+
+  // Get community statistics (managers only)
+  getCommunityStats: async (communityId) => {
+    const response = await api.get(`/api/communities/${communityId}/stats`)
+    return response.data.data.stats
+  },
+
+  // Update community info (managers only)
+  updateCommunityInfo: async (communityId, communityData) => {
+    const response = await api.patch(`/api/communities/${communityId}`, communityData)
+    return response.data.data.community
+  },
+
+  // Delete community (managers only)
+  deleteCommunity: async (communityId) => {
+    const response = await api.delete(`/api/communities/${communityId}`)
+    return response.data
+  },
+
+  // Update member bio
+  updateMemberBio: async (communityId, bio) => {
+    const response = await api.patch(`/api/communities/${communityId}/bio`, { bio })
+    return response.data.data.participant
+  },
+
+  // Leave community
+  exitCommunity: async (communityId) => {
+    const response = await api.delete(`/api/communities/${communityId}/leave`)
+    return response.data
+  },
+
+  // Remove member (managers only)
+  removeMember: async (communityId, memberId) => {
+    const response = await api.delete(`/api/communities/${communityId}/members/${memberId}`)
+    return response.data
+  },
+
+  // Get pending join requests (managers only)
+  getPendingRequests: async (communityId) => {
+    const response = await api.get(`/api/communities/${communityId}/pending`)
+    return response.data.data.pendingMembers
+  },
+
+  // Approve join request (managers only)
+  approveJoinRequest: async (communityId, memberId) => {
+    const response = await api.post(`/api/communities/${communityId}/pending/${memberId}/approve`)
+    return response.data
+  },
+
+  // Reject join request (managers only)
+  rejectJoinRequest: async (communityId, memberId) => {
+    const response = await api.delete(`/api/communities/${communityId}/pending/${memberId}/reject`)
+    return response.data
+  },
+
+  // Get community competitions
+  getCommunityCompetitions: async (communityId) => {
+    const response = await api.get(`/api/communities/${communityId}/competitions`)
+    return response.data.data
+  },
+
+  // Create community competition (managers only)
+  createCommunityCompetition: async (communityId, competitionData) => {
+    const response = await api.post(`/api/communities/${communityId}/competitions`, competitionData)
+    return response.data.data
+  },
+
+  // Join community competition
+  joinCommunityCompetition: async (communityId, competitionId, payload) => {
+    const response = await api.post(`/api/communities/${communityId}/competitions/${competitionId}/join`, payload)
+    return response.data
+  },
+
+  // Get competition entries
+  getCommunityCompetitionEntries: async (communityId, competitionId) => {
+    const response = await api.get(`/api/communities/${communityId}/competitions/${competitionId}/entries`)
+    return response.data.data
+  },
+
+  // Delete community competition (managers only)
+  deleteCommunityCompetition: async (communityId, competitionId) => {
+    const response = await api.delete(`/api/communities/${communityId}/competitions/${competitionId}`)
     return response.data
   }
 }
