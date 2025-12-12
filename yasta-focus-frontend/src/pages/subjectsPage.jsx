@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus, Trash2, Edit2 } from 'lucide-react'
+import { Search, Plus, Trash2, Edit2, MessageCircle } from 'lucide-react'
+import SubjectChat from '../components/SubjectChat'
 import { useGetSubjects, useGetNotes, useGetNote, useUpdateNote, useDeleteNote, useGetTasks, useUpdateTask, useToggleTask, useDeleteTask, useCreateSubject, useCreateNote } from '../services/subjectServices'
 import { useGetDecks, useDeleteDeck, useCreateDeck } from '../services/deckServices'
 import { useCreateTask } from '../services/subjectServices'
@@ -302,6 +303,9 @@ export default function SubjectsPage() {
           <p className="text-slate-400 text-lg">
             All your notes, tasks, and decks for this subject.
           </p>
+          {activeTab === 'chat' && selectedSubject && (
+            <SubjectChat subject={selectedSubject} />
+          )}
         </div>
 
         {/* Search and Tabs */}
@@ -608,16 +612,27 @@ export default function SubjectsPage() {
             <button
               key={subject.subject_name}
               onClick={() => setSelectedSubject(subject.subject_name)}
-              className={`w-full p-4 rounded-xl text-left transition-all ${
+              className={`w-full p-4 rounded-xl text-left transition-all flex items-start justify-between gap-2 ${
                 subject.subject_name === selectedSubject
                   ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/50'
                   : 'bg-slate-800/50 text-slate-300 hover:bg-slate-800 border border-slate-700'
               }`}
             >
-              <div className="font-semibold text-lg">{subject.subject_name}</div>
-              {subject.description && (
-                <div className="text-sm opacity-80 mt-1">{subject.description}</div>
-              )}
+              <div className="flex-1">
+                <div className="font-semibold text-lg">{subject.subject_name}</div>
+                {subject.description && (
+                  <div className="text-sm opacity-80 mt-1">{subject.description}</div>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setSelectedSubject(subject.subject_name); setActiveTab('chat') }}
+                  title={`Chat about ${subject.subject_name}`}
+                  className="p-2 rounded-md text-slate-300 hover:text-white hover:bg-slate-700/50"
+                >
+                  <MessageCircle size={18} />
+                </button>
+              </div>
             </button>
           ))}
         </div>

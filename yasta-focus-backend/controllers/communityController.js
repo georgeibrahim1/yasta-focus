@@ -644,6 +644,7 @@ export const getCommunityMembers = catchAsync(async (req, res, next) => {
         community_id: community.community_id,
         community_name: community.community_name,
         community_description: community.community_description,
+        community_creator: community.community_creator,
         total_members: membersResult.rows.length,
         total_rooms: parseInt(roomsResult.rows[0].total_rooms)
       },
@@ -735,6 +736,61 @@ export const getPendingRequests = catchAsync(async (req, res, next) => {
       pendingMembers: pendingResult.rows
     }
   });
+});
+
+// Promote a member to community manager (creator or manager only)
+export const promoteMember = catchAsync(async (req, res, next) => {
+  const { communityId, memberId } = req.params;
+  const userId = req.user?.user_id;
+
+  // Check if community exists
+  const communityResult = await db.query('SELECT * FROM community WHERE community_ID = $1', [communityId]);
+  if (communityResult.rows.length === 0) return next(new AppError('Community not found', 404));
+
+  // Check if requester is community creator or manager
+  const isCreator = communityResult.rows[0].community_creator === userId;
+  const managerCheck = await db.query('SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2', [communityId, userId]);
+  if (!isCreator && managerCheck.rows.length === 0) return next(new AppError('Only community creator or managers can promote members', 403));
+
+  // Ensure target is a member
+  const memberCheck = await db.query('SELECT * FROM community_Participants WHERE community_ID = $1 AND user_id = $2 AND Member_Status = $3', [communityId, memberId, 'Accepted']);
+  if (memberCheck.rows.length === 0) return next(new AppError('Target user is not an accepted member', 400));
+
+  // Check if already manager
+  const already = await db.query('SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2', [communityId, memberId]);
+  if (already.rows.length > 0) return next(new AppError('User is already a manager', 400));
+
+  // Insert into communityManagers
+  await db.query('INSERT INTO communityManagers (moderator_ID, community_ID) VALUES ($1, $2)', [memberId, communityId]);
+
+  res.status(200).json({ status: 'success', message: 'Member promoted to manager' });
+});
+
+// Demote a community manager (creator or manager only)
+export const demoteMember = catchAsync(async (req, res, next) => {
+  const { communityId, memberId } = req.params;
+  const userId = req.user?.user_id;
+
+  // Check if community exists
+  const communityResult = await db.query('SELECT * FROM community WHERE community_ID = $1', [communityId]);
+  if (communityResult.rows.length === 0) return next(new AppError('Community not found', 404));
+
+  // Check if requester is community creator or manager
+  const isCreator = communityResult.rows[0].community_creator === userId;
+  const managerCheck = await db.query('SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2', [communityId, userId]);
+  if (!isCreator && managerCheck.rows.length === 0) return next(new AppError('Only community creator or managers can demote managers', 403));
+
+  // Prevent demoting the community creator
+  if (communityResult.rows[0].community_creator === memberId) return next(new AppError('Cannot demote the community creator', 400));
+
+  // Check that target is a manager
+  const target = await db.query('SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2', [communityId, memberId]);
+  if (target.rows.length === 0) return next(new AppError('Target is not a manager', 400));
+
+  // Delete manager entry
+  await db.query('DELETE FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2', [communityId, memberId]);
+
+  res.status(200).json({ status: 'success', message: 'Member demoted from manager' });
 });
 
 // Approve a pending join request (managers only)
