@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Input from '../components/Input'
 import Select from '../components/Select'
 import CommunityCard from '../components/CommunityCard'
@@ -6,15 +7,21 @@ import CommunitySidebar from '../components/CommunitySidebar'
 import { useGetCommunities } from '../services/communityServices/hooks/useGetCommunities'
 import { useGetAllTags } from '../services/communityServices/hooks/useGetAllTags'
 import { useJoinCommunity } from '../services/communityServices/hooks/useJoinCommunity'
+import { useUser } from '../services/authServices'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export default function CommunitiesPage() {
+  const navigate = useNavigate()
   const [search, setSearch] = useState('')
   const [selectedTag, setSelectedTag] = useState('') // Single tag selection
   const [sizeFilter, setSizeFilter] = useState('all') // all, small (1-10), medium (11-50), large (51+)
   const [showJoined, setShowJoined] = useState('all') // all, joined, not-joined
   const [page, setPage] = useState(1)
   const limit = 6
+
+  const { data: currentUser } = useUser()
+  const user = currentUser?.data?.user || currentUser?.user || currentUser
+  const isAdmin = user?.role === 0
 
   // Build params object for API
   const params = useMemo(() => {
@@ -43,12 +50,13 @@ export default function CommunitiesPage() {
   const allTags = tagsData?.data?.tags || []
 
   const handleJoinClick = (communityId) => {
-    joinCommunity(communityId)
+    if (!isAdmin) {
+      joinCommunity(communityId)
+    }
   }
 
   const handleViewClick = (communityId) => {
-    // TODO: Navigate to community detail page
-    console.log('View community:', communityId)
+    navigate(`/communities/${communityId}/rooms`)
   }
 
   return (
@@ -157,6 +165,7 @@ export default function CommunitiesPage() {
                 community={community}
                 onJoin={() => handleJoinClick(community.community_id)}
                 onView={() => handleViewClick(community.community_id)}
+                isAdmin={isAdmin}
               />
             ))}
           </div>

@@ -1,7 +1,7 @@
 import React from 'react'
 import { Users, Tag } from 'lucide-react'
 
-export default function CommunityCard({ community = {}, onJoin = () => {}, onView = () => {} }) {
+export default function CommunityCard({ community = {}, onJoin = () => {}, onView = () => {}, isAdmin = false }) {
   const { 
     community_id, 
     community_name, 
@@ -58,7 +58,14 @@ export default function CommunityCard({ community = {}, onJoin = () => {}, onVie
 
           {/* Action button */}
           <div>
-            {isModerator ? (
+            {isAdmin ? (
+              <button
+                onClick={onView}
+                className="w-full px-4 py-2 rounded-xl bg-yellow-600 text-white transition text-sm font-medium cursor-pointer hover:bg-yellow-500"
+              >
+                Manage
+              </button>
+            ) : isModerator ? (
               <button
                 onClick={onView}
                 className="w-full px-4 py-2 rounded-xl bg-purple-600 text-white transition text-sm font-medium cursor-pointer hover:bg-purple-500"

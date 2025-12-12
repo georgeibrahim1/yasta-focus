@@ -328,4 +328,685 @@ export const createCommunity = catchAsync(async (req, res, next) => {
   });
 });
 
+// Get community statistics (for managers/admins)
+export const getCommunityStats = catchAsync(async (req, res, next) => {
+  const { communityId } = req.params;
+  const userId = req.user?.user_id;
 
+  // Check if community exists
+  const communityResult = await db.query(
+    'SELECT * FROM community WHERE community_ID = $1',
+    [communityId]
+  );
+
+  if (communityResult.rows.length === 0) {
+    return next(new AppError('Community not found', 404));
+  }
+
+  // Check if user is a manager
+  const managerResult = await db.query(
+    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+    [communityId, userId]
+  );
+
+  if (managerResult.rows.length === 0) {
+    return next(new AppError('Only community managers can view statistics', 403));
+  }
+
+  // Get total member count (current)
+  const totalMembersResult = await db.query(`
+    SELECT COUNT(*) as total_members
+    FROM community_Participants
+    WHERE community_ID = $1 AND Member_Status = 'Accepted'
+  `, [communityId]);
+
+  // Get left members count
+  const leftMembersResult = await db.query(`
+    SELECT COUNT(*) as left_members
+    FROM community_Participants
+    WHERE community_ID = $1 AND Member_Status = 'Left'
+  `, [communityId]);
+
+  // Get joined members per day (last 7 days)
+  const joinedPerDayResult = await db.query(`
+    SELECT 
+      DATE(join_Date) as date,
+      COUNT(*) as joined
+    FROM community_Participants
+    WHERE community_ID = $1 
+      AND Member_Status = 'Accepted'
+      AND join_Date >= NOW() - INTERVAL '7 days'
+    GROUP BY DATE(join_Date)
+    ORDER BY date DESC
+  `, [communityId]);
+
+  // Get joined members per week (last 4 weeks)
+  const joinedPerWeekResult = await db.query(`
+    SELECT 
+      DATE_TRUNC('week', join_Date) as week,
+      COUNT(*) as joined
+    FROM community_Participants
+    WHERE community_ID = $1 
+      AND Member_Status = 'Accepted'
+      AND join_Date >= NOW() - INTERVAL '4 weeks'
+    GROUP BY DATE_TRUNC('week', join_Date)
+    ORDER BY week DESC
+  `, [communityId]);
+
+  // Get joined members per month (last 6 months)
+  const joinedPerMonthResult = await db.query(`
+    SELECT 
+      DATE_TRUNC('month', join_Date) as month,
+      COUNT(*) as joined
+    FROM community_Participants
+    WHERE community_ID = $1 
+      AND Member_Status = 'Accepted'
+      AND join_Date >= NOW() - INTERVAL '6 months'
+    GROUP BY DATE_TRUNC('month', join_Date)
+    ORDER BY month DESC
+  `, [communityId]);
+
+  // Get total study rooms count
+  const totalRoomsResult = await db.query(`
+    SELECT COUNT(*) as total_rooms
+    FROM studyRoom
+    WHERE community_ID = $1
+  `, [communityId]);
+
+  // Get active study rooms (with members)
+  const activeRoomsResult = await db.query(`
+    SELECT COUNT(DISTINCT sr.room_Code) as active_rooms
+    FROM studyRoom sr
+    JOIN studyRoom_Members sm ON sr.room_Code = sm.room_Code
+    WHERE sr.community_ID = $1
+  `, [communityId]);
+
+  const stats = {
+    totalMembers: parseInt(totalMembersResult.rows[0].total_members),
+    leftMembers: parseInt(leftMembersResult.rows[0].left_members),
+    totalRooms: parseInt(totalRoomsResult.rows[0].total_rooms),
+    activeRooms: parseInt(activeRoomsResult.rows[0].active_rooms),
+    joinedPerDay: joinedPerDayResult.rows.map(row => ({
+      date: row.date,
+      joined: parseInt(row.joined)
+    })),
+    joinedPerWeek: joinedPerWeekResult.rows.map(row => ({
+      week: row.week,
+      joined: parseInt(row.joined)
+    })),
+    joinedPerMonth: joinedPerMonthResult.rows.map(row => ({
+      month: row.month,
+      joined: parseInt(row.joined)
+    }))
+  };
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      stats
+    }
+  });
+});
+
+// Update community info (managers only)
+export const updateCommunityInfo = catchAsync(async (req, res, next) => {
+  const { communityId } = req.params;
+  const userId = req.user?.user_id;
+  const { community_Name, community_Description } = req.body;
+
+  // Check if user is a manager
+  const managerResult = await db.query(
+    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+    [communityId, userId]
+  );
+
+  if (managerResult.rows.length === 0) {
+    return next(new AppError('Only community managers can update community info', 403));
+  }
+
+  const updates = [];
+  const params = [];
+  let paramCount = 0;
+
+  if (community_Name) {
+    paramCount++;
+    updates.push(`community_Name = $${paramCount}`);
+    params.push(community_Name);
+  }
+
+  if (community_Description) {
+    paramCount++;
+    updates.push(`community_Description = $${paramCount}`);
+    params.push(community_Description);
+  }
+
+  if (updates.length === 0) {
+    return next(new AppError('No valid fields to update', 400));
+  }
+
+  paramCount++;
+  params.push(communityId);
+
+  const updateQuery = `
+    UPDATE community
+    SET ${updates.join(', ')}
+    WHERE community_ID = $${paramCount}
+    RETURNING *
+  `;
+
+  const result = await db.query(updateQuery, params);
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      community: result.rows[0]
+    }
+  });
+});
+
+// Update member bio
+export const updateMemberBio = catchAsync(async (req, res, next) => {
+  const { communityId } = req.params;
+  const userId = req.user?.user_id;
+  const { bio } = req.body;
+
+  // Check if user is a member
+  const memberResult = await db.query(
+    'SELECT * FROM community_Participants WHERE community_ID = $1 AND user_id = $2 AND Member_Status = \'Accepted\'',
+    [communityId, userId]
+  );
+
+  if (memberResult.rows.length === 0) {
+    return next(new AppError('You must be a member of this community to update your bio', 403));
+  }
+
+  // Update the member bio
+  const result = await db.query(
+    `UPDATE community_Participants
+     SET Member_Bio = $1
+     WHERE community_ID = $2 AND user_id = $3
+     RETURNING *`,
+    [bio || '', communityId, userId]
+  );
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      participant: result.rows[0]
+    }
+  });
+});
+
+// Remove member (managers only)
+export const removeMember = catchAsync(async (req, res, next) => {
+  const { communityId, memberId } = req.params;
+  const userId = req.user?.user_id;
+
+  // Check if user is a manager
+  const managerResult = await db.query(
+    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+    [communityId, userId]
+  );
+
+  if (managerResult.rows.length === 0) {
+    return next(new AppError('Only community managers can remove members', 403));
+  }
+
+  // Cannot remove other managers
+  const targetManagerResult = await db.query(
+    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+    [communityId, memberId]
+  );
+
+  if (targetManagerResult.rows.length > 0) {
+    return next(new AppError('Cannot remove other managers', 400));
+  }
+
+  // Remove member from all study rooms in this community
+  await db.query(
+    'DELETE FROM studyRoom_Members WHERE community_ID = $1 AND student_ID = $2',
+    [communityId, memberId]
+  );
+
+  // Remove member from the community
+  await db.query(
+    'DELETE FROM community_Participants WHERE community_ID = $1 AND user_id = $2',
+    [communityId, memberId]
+  );
+
+  res.status(204).json({
+    status: 'success',
+    data: null
+  });
+});
+
+// Get all members of a community with manager status
+export const getCommunityMembers = catchAsync(async (req, res, next) => {
+  const { communityId } = req.params;
+  const userId = req.user?.user_id;
+
+  // Check if community exists and get info
+  const communityResult = await db.query(
+    'SELECT * FROM community WHERE community_ID = $1',
+    [communityId]
+  );
+
+  if (communityResult.rows.length === 0) {
+    return next(new AppError('Community not found', 404));
+  }
+
+  const community = communityResult.rows[0];
+
+  // Get all accepted members with their info and manager status
+  const membersResult = await db.query(`
+    SELECT 
+      u.user_id,
+      u.username,
+      u.profile_picture,
+      u.bio,
+      u.xp,
+      cp.member_bio,
+      cp.join_date,
+      CASE WHEN cm.moderator_id IS NOT NULL THEN true ELSE false END as is_manager,
+      CASE 
+        WHEN f.status = 'Accepted' THEN 'friends'
+        WHEN f.requesterid = $2 AND f.status = 'Pending' THEN 'pending_sent'
+        WHEN f.requesteeid = $2 AND f.status = 'Pending' THEN 'pending_received'
+        ELSE 'none'
+      END as friendship_status
+    FROM community_Participants cp
+    JOIN users u ON cp.user_id = u.user_id
+    LEFT JOIN communityManagers cm ON cp.community_ID = cm.community_ID AND cp.user_id = cm.moderator_id
+    LEFT JOIN friendship f ON (
+      (f.requesterid = u.user_id AND f.requesteeid = $2) OR 
+      (f.requesteeid = u.user_id AND f.requesterid = $2)
+    )
+    WHERE cp.community_ID = $1 AND cp.Member_Status = 'Accepted'
+    ORDER BY is_manager DESC, u.username ASC
+  `, [communityId, userId]);
+
+  // Check if current user is a manager
+  const currentUserIsManager = membersResult.rows.some(
+    member => member.user_id === userId && member.is_manager
+  );
+
+  // Get total study rooms count
+  const roomsResult = await db.query(
+    'SELECT COUNT(*) as total_rooms FROM studyRoom WHERE community_ID = $1',
+    [communityId]
+  );
+
+  res.status(200).json({
+    status: 'success',
+    results: membersResult.rows.length,
+    data: {
+      community: {
+        community_id: community.community_id,
+        community_name: community.community_name,
+        community_description: community.community_description,
+        total_members: membersResult.rows.length,
+        total_rooms: parseInt(roomsResult.rows[0].total_rooms)
+      },
+      members: membersResult.rows,
+      currentUserIsManager
+    }
+  });
+});
+
+// Delete community (managers only)
+export const deleteCommunity = catchAsync(async (req, res, next) => {
+  const { communityId } = req.params;
+  const userId = req.user?.user_id;
+
+  // Check if user is a manager
+  const managerResult = await db.query(
+    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_id = $2',
+    [communityId, userId]
+  );
+
+  if (managerResult.rows.length === 0) {
+    return next(new AppError('Only community managers can delete the community', 403));
+  }
+
+  // Delete announcements first (if foreign key doesn't have CASCADE)
+  await db.query(
+    'DELETE FROM announcement WHERE community_ID = $1',
+    [communityId]
+  );
+
+  // Delete community managers
+  await db.query(
+    'DELETE FROM communityManagers WHERE community_ID = $1',
+    [communityId]
+  );
+
+  // Delete community tags
+  await db.query(
+    'DELETE FROM communityTag WHERE community_ID = $1',
+    [communityId]
+  );
+
+  // Delete community (other cascade deletes will handle remaining tables like community_Participants, studyRoom, etc.)
+  await db.query(
+    'DELETE FROM community WHERE community_ID = $1',
+    [communityId]
+  );
+
+  res.status(204).json({
+    status: 'success',
+    data: null
+  });
+});
+
+// Get pending join requests (managers only)
+export const getPendingRequests = catchAsync(async (req, res, next) => {
+  const { communityId } = req.params;
+  const userId = req.user?.user_id;
+
+  // Check if user is a manager
+  const managerResult = await db.query(
+    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+    [communityId, userId]
+  );
+
+  if (managerResult.rows.length === 0) {
+    return next(new AppError('Only community managers can view pending requests', 403));
+  }
+
+  // Get all pending members
+  const pendingResult = await db.query(`
+    SELECT 
+      u.user_id,
+      u.username,
+      u.profile_picture,
+      u.bio,
+      u.xp,
+      cp.join_date
+    FROM community_Participants cp
+    JOIN users u ON cp.user_id = u.user_id
+    WHERE cp.community_ID = $1 AND cp.Member_Status = 'Pending'
+    ORDER BY cp.join_date ASC
+  `, [communityId]);
+
+  res.status(200).json({
+    status: 'success',
+    results: pendingResult.rows.length,
+    data: {
+      pendingMembers: pendingResult.rows
+    }
+  });
+});
+
+// Approve a pending join request (managers only)
+export const approveJoinRequest = catchAsync(async (req, res, next) => {
+  const { communityId, memberId } = req.params;
+  const userId = req.user?.user_id;
+
+  // Check if user is a manager
+  const managerResult = await db.query(
+    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+    [communityId, userId]
+  );
+
+  if (managerResult.rows.length === 0) {
+    return next(new AppError('Only community managers can approve requests', 403));
+  }
+
+  // Update member status to Accepted
+  const result = await db.query(
+    `UPDATE community_Participants 
+     SET Member_Status = 'Accepted'
+     WHERE community_ID = $1 AND user_ID = $2 AND Member_Status = 'Pending'
+     RETURNING *`,
+    [communityId, memberId]
+  );
+
+  if (result.rows.length === 0) {
+    return next(new AppError('Pending request not found', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Join request approved',
+    data: {
+      member: result.rows[0]
+    }
+  });
+});
+
+// Reject a pending join request (managers only)
+export const rejectJoinRequest = catchAsync(async (req, res, next) => {
+  const { communityId, memberId } = req.params;
+  const userId = req.user?.user_id;
+
+  // Check if user is a manager
+  const managerResult = await db.query(
+    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+    [communityId, userId]
+  );
+
+  if (managerResult.rows.length === 0) {
+    return next(new AppError('Only community managers can reject requests', 403));
+  }
+
+  // Delete the pending request
+  const result = await db.query(
+    `DELETE FROM community_Participants 
+     WHERE community_ID = $1 AND user_ID = $2 AND Member_Status = 'Pending'
+     RETURNING *`,
+    [communityId, memberId]
+  );
+
+  if (result.rows.length === 0) {
+    return next(new AppError('Pending request not found', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Join request rejected'
+  });
+});
+
+// Get community competitions
+export const getCommunityCompetitions = catchAsync(async (req, res, next) => {
+  const { communityId } = req.params;
+  const userId = req.user?.user_id;
+
+  const result = await db.query(
+    `SELECT 
+      c.*,
+      CASE 
+        WHEN cp.user_id IS NOT NULL THEN 'joined'
+        ELSE 'not_joined'
+      END as entry_status
+    FROM competition c
+    LEFT JOIN CompetitionParticipants cp 
+      ON c.competition_id = cp.comp_id AND cp.user_id = $1
+    WHERE c.competition_type = 'local' AND c.community_id = $2
+    ORDER BY c.end_time ASC`,
+    [userId, communityId]
+  );
+
+  res.status(200).json({
+    status: 'success',
+    data: result.rows
+  });
+});
+
+// Create a community competition (managers only)
+export const createCommunityCompetition = catchAsync(async (req, res, next) => {
+  const { communityId } = req.params;
+  const userId = req.user?.user_id;
+  const { comp_name, comp_description, deadline, max_subjects, max_participants } = req.body;
+
+  // Check if user is a manager
+  const managerResult = await db.query(
+    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+    [communityId, userId]
+  );
+
+  if (managerResult.rows.length === 0) {
+    return next(new AppError('Only community managers can create competitions', 403));
+  }
+
+  // Create the competition
+  const result = await db.query(
+    `INSERT INTO competition 
+      (title, description, start_time, end_time, max_subjects, max_participants, creator_id, competition_type, community_id)
+    VALUES ($1, $2, NOW(), $3, $4, $5, $6, 'local', $7)
+    RETURNING *`,
+    [comp_name, comp_description, deadline, max_subjects, max_participants, userId, communityId]
+  );
+
+  res.status(201).json({
+    status: 'success',
+    data: result.rows[0]
+  });
+});
+
+// Join a community competition
+export const joinCommunityCompetition = catchAsync(async (req, res, next) => {
+  const { communityId, competitionId } = req.params;
+  const userId = req.user?.user_id;
+  const { subjects } = req.body;
+
+  if (!subjects || !Array.isArray(subjects) || subjects.length === 0) {
+    return next(new AppError('Subjects array is required', 400));
+  }
+
+  // Check if user is a member of the community
+  const memberResult = await db.query(
+    `SELECT * FROM community_Participants 
+     WHERE community_ID = $1 AND user_ID = $2 AND Member_Status = 'Accepted'`,
+    [communityId, userId]
+  );
+
+  if (memberResult.rows.length === 0) {
+    return next(new AppError('You must be a member of this community to join competitions', 403));
+  }
+
+  // Check if competition exists and belongs to this community
+  const competitionResult = await db.query(
+    `SELECT * FROM competition 
+     WHERE competition_id = $1 AND community_id = $2 AND competition_type = 'local'`,
+    [competitionId, communityId]
+  );
+
+  if (competitionResult.rows.length === 0) {
+    return next(new AppError('Competition not found in this community', 404));
+  }
+
+  const competition = competitionResult.rows[0];
+
+  // Check max subjects
+  if (subjects.length > competition.max_subjects) {
+    return next(new AppError(`Maximum ${competition.max_subjects} subjects allowed`, 400));
+  }
+
+  // Check if already joined
+  const existingEntry = await db.query(
+    'SELECT * FROM CompetitionParticipants WHERE comp_id = $1 AND user_id = $2',
+    [competitionId, userId]
+  );
+
+  if (existingEntry.rows.length > 0) {
+    return next(new AppError('You have already joined this competition', 400));
+  }
+
+  // Check max participants
+  const participantCount = await db.query(
+    'SELECT COUNT(DISTINCT user_id) as count FROM CompetitionParticipants WHERE comp_id = $1',
+    [competitionId]
+  );
+
+  if (parseInt(participantCount.rows[0].count) >= competition.max_participants) {
+    return next(new AppError('Competition has reached maximum participants', 400));
+  }
+
+  // Insert subjects
+  for (const subject of subjects) {
+    await db.query(
+      'INSERT INTO CompetitionParticipants (comp_id, user_id, subject_name) VALUES ($1, $2, $3)',
+      [competitionId, userId, subject]
+    );
+  }
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Successfully joined the competition'
+  });
+});
+
+// Get competition entries (participants)
+export const getCommunityCompetitionEntries = catchAsync(async (req, res, next) => {
+  const { communityId, competitionId } = req.params;
+
+  // Verify competition belongs to community
+  const competitionResult = await db.query(
+    `SELECT * FROM competition 
+     WHERE competition_id = $1 AND community_id = $2 AND competition_type = 'local'`,
+    [competitionId, communityId]
+  );
+
+  if (competitionResult.rows.length === 0) {
+    return next(new AppError('Competition not found in this community', 404));
+  }
+
+  const result = await db.query(
+    `SELECT 
+      cp.user_id,
+      u.user_name,
+      u.profile_pic,
+      cp.subject_name,
+      cp.total_time
+    FROM CompetitionParticipants cp
+    JOIN Users u ON cp.user_id = u.user_id
+    WHERE cp.comp_id = $1
+    ORDER BY cp.total_time DESC, u.user_name`,
+    [competitionId]
+  );
+
+  res.status(200).json({
+    status: 'success',
+    data: result.rows
+  });
+});
+
+// Delete a community competition (managers only)
+export const deleteCommunityCompetition = catchAsync(async (req, res, next) => {
+  const { communityId, competitionId } = req.params;
+  const userId = req.user?.user_id;
+
+  // Check if user is a manager
+  const managerResult = await db.query(
+    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+    [communityId, userId]
+  );
+
+  if (managerResult.rows.length === 0) {
+    return next(new AppError('Only community managers can delete competitions', 403));
+  }
+
+  // Delete competition participants first (if not cascading)
+  await db.query(
+    'DELETE FROM CompetitionParticipants WHERE comp_id = $1',
+    [competitionId]
+  );
+
+  // Delete competition
+  const result = await db.query(
+    `DELETE FROM competition 
+     WHERE competition_id = $1 AND community_id = $2 AND competition_type = 'local'
+     RETURNING *`,
+    [competitionId, communityId]
+  );
+
+  if (result.rows.length === 0) {
+    return next(new AppError('Competition not found', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Competition deleted successfully'
+  });
+});

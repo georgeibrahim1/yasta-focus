@@ -17,7 +17,49 @@ router.post('/', protect, communityController.createCommunity);
 router.post('/:communityId/join', protect, communityController.joinCommunity);
 
 // Leave community
-router.post('/:communityId/leave', protect, communityController.leaveCommunity);
+router.delete('/:communityId/leave', protect, communityController.leaveCommunity);
+
+// Remove member (managers only)
+router.delete('/:communityId/members/:memberId', protect, communityController.removeMember);
+
+// Get all community members
+router.get('/:communityId/members', protect, communityController.getCommunityMembers);
+
+// Update member bio
+router.patch('/:communityId/bio', protect, communityController.updateMemberBio);
+
+// Get community statistics (managers only)
+router.get('/:communityId/stats', protect, communityController.getCommunityStats);
+
+// Update community info (managers only)
+router.patch('/:communityId', protect, communityController.updateCommunityInfo);
+
+// Delete community (managers only)
+router.delete('/:communityId', protect, communityController.deleteCommunity);
+
+// Get pending join requests (managers only)
+router.get('/:communityId/pending', protect, communityController.getPendingRequests);
+
+// Approve pending join request (managers only)
+router.post('/:communityId/pending/:memberId/approve', protect, communityController.approveJoinRequest);
+
+// Reject pending join request (managers only)
+router.delete('/:communityId/pending/:memberId/reject', protect, communityController.rejectJoinRequest);
+
+// Get community competitions
+router.get('/:communityId/competitions', protect, communityController.getCommunityCompetitions);
+
+// Create community competition (managers only)
+router.post('/:communityId/competitions', protect, communityController.createCommunityCompetition);
+
+// Join community competition
+router.post('/:communityId/competitions/:competitionId/join', protect, communityController.joinCommunityCompetition);
+
+// Get competition entries
+router.get('/:communityId/competitions/:competitionId/entries', protect, communityController.getCommunityCompetitionEntries);
+
+// Delete community competition (managers only)
+router.delete('/:communityId/competitions/:competitionId', protect, communityController.deleteCommunityCompetition);
 
 export default router;
 
