@@ -9,6 +9,7 @@ import {
   useGiveXPToFriend
 } from '../services/friendshipServices'
 import { leaderboardService } from '../services/leaderboardServices/service'
+import { useCheckInStatus } from '../services/leaderboardServices'
 import { useUser } from '../services/authServices'
 import { 
   User, 
@@ -26,11 +27,31 @@ import {
   Star
 } from 'lucide-react'
 
+// Component for Gift XP button with per-friend check-in status
+function GiftXPButton({ friendId, onGiveXP }) {
+  const { data: checkInStatus } = useCheckInStatus(friendId)
+  const hasGivenXP = checkInStatus?.hasCheckedIn || false
+
+  return (
+    <button
+      onClick={() => onGiveXP(friendId)}
+      disabled={hasGivenXP}
+      className={`p-2 rounded-lg transition-colors ${
+        hasGivenXP
+          ? 'bg-gray-600/20 text-gray-500 cursor-not-allowed'
+          : 'bg-purple-600/20 hover:bg-purple-600/30 text-purple-400'
+      }`}
+      title={hasGivenXP ? 'Already gave XP today' : 'Give 10 XP'}
+    >
+      <Gift className="w-5 h-5" />
+    </button>
+  )
+}
+
 export default function ProfilePage() {
   const { userId } = useParams()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('about')
-  const [hasGivenXP, setHasGivenXP] = useState({})
   
   const { data: currentUser } = useUser()
   const { data: profile, isLoading: profileLoading } = useGetUserProfile(userId)
@@ -87,11 +108,8 @@ export default function ProfilePage() {
   }
 
   const handleGiveXP = async (friendId) => {
-    if (hasGivenXP[friendId]) return
-    
     try {
       await giveXPMutation.mutateAsync(friendId)
-      setHasGivenXP(prev => ({ ...prev, [friendId]: true }))
     } catch {
       alert('Error giving XP')
     }
@@ -402,18 +420,7 @@ export default function ProfilePage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleGiveXP(friend.user_id)}
-                          disabled={hasGivenXP[friend.user_id]}
-                          className={`p-2 rounded-lg transition-colors ${
-                            hasGivenXP[friend.user_id]
-                              ? 'bg-gray-600/20 text-gray-500 cursor-not-allowed'
-                              : 'bg-purple-600/20 hover:bg-purple-600/30 text-purple-400'
-                          }`}
-                          title="Give 10 XP"
-                        >
-                          <Gift className="w-5 h-5" />
-                        </button>
+                        <GiftXPButton friendId={friend.user_id} onGiveXP={handleGiveXP} />
                         <button
                           onClick={() => handleRemoveFriend(friend.user_id)}
                           className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors"
