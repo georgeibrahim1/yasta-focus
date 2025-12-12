@@ -7,6 +7,12 @@ export const leaderboardService = {
     return response.data
   },
 
+  // Get check-in status
+  getCheckInStatus: async (toUserId) => {
+    const response = await api.get('/api/leaderboard/checkin-status', { params: { toUserId } })
+    return response.data.data
+  },
+
   // Give XP to a user
   giveXP: async (userId, rank) => {
     const response = await api.post('/api/leaderboard/give-xp', { userId, rank })

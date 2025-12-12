@@ -194,6 +194,7 @@ export const giveXPToFriend = catchAsync(async (req, res, next) => {
   const { friendId } = req.params;
   const userId = req.user.user_id;
   const xpAmount = 10; // Fixed amount
+  const today = new Date().toISOString().split('T')[0];
 
   // Check if they are friends
   const friendshipResult = await pool.query(
@@ -207,6 +208,22 @@ export const giveXPToFriend = catchAsync(async (req, res, next) => {
   if (friendshipResult.rows.length === 0) {
     return next(new AppError('You can only give XP to your friends', 403));
   }
+
+  // Check if user has already given XP to this friend today
+  const existingCheckIn = await pool.query(
+    'SELECT * FROM daily_checkin WHERE user_id = $1 AND checkin_date = $2 AND to_user_id = $3',
+    [userId, today, friendId]
+  );
+
+  if (existingCheckIn.rows.length > 0) {
+    return next(new AppError('You have already given XP to this friend today', 400));
+  }
+
+  // Insert daily check-in record
+  await pool.query(
+    'INSERT INTO daily_checkin (user_id, checkin_date, to_user_id, xp_awarded) VALUES ($1, $2, $3, $4)',
+    [userId, today, friendId, xpAmount]
+  );
 
   // Give XP to friend
   await pool.query(

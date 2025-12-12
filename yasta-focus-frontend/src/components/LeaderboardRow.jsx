@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Trophy, Medal, Award, UserPlus, Flag, Gift } from 'lucide-react'
+import { useCheckInStatus } from '../services/leaderboardServices'
 
 export default function LeaderboardRow({ 
   user, 
@@ -9,7 +10,8 @@ export default function LeaderboardRow({
   onReport, 
   onGiveXP 
 }) {
-  const [hasGivenXP, setHasGivenXP] = useState(false)
+  const { data: checkInStatus } = useCheckInStatus(user.user_id)
+  const hasGivenXP = checkInStatus?.hasCheckedIn || false
   const formatTime = (seconds) => {
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
@@ -140,17 +142,14 @@ export default function LeaderboardRow({
 
           {/* Give XP */}
           <button
-            onClick={() => {
-              onGiveXP(user, rank)
-              setHasGivenXP(true)
-            }}
+            onClick={() => onGiveXP(user, rank)}
             disabled={hasGivenXP}
             className={`px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
               hasGivenXP
                 ? 'bg-slate-600 cursor-not-allowed opacity-50'
                 : 'bg-indigo-600 hover:bg-indigo-500'
             }`}
-            title={hasGivenXP ? 'Already gave XP' : `Give ${getXPAmount(rank)} XP`}
+            title={hasGivenXP ? 'Already gave XP today' : `Give ${getXPAmount(rank)} XP`}
           >
             <Gift className="w-4 h-4 text-white" />
             <span className="text-white font-medium text-sm">

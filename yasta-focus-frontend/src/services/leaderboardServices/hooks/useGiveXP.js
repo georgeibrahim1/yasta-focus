@@ -1,6 +1,14 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { leaderboardService } from '../service'
 import toast from 'react-hot-toast'
+
+export const useCheckInStatus = (toUserId) => {
+  return useQuery({
+    queryKey: ['checkInStatus', toUserId],
+    queryFn: () => leaderboardService.getCheckInStatus(toUserId),
+    enabled: !!toUserId
+  })
+}
 
 export const useGiveXP = () => {
   const qc = useQueryClient()
@@ -13,6 +21,7 @@ export const useGiveXP = () => {
     onSuccess: (data) => {
       console.log('useGiveXP success:', data)
       qc.invalidateQueries({ queryKey: ['leaderboard'] })
+      qc.invalidateQueries({ queryKey: ['checkInStatus'] })
       toast.success(`You gave ${data.data.amountGiven} XP!`)
     },
     onError: (err) => {

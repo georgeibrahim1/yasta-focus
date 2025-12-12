@@ -8,6 +8,7 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/', leaderboardController.getLeaderboard);
+router.get('/checkin-status', leaderboardController.getCheckInStatus);
 router.post('/give-xp', leaderboardController.giveXP);
 router.post('/friend-request', leaderboardController.sendFriendRequest);
 router.post('/report', leaderboardController.reportUser);

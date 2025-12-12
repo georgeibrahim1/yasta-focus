@@ -82,10 +82,34 @@ export const getLeaderboard = catchAsync(async (req, res, next) => {
   });
 });
 
-// Give XP to a user on the leaderboard (once per session)
+// Check if user has already given XP to a specific user today
+export const getCheckInStatus = catchAsync(async (req, res, next) => {
+  const userId = req.user.user_id;
+  const { toUserId } = req.query;
+  const today = new Date().toISOString().split('T')[0];
+
+  if (!toUserId) {
+    return next(new AppError('Target user ID is required', 400));
+  }
+
+  const result = await db.query(
+    'SELECT * FROM daily_checkin WHERE user_id = $1 AND checkin_date = $2 AND to_user_id = $3',
+    [userId, today, toUserId]
+  );
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      hasCheckedIn: result.rows.length > 0
+    }
+  });
+});
+
+// Give XP to a user on the leaderboard
 export const giveXP = catchAsync(async (req, res, next) => {
   const giverId = req.user.user_id;
   const { userId, rank } = req.body;
+  const today = new Date().toISOString().split('T')[0];
 
   if (!userId) {
     return next(new AppError('User ID is required', 400));
@@ -95,11 +119,27 @@ export const giveXP = catchAsync(async (req, res, next) => {
     return next(new AppError('You cannot give XP to yourself', 400));
   }
 
+  // Check if user has already given XP to this specific user today
+  const existingCheckIn = await db.query(
+    'SELECT * FROM daily_checkin WHERE user_id = $1 AND checkin_date = $2 AND to_user_id = $3',
+    [giverId, today, userId]
+  );
+
+  if (existingCheckIn.rows.length > 0) {
+    return next(new AppError('You have already given XP to this user today', 400));
+  }
+
   // Determine XP amount based on rank
   let xpAmount = 1;
   if (rank === 1) xpAmount = 20;
   else if (rank === 2) xpAmount = 10;
   else if (rank === 3) xpAmount = 5;
+
+  // Insert daily check-in record
+  await db.query(
+    'INSERT INTO daily_checkin (user_id, checkin_date, to_user_id, xp_awarded) VALUES ($1, $2, $3, $4)',
+    [giverId, today, userId, xpAmount]
+  );
 
   // Update user XP
   const updateQuery = `
@@ -108,7 +148,7 @@ export const giveXP = catchAsync(async (req, res, next) => {
     WHERE user_id = $2 
     RETURNING xp
   `;
-  const updateResult = await db.query(updateQuery, [xpAmount, userId]);
+  const updateResult = await db.query(updateQuery, [xpAmount, giverId]);
 
   res.status(200).json({
     status: 'success',
