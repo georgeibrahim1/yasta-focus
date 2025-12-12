@@ -21,6 +21,28 @@ export const useKickMember = () => {
   })
 }
 
+export const usePromoteMember = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ communityId, memberId }) => communityService.promoteMember(communityId, memberId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['communityMembers', variables.communityId] })
+    }
+  })
+}
+
+export const useDemoteMember = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ communityId, memberId }) => communityService.demoteMember(communityId, memberId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['communityMembers', variables.communityId] })
+    }
+  })
+}
+
 export const usePendingRequests = (communityId, enabled = false) => {
   return useQuery({
     queryKey: ['pendingRequests', communityId],

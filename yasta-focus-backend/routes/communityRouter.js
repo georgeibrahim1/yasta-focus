@@ -25,6 +25,10 @@ router.delete('/:communityId/members/:memberId', protect, communityController.re
 // Get all community members
 router.get('/:communityId/members', protect, communityController.getCommunityMembers);
 
+// Promote / Demote members (creator or managers only)
+router.post('/:communityId/members/:memberId/promote', protect, communityController.promoteMember);
+router.post('/:communityId/members/:memberId/demote', protect, communityController.demoteMember);
+
 // Update member bio
 router.patch('/:communityId/bio', protect, communityController.updateMemberBio);
 

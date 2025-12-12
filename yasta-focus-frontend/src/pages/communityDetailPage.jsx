@@ -15,7 +15,10 @@ import {
   useCommunityStats,
   useUpdateCommunityInfo,
   useUpdateMemberBio,
-  useExitCommunity
+  useExitCommunity,
+  useCommunityMembers,
+  usePromoteMember,
+  useDemoteMember
 } from '../services/communityServices'
 import { useUser } from '../services/authServices'
 import StudyRoomList from '../components/StudyRoomList'
@@ -35,17 +38,20 @@ export default function CommunityDetailPage() {
 
   const { data: currentUser } = useUser()
   const { data: stats, isLoading: statsLoading } = useCommunityStats(communityId)
+  const { data: membersData } = useCommunityMembers(communityId)
+  const promoteMember = usePromoteMember()
+  const demoteMember = useDemoteMember()
   const updateInfo = useUpdateCommunityInfo()
   const updateBio = useUpdateMemberBio()
   const exitCommunity = useExitCommunity()
   
-  // TODO: Replace with actual check from community data
-  const isManager = true // Placeholder - should check communitymanagers table
+  const isManager = membersData?.currentUserIsManager || false
 
   const tabs = [
     { id: 'rooms', label: 'Study Rooms', icon: Users },
     { id: 'announcements', label: 'Announcements', icon: Megaphone },
     { id: 'info', label: 'Info', icon: Info },
+    { id: 'members', label: 'Members', icon: Users },
   ]
 
   if (isManager) {
@@ -287,6 +293,39 @@ export default function CommunityDetailPage() {
                   <p className="text-gray-600 dark:text-gray-400">
                     Your bio... {/* TODO */}
                   </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'members' && isManager && (
+            <div className="space-y-6">
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Members</h3>
+                {!membersData ? (
+                  <p className="text-gray-600 dark:text-gray-400">Loading members...</p>
+                ) : (
+                  <div className="space-y-3">
+                    {membersData.members.map((m) => (
+                      <div key={m.user_id} className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 p-3 rounded">
+                        <div className="flex items-center gap-3">
+                          <img src={m.profile_picture} alt="" className="w-10 h-10 rounded-full object-cover" />
+                          <div>
+                            <div className="font-medium text-gray-900 dark:text-white">{m.username}</div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">{m.bio}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {membersData.currentUserIsManager && !m.is_manager && (
+                            <button onClick={() => promoteMember.mutate({ communityId, memberId: m.user_id })} className="px-3 py-1 bg-green-600 text-white rounded">Promote</button>
+                          )}
+                          {membersData.currentUserIsManager && m.is_manager && (
+                            <button onClick={() => demoteMember.mutate({ communityId, memberId: m.user_id })} className="px-3 py-1 bg-yellow-600 text-white rounded">Demote</button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>

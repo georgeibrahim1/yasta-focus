@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Search, Users, ArrowLeft, Plus, Trash2, UserPlus, Flag, UserX, Megaphone, Shield, Edit3, Clock, Check, X, Settings, LogOut, BarChart3, TrendingUp, Trophy, Calendar } from 'lucide-react'
 import { useStudyRooms, useJoinRoom, useLeaveRoom, useDeleteRoom } from '../services/studyRoomServices'
 import { useAnnouncements, useCreateAnnouncement, useDeleteAnnouncement } from '../services/announcementServices'
-import { useCommunityMembers, useKickMember, usePendingRequests, useApproveJoinRequest, useRejectJoinRequest, useCommunityStats } from '../services/communityServices'
+import { useCommunityMembers, useKickMember, usePendingRequests, useApproveJoinRequest, useRejectJoinRequest, useCommunityStats, usePromoteMember, useDemoteMember } from '../services/communityServices'
 import { useUpdateCommunityInfo, useDeleteCommunity, useExitCommunity, useUpdateMemberBio } from '../services/communityServices'
 import { useCommunityCompetitions, useCreateCommunityCompetition, useJoinCommunityCompetition, useDeleteCommunityCompetition } from '../services/communityServices'
 import { useSendFriendRequest, useReportUser } from '../services/leaderboardServices'
@@ -51,6 +51,8 @@ export default function StudyRoomsPage() {
   const leaveRoom = useLeaveRoom()
   const deleteRoom = useDeleteRoom()
   const kickMember = useKickMember()
+  const promoteMember = usePromoteMember()
+  const demoteMember = useDemoteMember()
   const { mutate: sendFriendRequest } = useSendFriendRequest()
   const { mutate: reportUser } = useReportUser()
   const createAnnouncement = useCreateAnnouncement()
@@ -169,6 +171,26 @@ export default function StudyRoomsPage() {
     if (window.confirm('Are you sure you want to remove this member from the community?')) {
       try {
         await kickMember.mutateAsync({ communityId, memberId })
+      } catch {
+        // Error handled by mutation
+      }
+    }
+  }
+
+  const handlePromoteMember = async (memberId) => {
+    if (window.confirm('Promote this member to community manager?')) {
+      try {
+        await promoteMember.mutateAsync({ communityId, memberId })
+      } catch {
+        // Error handled by mutation
+      }
+    }
+  }
+
+  const handleDemoteMember = async (memberId) => {
+    if (window.confirm('Demote this manager to a regular member?')) {
+      try {
+        await demoteMember.mutateAsync({ communityId, memberId })
       } catch {
         // Error handled by mutation
       }
@@ -663,6 +685,29 @@ export default function StudyRoomsPage() {
                           title="Remove from community"
                         >
                           <UserX className="w-4 h-4 text-slate-400 hover:text-red-500" />
+                        </button>
+                      )}
+                      {/* Promote (managers only, promote regular members) */}
+                      {currentUserIsManager && !member.is_manager && (
+                        <button
+                          onClick={() => handlePromoteMember(member.user_id)}
+                          disabled={promoteMember.isPending}
+                          className="p-1.5 hover:bg-green-900/20 rounded-lg transition-colors"
+                          title="Promote to manager"
+                        >
+                          <Shield className="w-4 h-4 text-slate-400 hover:text-amber-400" />
+                        </button>
+                      )}
+
+                      {/* Demote (managers only, demote other managers) */}
+                      {currentUserIsManager && member.is_manager && member.user_id !== userId && (
+                        <button
+                          onClick={() => handleDemoteMember(member.user_id)}
+                          disabled={demoteMember.isPending}
+                          className="p-1.5 hover:bg-yellow-900/20 rounded-lg transition-colors"
+                          title="Demote manager"
+                        >
+                          <Shield className="w-4 h-4 text-slate-400 hover:text-yellow-400" />
                         </button>
                       )}
                     </div>

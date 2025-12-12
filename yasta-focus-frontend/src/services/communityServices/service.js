@@ -100,6 +100,18 @@ export const communityService = {
     return response.data
   },
 
+  // Promote member to manager
+  promoteMember: async (communityId, memberId) => {
+    const response = await api.post(`/api/communities/${communityId}/members/${memberId}/promote`)
+    return response.data
+  },
+
+  // Demote manager to regular member
+  demoteMember: async (communityId, memberId) => {
+    const response = await api.post(`/api/communities/${communityId}/members/${memberId}/demote`)
+    return response.data
+  },
+
   // Get pending join requests (managers only)
   getPendingRequests: async (communityId) => {
     const response = await api.get(`/api/communities/${communityId}/pending`)
