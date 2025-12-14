@@ -135,28 +135,47 @@ export const giveXP = catchAsync(async (req, res, next) => {
   else if (rank === 2) xpAmount = 10;
   else if (rank === 3) xpAmount = 5;
 
-  // Insert daily check-in record
-  await db.query(
-    'INSERT INTO daily_checkin (user_id, checkin_date, to_user_id, xp_awarded) VALUES ($1, $2, $3, $4)',
-    [giverId, today, userId, xpAmount]
-  );
+  // Start transaction
+  await db.query('BEGIN');
 
-  // Update user XP
-  const updateQuery = `
-    UPDATE users 
-    SET xp = xp + $1 
-    WHERE user_id = $2 
-    RETURNING xp
-  `;
-  const updateResult = await db.query(updateQuery, [xpAmount, giverId]);
+  try {
+    // Insert daily check-in record
+    await db.query(
+      'INSERT INTO daily_checkin (user_id, checkin_date, to_user_id, xp_awarded) VALUES ($1, $2, $3, $4)',
+      [giverId, today, userId, xpAmount]
+    );
 
-  res.status(200).json({
-    status: 'success',
-    data: {
-      newXP: updateResult.rows[0].xp,
-      amountGiven: xpAmount
-    }
-  });
+    // Give XP to receiver (giver's XP remains unchanged)
+    const updateQuery = `
+      UPDATE users 
+      SET xp = xp + $1 
+      WHERE user_id = $2 
+      RETURNING xp
+    `;
+    const updateResult = await db.query(updateQuery, [xpAmount, userId]);
+
+    // Commit transaction
+    await db.query('COMMIT');
+
+    // Get updated giver data
+    const giverUpdated = await db.query(
+      'SELECT xp FROM users WHERE user_id = $1',
+      [giverId]
+    );
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        receiverNewXP: updateResult.rows[0].xp,
+        giverNewXP: giverUpdated.rows[0].xp,
+        amountGiven: xpAmount
+      }
+    });
+  } catch (error) {
+    // Rollback transaction on error
+    await db.query('ROLLBACK');
+    throw error;
+  }
 });
 
 // Send friend request
