@@ -274,6 +274,59 @@ export const leaveCommunity = catchAsync(async (req, res, next) => {
 });
 
 // Create a new community
+// export const createCommunity = catchAsync(async (req, res, next) => {
+//   const userId = req.user.user_id;
+//   const { community_Name, community_Description, tags = [] } = req.body;
+
+//   if (!community_Name || community_Name.trim() === '') {
+//     return next(new AppError('Community name is required', 400));
+//   }
+//   if (!community_Description || community_Description.trim() === '') {
+//     return next(new AppError('Community description is required', 400));
+//   }
+
+//   // Insert community
+//   const query = `
+//     INSERT INTO community (community_Name, community_Description, community_Creator)
+//     VALUES ($1, $2, $3)
+//     RETURNING *
+//   `;
+//   const result = await db.query(query, [community_Name.trim(), community_Description.trim(), userId]);
+//   const community = result.rows[0];
+
+//   // Auto-accept creator as member
+//   await db.query(
+//     `INSERT INTO community_Participants (community_ID, user_id, Join_Date, Member_Status)
+//      VALUES ($1, $2, NOW(), 'Accepted')`,
+//     [community.community_id, userId]
+//   );
+
+//   // Add creator as community manager
+//   await db.query(
+//     `INSERT INTO communityManagers (moderator_ID, community_ID)
+//      VALUES ($1, $2)`,
+//     [userId, community.community_id]
+//   );
+
+//   // Add tags if provided
+//   if (tags && Array.isArray(tags) && tags.length > 0) {
+//     for (const tag of tags) {
+//       if (tag && tag.trim()) {
+//         await db.query(
+//           'INSERT INTO communityTag (tag, community_ID) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+//           [tag.trim().toLowerCase(), community.community_id]
+//         );
+//       }
+//     }
+//   }
+
+//   res.status(201).json({
+//     status: 'success',
+//     data: {
+//       community
+//     }
+//   });
+// });
 export const createCommunity = catchAsync(async (req, res, next) => {
   const userId = req.user.user_id;
   const { community_Name, community_Description, tags = [] } = req.body;
@@ -285,13 +338,19 @@ export const createCommunity = catchAsync(async (req, res, next) => {
     return next(new AppError('Community description is required', 400));
   }
 
-  // Insert community
-  const query = `
-    INSERT INTO community (community_Name, community_Description, community_Creator)
-    VALUES ($1, $2, $3)
-    RETURNING *
-  `;
-  const result = await db.query(query, [community_Name.trim(), community_Description.trim(), userId]);
+  // Use procedure for first tag (or null)
+  const firstTag = tags && Array.isArray(tags) && tags.length > 0 ? tags[0].trim().toLowerCase() : null;
+  
+  await db.query(
+    'CALL create_community_full($1, $2, $3, $4)',
+    [community_Name.trim(), community_Description.trim(), userId, firstTag]
+  );
+
+  // Fetch the created community
+  const result = await db.query(
+    'SELECT * FROM community WHERE community_Creator = $1 AND community_Name = $2 ORDER BY community_ID DESC LIMIT 1',
+    [userId, community_Name.trim()]
+  );
   const community = result.rows[0];
 
   // Auto-accept creator as member
@@ -301,16 +360,10 @@ export const createCommunity = catchAsync(async (req, res, next) => {
     [community.community_id, userId]
   );
 
-  // Add creator as community manager
-  await db.query(
-    `INSERT INTO communityManagers (moderator_ID, community_ID)
-     VALUES ($1, $2)`,
-    [userId, community.community_id]
-  );
-
-  // Add tags if provided
-  if (tags && Array.isArray(tags) && tags.length > 0) {
-    for (const tag of tags) {
+  // Add remaining tags if there are more than one
+  if (tags && Array.isArray(tags) && tags.length > 1) {
+    for (let i = 1; i < tags.length; i++) {
+      const tag = tags[i];
       if (tag && tag.trim()) {
         await db.query(
           'INSERT INTO communityTag (tag, community_ID) VALUES ($1, $2) ON CONFLICT DO NOTHING',
@@ -698,6 +751,7 @@ export const deleteCommunity = catchAsync(async (req, res, next) => {
     data: null
   });
 });
+
 
 // Get pending join requests (managers only)
 export const getPendingRequests = catchAsync(async (req, res, next) => {

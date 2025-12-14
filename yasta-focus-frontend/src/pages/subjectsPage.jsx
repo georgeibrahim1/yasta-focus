@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus, Trash2, Edit2, MessageCircle } from 'lucide-react'
+import { Search, Plus, Trash2, Edit2, Bot } from 'lucide-react'
 import SubjectChat from '../components/SubjectChat'
 import { useGetSubjects, useGetNotes, useGetNote, useUpdateNote, useDeleteNote, useGetTasks, useUpdateTask, useToggleTask, useDeleteTask, useCreateSubject, useCreateNote } from '../services/subjectServices'
 import { useGetDecks, useDeleteDeck, useCreateDeck } from '../services/deckServices'
@@ -32,6 +32,7 @@ export default function SubjectsPage() {
   const [newNote, setNewNote] = useState({ note_title: '', note_text: '' })
   const [newTask, setNewTask] = useState({ task_title: '', description: '', deadline: null, status: 'Not Started' })
   const [newDeck, setNewDeck] = useState({ deck_title: '', deck__desc: '', reminder_by: '' })
+  const [chatMessages, setChatMessages] = useState([]) // Persist chat messages
 
   // Fetch subjects
   const { data: subjectsData } = useGetSubjects()
@@ -299,16 +300,26 @@ export default function SubjectsPage() {
       <div className="flex-1 p-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-5xl font-bold text-white mb-3">{selectedSubject || 'Select a Subject'}</h1>
-          <p className="text-slate-400 text-lg">
-            All your notes, tasks, and decks for this subject.
-          </p>
-          {activeTab === 'chat' && selectedSubject && (
-            <SubjectChat subject={selectedSubject} />
+          {activeTab === 'chat' ? (
+            <>
+              <h1 className="text-5xl font-bold text-white mb-3">AI Assistant</h1>
+              <p className="text-slate-400 text-lg">
+                Ask me anything! I'm here to help with your studies.
+              </p>
+              <SubjectChat subject="General" messages={chatMessages} setMessages={setChatMessages} />
+            </>
+          ) : (
+            <>
+              <h1 className="text-5xl font-bold text-white mb-3">{selectedSubject || 'Select a Subject'}</h1>
+              <p className="text-slate-400 text-lg">
+                All your notes, tasks, and decks for this subject.
+              </p>
+            </>
           )}
         </div>
 
-        {/* Search and Tabs */}
+        {/* Search and Tabs - Only show when not in chat mode */}
+        {activeTab !== 'chat' && (
         <div className="flex items-center gap-4 mb-8">
           {/* Search Bar */}
           <div className="flex-1 relative">
@@ -368,6 +379,7 @@ export default function SubjectsPage() {
             <Plus size={24} />
           </button>
         </div>
+        )}
 
         {/* Task Filters and Sorting */}
         {activeTab === 'tasks' && (
@@ -611,9 +623,14 @@ export default function SubjectsPage() {
           {subjects.map(subject => (
             <button
               key={subject.subject_name}
-              onClick={() => setSelectedSubject(subject.subject_name)}
-              className={`w-full p-4 rounded-xl text-left transition-all flex items-start justify-between gap-2 ${
-                subject.subject_name === selectedSubject
+              onClick={() => {
+                setSelectedSubject(subject.subject_name)
+                if (activeTab === 'chat') {
+                  setActiveTab('notes') // Switch back to notes when selecting a subject
+                }
+              }}
+              className={`w-full p-4 rounded-xl text-left transition-all ${
+                subject.subject_name === selectedSubject && activeTab !== 'chat'
                   ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/50'
                   : 'bg-slate-800/50 text-slate-300 hover:bg-slate-800 border border-slate-700'
               }`}
@@ -623,15 +640,6 @@ export default function SubjectsPage() {
                 {subject.description && (
                   <div className="text-sm opacity-80 mt-1">{subject.description}</div>
                 )}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={(e) => { e.stopPropagation(); setSelectedSubject(subject.subject_name); setActiveTab('chat') }}
-                  title={`Chat about ${subject.subject_name}`}
-                  className="p-2 rounded-md text-slate-300 hover:text-white hover:bg-slate-700/50"
-                >
-                  <MessageCircle size={18} />
-                </button>
               </div>
             </button>
           ))}
@@ -644,6 +652,22 @@ export default function SubjectsPage() {
         >
           <Plus size={20} />
           Add New Subject
+        </button>
+
+        {/* AI Chat Button */}
+        <button 
+          onClick={() => {
+            setActiveTab('chat')
+            // Don't deselect subject, just show chat mode
+          }}
+          className={`w-full mt-4 p-4 font-medium rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 ${
+            activeTab === 'chat'
+              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-indigo-500/50'
+              : 'bg-slate-800/50 border border-slate-700 text-slate-300 hover:text-white hover:border-indigo-500'
+          }`}
+        >
+          <Bot size={20} />
+          AI Chat
         </button>
       </aside>
 

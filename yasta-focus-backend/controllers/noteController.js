@@ -61,6 +61,40 @@ export const getNote = catchAsync(async (req, res, next) => {
 });
 
 // Create a new note
+// export const createNote = catchAsync(async (req, res, next) => {
+//   const userId = req.user.user_id;
+//   const { subjectName } = req.params;
+//   const { note_title, note_text } = req.body;
+
+//   if (!note_title) {
+//     return next(new AppError('Note title is required', 400));
+//   }
+
+//   // Verify subject exists and belongs to user
+//   const subjectCheck = await db.query(
+//     'SELECT subject_name FROM subject WHERE user_id = $1 AND subject_name = $2',
+//     [userId, subjectName]
+//   );
+
+//   if (subjectCheck.rows.length === 0) {
+//     return next(new AppError('Subject not found', 404));
+//   }
+
+//   const query = `
+//     INSERT INTO note (note_title, subject_name, user_id, note_text)
+//     VALUES ($1, $2, $3, $4)
+//     RETURNING note_title, subject_name, user_id, note_text
+//   `;
+
+//   const result = await db.query(query, [note_title, subjectName, userId, note_text || null]);
+
+//   res.status(201).json({
+//     status: 'success',
+//     data: {
+//       note: result.rows[0]
+//     }
+//   });
+// });
 export const createNote = catchAsync(async (req, res, next) => {
   const userId = req.user.user_id;
   const { subjectName } = req.params;
@@ -80,13 +114,16 @@ export const createNote = catchAsync(async (req, res, next) => {
     return next(new AppError('Subject not found', 404));
   }
 
-  const query = `
-    INSERT INTO note (note_title, subject_name, user_id, note_text)
-    VALUES ($1, $2, $3, $4)
-    RETURNING note_title, subject_name, user_id, note_text
-  `;
+  await db.query(
+    'CALL create_note($1, $2, $3, $4)',
+    [userId, subjectName, note_title, note_text || null]
+  );
 
-  const result = await db.query(query, [note_title, subjectName, userId, note_text || null]);
+  // Fetch the created note to return
+  const result = await db.query(
+    'SELECT note_title, subject_name, user_id, note_text FROM note WHERE user_id = $1 AND subject_name = $2 AND note_title = $3',
+    [userId, subjectName, note_title]
+  );
 
   res.status(201).json({
     status: 'success',

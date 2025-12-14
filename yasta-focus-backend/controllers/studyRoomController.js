@@ -3,51 +3,71 @@ import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/appError.js';
 
 // Get all study rooms for a community with optional search
+// export const getCommunityRooms = catchAsync(async (req, res, next) => {
+//   const { communityId } = req.params;
+//   const { search } = req.query;
+
+//   let queryText = `
+//     SELECT 
+//       sr.*,
+//       json_build_object(
+//         'user_id', u.user_id,
+//         'username', u.username,
+//         'profile_pic', u.profile_picture
+//       ) as creator,
+//       COALESCE(
+//         json_agg(
+//           json_build_object(
+//             'user_id', mu.user_id,
+//             'username', mu.username,
+//             'profile_pic', mu.profile_picture
+//           )
+//         ) FILTER (WHERE mu.user_id IS NOT NULL), 
+//         '[]'
+//       ) as members
+//     FROM studyRoom sr
+//     LEFT JOIN users u ON sr.student_Creator = u.user_id
+//     LEFT JOIN studyRoom_Members srm ON sr.room_Code = srm.room_Code AND sr.community_ID = srm.community_ID
+//     LEFT JOIN users mu ON srm.student_ID = mu.user_id
+//     WHERE sr.community_ID = $1
+//   `;
+
+//   const params = [communityId];
+
+//   if (search) {
+//     queryText += ` AND sr.room_Name ILIKE $2`;
+//     params.push(`%${search}%`);
+//   }
+
+//   queryText += ` GROUP BY sr.room_Code, sr.community_ID, sr.room_Name, sr.student_Creator, u.user_id, u.username, u.profile_picture`;
+
+//   const result = await db.query(queryText, params);
+
+//   res.status(200).json({
+//     status: 'success',
+//     results: result.rows.length,
+//     data: {
+//       rooms: result.rows
+//     }
+//   });
+// });
+// Get all study rooms for a community with optional search
 export const getCommunityRooms = catchAsync(async (req, res, next) => {
   const { communityId } = req.params;
   const { search } = req.query;
 
-  let queryText = `
-    SELECT 
-      sr.*,
-      json_build_object(
-        'user_id', u.user_id,
-        'username', u.username,
-        'profile_pic', u.profile_picture
-      ) as creator,
-      COALESCE(
-        json_agg(
-          json_build_object(
-            'user_id', mu.user_id,
-            'username', mu.username,
-            'profile_pic', mu.profile_picture
-          )
-        ) FILTER (WHERE mu.user_id IS NOT NULL), 
-        '[]'
-      ) as members
-    FROM studyRoom sr
-    LEFT JOIN users u ON sr.student_Creator = u.user_id
-    LEFT JOIN studyRoom_Members srm ON sr.room_Code = srm.room_Code AND sr.community_ID = srm.community_ID
-    LEFT JOIN users mu ON srm.student_ID = mu.user_id
-    WHERE sr.community_ID = $1
-  `;
+  const result = await db.query(
+    'SELECT get_community_rooms($1, $2) as rooms',
+    [communityId, search || null]
+  );
 
-  const params = [communityId];
-
-  if (search) {
-    queryText += ` AND sr.room_Name ILIKE $2`;
-    params.push(`%${search}%`);
-  }
-
-  queryText += ` GROUP BY sr.room_Code, sr.community_ID, sr.room_Name, sr.student_Creator, u.user_id, u.username, u.profile_picture`;
-
-  const result = await db.query(queryText, params);
+  const rooms = result.rows[0]?.rooms || [];
 
   res.status(200).json({
     status: 'success',
-    results: result.rows.length,
+    results: rooms.length,
     data: {
-      rooms: result.rows
+      rooms: rooms
     }
   });
 });
