@@ -3,17 +3,33 @@ import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/appError.js';
 
 // Get all subjects for the logged-in user
+// export const getAllSubjects = catchAsync(async (req, res, next) => {
+//   const userId = req.user.user_id;
+
+//   const query = `
+//     SELECT subject_name, user_id, description, photo
+//     FROM subject
+//     WHERE user_id = $1
+//     ORDER BY subject_name ASC
+//   `;
+
+//   const result = await db.query(query, [userId]);
+
+//   res.status(200).json({
+//     status: 'success',
+//     results: result.rows.length,
+//     data: {
+//       subjects: result.rows
+//     }
+//   });
+// });
 export const getAllSubjects = catchAsync(async (req, res, next) => {
   const userId = req.user.user_id;
 
-  const query = `
-    SELECT subject_name, user_id, description, photo
-    FROM subject
-    WHERE user_id = $1
-    ORDER BY subject_name ASC
-  `;
-
-  const result = await db.query(query, [userId]);
+  const result = await db.query(
+    'SELECT * FROM get_user_subjects($1)',
+    [userId]
+  );
 
   res.status(200).json({
     status: 'success',
@@ -50,6 +66,29 @@ export const getSubject = catchAsync(async (req, res, next) => {
 });
 
 // Create a new subject
+// export const createSubject = catchAsync(async (req, res, next) => {
+//   const userId = req.user.user_id;
+//   const { subject_name, description, photo } = req.body;
+
+//   if (!subject_name) {
+//     return next(new AppError('Subject name is required', 400));
+//   }
+
+//   const query = `
+//     INSERT INTO subject (subject_name, user_id, description, photo)
+//     VALUES ($1, $2, $3, $4)
+//     RETURNING subject_name, user_id, description, photo
+//   `;
+
+//   const result = await db.query(query, [subject_name, userId, description || null, photo || null]);
+
+//   res.status(201).json({
+//     status: 'success',
+//     data: {
+//       subject: result.rows[0]
+//     }
+//   });
+// });
 export const createSubject = catchAsync(async (req, res, next) => {
   const userId = req.user.user_id;
   const { subject_name, description, photo } = req.body;
@@ -58,13 +97,16 @@ export const createSubject = catchAsync(async (req, res, next) => {
     return next(new AppError('Subject name is required', 400));
   }
 
-  const query = `
-    INSERT INTO subject (subject_name, user_id, description, photo)
-    VALUES ($1, $2, $3, $4)
-    RETURNING subject_name, user_id, description, photo
-  `;
+  await db.query(
+    'CALL create_subject($1, $2, $3, $4)',
+    [userId, subject_name, description || null, photo || null]
+  );
 
-  const result = await db.query(query, [subject_name, userId, description || null, photo || null]);
+  // Fetch the created subject to return
+  const result = await db.query(
+    'SELECT subject_name, user_id, description, photo FROM subject WHERE user_id = $1 AND subject_name = $2',
+    [userId, subject_name]
+  );
 
   res.status(201).json({
     status: 'success',
