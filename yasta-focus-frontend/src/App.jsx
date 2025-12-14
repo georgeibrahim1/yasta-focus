@@ -10,6 +10,7 @@ import StudyRoomsPage from './pages/studyRoomsPage'
 import LeaderboardPage from './pages/leaderboardPage'
 import StatisticsPage from './pages/statisticsPage'
 import ProfilePage from './pages/profilePage'
+import SettingsPage from './pages/settingsPage'
 import DashboardPage from './pages/dashboardPage'
 import AdminStatisticsPage from './pages/adminStatisticsPage'
 import AdminReportsPage from './pages/adminReportsPage'
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="statistics" element={<StatisticsPage/>}/>
         <Route path="profile" element={<ProfilePage/>}/>
         <Route path="profile/:userId" element={<ProfilePage/>}/>
+        <Route path="settings" element={<SettingsPage/>}/>
         <Route path="decks/:subjectName/:deckTitle" element={<DeckDetailPage/>}/>
         
         {/* Admin-only Routes */}

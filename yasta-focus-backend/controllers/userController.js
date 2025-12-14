@@ -184,3 +184,67 @@ export const getMe = catchAsync(async (req, res, next) => {
     }
   });
 });
+
+// Get dashboard statistics
+export const getDashboardStats = catchAsync(async (req, res, next) => {
+  const userId = req.user.user_id;
+
+  // Get total study time (all time)
+  const totalStudyTimeResult = await pool.query(
+    `SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (time_stamp - created_at))), 0) as total_seconds
+     FROM session
+     WHERE user_id = $1`,
+    [userId]
+  );
+  const totalStudyTime = Math.floor(totalStudyTimeResult.rows[0].total_seconds / 60); // in minutes
+
+  // Get weekly study time (last 7 days)
+  const weeklyStudyTimeResult = await pool.query(
+    `SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (time_stamp - created_at))), 0) as total_seconds
+     FROM session
+     WHERE user_id = $1 
+     AND created_at >= CURRENT_DATE - INTERVAL '7 days'`,
+    [userId]
+  );
+  const weeklyStudyTime = Math.floor(weeklyStudyTimeResult.rows[0].total_seconds / 60); // in minutes
+
+  // Get active communities count
+  const activeCommunitiesResult = await pool.query(
+    `SELECT COUNT(*) as count
+     FROM community_participants
+     WHERE user_id = $1`,
+    [userId]
+  );
+  const activeCommunities = parseInt(activeCommunitiesResult.rows[0].count);
+
+  // Get user XP and rank
+  const userResult = await pool.query(
+    `SELECT xp FROM users WHERE user_id = $1`,
+    [userId]
+  );
+  const userXp = userResult.rows[0].xp || 0;
+
+  // Get user rank
+  const rankResult = await pool.query(
+    `SELECT COUNT(*) + 1 as rank
+     FROM users
+     WHERE xp > $1`,
+    [userXp]
+  );
+  const currentRank = parseInt(rankResult.rows[0].rank);
+
+  // Weekly goal (fixed at 1200 minutes or 20 hours)
+  const weeklyGoal = 1200;
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      totalStudyTime,
+      weeklyStudyTime,
+      weeklyGoal,
+      activeCommunities,
+      xp: userXp,
+      currentRank
+    }
+  });
+});
