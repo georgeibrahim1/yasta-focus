@@ -1,21 +1,31 @@
+import { Link } from 'react-router-dom'
 import { useUser } from '../services/authServices'
+import { useDashboardStats } from '../services/dashboardServices'
 import { Clock, BookOpen, Trophy, Users, Target } from 'lucide-react'
 
 export default function StudentDashboardPage() {
   const { data: currentUser } = useUser()
   const user = currentUser?.data?.user || currentUser?.user || currentUser
+  const { data: statsData, isLoading: statsLoading } = useDashboardStats()
 
-  // Mock data - will be replaced with real API calls
-  const stats = {
-    totalStudyTime: 2450, // minutes
-    weeklyGoal: 1200, // minutes
-    activeCommunities: 3,
-    completedSubjects: 8,
-    currentRank: 42,
-    xp: user?.xp || 0
+  const stats = statsData?.data || {
+    totalStudyTime: 0,
+    weeklyStudyTime: 0,
+    weeklyGoal: 1200,
+    activeCommunities: 0,
+    xp: 0,
+    currentRank: 0
   }
 
-  const weeklyProgress = Math.min(100, (stats.totalStudyTime / stats.weeklyGoal) * 100)
+  const weeklyProgress = Math.min(100, (stats.weeklyStudyTime / stats.weeklyGoal) * 100)
+
+  if (statsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl text-white">Loading dashboard...</div>
+      </div>
+    )
+  }
 
   const StatCard = ({ icon: Icon, label, value, subtext, iconColor }) => (
     <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 hover:bg-slate-800/70 transition-colors">
@@ -79,7 +89,7 @@ export default function StudentDashboardPage() {
                 Weekly Goal
               </h3>
               <p className="text-slate-400 text-sm mt-1">
-                {stats.totalStudyTime} / {stats.weeklyGoal} minutes
+                {stats.weeklyStudyTime} / {stats.weeklyGoal} minutes
               </p>
             </div>
             <div className="text-right">
@@ -99,30 +109,30 @@ export default function StudentDashboardPage() {
         <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
           <h3 className="text-white font-semibold text-lg mb-4">Quick Actions</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <a
-              href="/timer"
+            <Link
+              to="/timer"
               className="p-4 bg-slate-700/50 hover:bg-slate-700 rounded-lg border border-slate-600/50 transition-colors group"
             >
               <Clock size={20} className="text-indigo-400 mb-2" />
               <div className="text-white font-medium mb-1">Start Studying</div>
               <div className="text-slate-400 text-sm">Begin a study session</div>
-            </a>
-            <a
-              href="/communities"
+            </Link>
+            <Link
+              to="/communities"
               className="p-4 bg-slate-700/50 hover:bg-slate-700 rounded-lg border border-slate-600/50 transition-colors group"
             >
               <Users size={20} className="text-purple-400 mb-2" />
               <div className="text-white font-medium mb-1">Join Community</div>
               <div className="text-slate-400 text-sm">Find study groups</div>
-            </a>
-            <a
-              href="/leaderboard"
+            </Link>
+            <Link
+              to="/leaderboard"
               className="p-4 bg-slate-700/50 hover:bg-slate-700 rounded-lg border border-slate-600/50 transition-colors group"
             >
               <Trophy size={20} className="text-yellow-400 mb-2" />
               <div className="text-white font-medium mb-1">View Rankings</div>
               <div className="text-slate-400 text-sm">Check leaderboard</div>
-            </a>
+            </Link>
           </div>
         </div>
       </div>
