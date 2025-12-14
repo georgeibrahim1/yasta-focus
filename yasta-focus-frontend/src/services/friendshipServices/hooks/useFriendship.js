@@ -73,8 +73,13 @@ export const useGiveXPToFriend = () => {
   return useMutation({
     mutationFn: giveXPToFriend,
     onSuccess: () => {
+      // Refresh friends list (to show updated XP for receiver)
       queryClient.invalidateQueries({ queryKey: ['friends'] })
+      // Refresh check-in status (to disable button)
       queryClient.invalidateQueries({ queryKey: ['checkInStatus'] })
+      // Refresh current user data (to show updated XP for giver)
+      queryClient.invalidateQueries({ queryKey: ['user'] })
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] })
     },
   })
 }

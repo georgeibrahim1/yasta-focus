@@ -219,29 +219,42 @@ export const giveXPToFriend = catchAsync(async (req, res, next) => {
     return next(new AppError('You have already given XP to this friend today', 400));
   }
 
-  // Insert daily check-in record
-  await pool.query(
-    'INSERT INTO daily_checkin (user_id, checkin_date, to_user_id, xp_awarded) VALUES ($1, $2, $3, $4)',
-    [userId, today, friendId, xpAmount]
-  );
+  // Start transaction
+  await pool.query('BEGIN');
 
-  // Give XP to friend
-  await pool.query(
-    'UPDATE users SET xp = xp + $1 WHERE user_id = $2',
-    [xpAmount, friendId]
-  );
+  try {
+    // Insert daily check-in record
+    await pool.query(
+      'INSERT INTO daily_checkin (user_id, checkin_date, to_user_id, xp_awarded) VALUES ($1, $2, $3, $4)',
+      [userId, today, friendId, xpAmount]
+    );
 
-  // Get updated friend data
-  const friendResult = await pool.query(
-    'SELECT user_id, username, xp FROM users WHERE user_id = $1',
-    [friendId]
-  );
+    // Give XP to friend (giver's XP remains unchanged)
+    await pool.query(
+      'UPDATE users SET xp = xp + $1 WHERE user_id = $2',
+      [xpAmount, friendId]
+    );
 
-  res.status(200).json({
-    status: 'success',
-    message: `Successfully gave ${xpAmount} XP`,
-    data: {
-      friend: friendResult.rows[0]
-    }
-  });
+    // Commit transaction
+    await pool.query('COMMIT');
+
+    // Get updated data for both users
+    const [giverUpdated, friendUpdated] = await Promise.all([
+      pool.query('SELECT user_id, username, xp FROM users WHERE user_id = $1', [userId]),
+      pool.query('SELECT user_id, username, xp FROM users WHERE user_id = $1', [friendId])
+    ]);
+
+    res.status(200).json({
+      status: 'success',
+      message: `Successfully gave ${xpAmount} XP to ${friendUpdated.rows[0].username}`,
+      data: {
+        giver: giverUpdated.rows[0],
+        friend: friendUpdated.rows[0]
+      }
+    });
+  } catch (error) {
+    // Rollback transaction on error
+    await pool.query('ROLLBACK');
+    throw error;
+  }
 });

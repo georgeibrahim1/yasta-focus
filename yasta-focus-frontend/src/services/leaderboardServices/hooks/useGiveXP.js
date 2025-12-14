@@ -20,8 +20,13 @@ export const useGiveXP = () => {
     },
     onSuccess: (data) => {
       console.log('useGiveXP success:', data)
+      // Refresh leaderboard to show updated receiver XP
       qc.invalidateQueries({ queryKey: ['leaderboard'] })
+      // Refresh check-in status to disable button
       qc.invalidateQueries({ queryKey: ['checkInStatus'] })
+      // Refresh current user data to show updated giver XP
+      qc.invalidateQueries({ queryKey: ['user'] })
+      qc.invalidateQueries({ queryKey: ['userProfile'] })
       toast.success(`You gave ${data.data.amountGiven} XP!`)
     },
     onError: (err) => {
