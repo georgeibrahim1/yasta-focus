@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useGetAllUsers, useUpdateUserRole } from '../services/adminServices'
-import { Users, Search, Shield, User, Crown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useGetAllUsers, useUpdateUserRole, useDeleteUser } from '../services/adminServices'
+import { Users, Search, Shield, User, Crown, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 
 const ROLE_OPTIONS = [
   { value: 0, label: 'Admin', icon: Shield, color: 'text-red-400', bg: 'bg-red-500/20', border: 'border-red-500/30' },
@@ -14,6 +14,7 @@ export default function AdminUsersPage() {
   
   const { data, isLoading } = useGetAllUsers(page, 20, search)
   const updateRole = useUpdateUserRole()
+  const deleteUser = useDeleteUser()
 
   const users = data?.data?.users || []
   const total = data?.data?.total || 0
@@ -30,6 +31,17 @@ export default function AdminUsersPage() {
       await updateRole.mutateAsync({ userId, role: newRole })
     } catch (error) {
       console.error('Failed to update role:', error)
+    }
+  }
+
+  const handleDeleteUser = async (userId, username) => {
+    if (window.confirm(`Are you sure you want to delete user "${username}"? This action cannot be undone.`)) {
+      try {
+        await deleteUser.mutateAsync(userId)
+      } catch (error) {
+        console.error('Failed to delete user:', error)
+        alert(error.response?.data?.message || 'Failed to delete user')
+      }
     }
   }
 
@@ -129,6 +141,9 @@ export default function AdminUsersPage() {
                     <th className="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                       Joined
                     </th>
+                    <th className="px-6 py-4 text-center text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700/50">
@@ -143,7 +158,6 @@ export default function AdminUsersPage() {
                             </div>
                             <div>
                               <p className="text-white font-semibold">{user.username}</p>
-                              <p className="text-slate-400 text-xs">ID: {user.user_id.slice(0, 8)}...</p>
                             </div>
                           </div>
                         </td>
@@ -182,6 +196,18 @@ export default function AdminUsersPage() {
                               day: 'numeric'
                             })}
                           </p>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex justify-center">
+                            <button
+                              onClick={() => handleDeleteUser(user.user_id, user.username)}
+                              disabled={deleteUser.isPending}
+                              className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="Delete user"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     )

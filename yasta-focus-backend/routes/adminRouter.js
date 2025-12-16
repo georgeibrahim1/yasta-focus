@@ -15,6 +15,7 @@ router.get('/users/top', adminController.getTopUsers);
 router.get('/users/recent', adminController.getRecentUsers);
 router.get('/users', adminController.getAllUsers);
 router.patch('/users/:userId/role', adminController.updateUserRole);
+router.delete('/users/:userId', adminController.deleteUser);
 
 // Community statistics
 router.get('/communities/active', adminController.getActiveCommunities);
