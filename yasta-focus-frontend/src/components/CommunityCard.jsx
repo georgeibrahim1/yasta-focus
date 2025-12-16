@@ -13,7 +13,9 @@ export default function CommunityCard({ community = {}, onJoin = () => {}, onVie
 
   const isJoined = user_status === 'Accepted'
   const isPending = user_status === 'Pending'
-  const isModerator = community.is_moderator
+  // Only show moderator status if user is actually a moderator (not just because backend marked admins)
+  // The isAdmin prop handles admin display separately
+  const isModerator = !isAdmin && (community.ismanager || community.is_moderator)
 
   return (
     <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-sm hover:border-slate-600 transition flex flex-col h-full">

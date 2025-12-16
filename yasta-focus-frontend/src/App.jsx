@@ -12,7 +12,7 @@ import StatisticsPage from './pages/statisticsPage'
 import ProfilePage from './pages/profilePage'
 import SettingsPage from './pages/settingsPage'
 import DashboardPage from './pages/dashboardPage'
-import AdminStatisticsPage from './pages/adminStatisticsPage'
+import AdminUsersPage from './pages/adminUsersPage'
 import AdminReportsPage from './pages/adminReportsPage'
 import RoomInterfacePage from './pages/roomInterfacePage'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -42,9 +42,9 @@ export default function App() {
         <Route path="achievements" element={<AchievementsPage/>}/>
 
         {/* Admin-only Routes */}
-        <Route path="admin/statistics" element={
+        <Route path="admin/users" element={
           <ProtectedRoute requiredRole={0}>
-            <AdminStatisticsPage/>
+            <AdminUsersPage/>
           </ProtectedRoute>
         }/>
         <Route path="admin/reports" element={
