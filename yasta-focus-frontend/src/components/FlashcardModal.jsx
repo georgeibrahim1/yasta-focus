@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 
-export default function FlashcardModal({ isOpen, onClose, onSubmit, formData, setFormData, isLoading, isEditing }) {
+export default function FlashcardModal({ isOpen, onClose, onSubmit, formData, setFormData, isLoading, isEditing, error }) {
   if (!isOpen) return null
 
   const handleSubmit = (e) => {
@@ -26,6 +26,11 @@ export default function FlashcardModal({ isOpen, onClose, onSubmit, formData, se
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {error && (
+            <div className="mb-4 p-3 rounded-lg border border-red-500 bg-red-500/10 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
           {/* Question */}
           <div className="w-full">
             <label className="block mb-2 text-sm font-medium text-slate-300">

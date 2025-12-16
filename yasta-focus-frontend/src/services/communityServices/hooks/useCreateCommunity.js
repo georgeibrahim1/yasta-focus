@@ -12,20 +12,16 @@ export const useCreateCommunity = () => {
     },
     onSuccess: (data) => {
       console.log('[useCreateCommunity] Success:', data)
-      qc.invalidateQueries({ queryKey: ['communities'] })
-      qc.invalidateQueries({ queryKey: ['communities', 'joined'] })
+      // Invalidate all communities queries using predicate to match all variations
+      qc.invalidateQueries({ 
+        predicate: (query) => query.queryKey[0] === 'communities'
+      })
+      
       const unlocked = data?.data?.unlockedAchievements || []
       if (unlocked.length > 0) {
         // Refresh achievement queries
         qc.invalidateQueries({ queryKey: ['achievements'] })
         qc.invalidateQueries({ queryKey: ['achievementStats'] })
-        
-        // Dispatch event for global notification system
-        // window.dispatchEvent(
-        //   new CustomEvent('achievements-unlocked', { 
-        //     detail: unlocked 
-        //   })
-        // )
         
         // Show success with achievement info
         const totalXP = unlocked.reduce((sum, a) => sum + a.xp, 0)

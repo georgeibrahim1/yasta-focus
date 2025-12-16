@@ -1,5 +1,6 @@
 export { useGetSubjects } from './hooks/useGetSubjects'
 export { useCreateSubject } from './hooks/useCreateSubject'
+export { useDeleteSubject } from './hooks/useDeleteSubject'
 export { useGetNotes } from './hooks/useGetNotes'
 export { useGetNote } from './hooks/useGetNote'
 export { useCreateNote } from './hooks/useCreateNote'
