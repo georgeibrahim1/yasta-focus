@@ -189,30 +189,31 @@ export const getMe = catchAsync(async (req, res, next) => {
 export const getDashboardStats = catchAsync(async (req, res, next) => {
   const userId = req.user.user_id;
 
-  // Get total study time (all time)
+  // Get total study time (all time) - only focus sessions, not break sessions
   const totalStudyTimeResult = await pool.query(
     `SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (time_stamp - created_at))), 0) as total_seconds
      FROM session
-     WHERE user_id = $1`,
+     WHERE user_id = $1 AND (type = 'focus' OR type IS NULL)`,
     [userId]
   );
   const totalStudyTime = Math.floor(totalStudyTimeResult.rows[0].total_seconds / 60); // in minutes
 
-  // Get weekly study time (last 7 days)
+  // Get weekly study time (last 7 days) - only focus sessions, not break sessions
   const weeklyStudyTimeResult = await pool.query(
     `SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (time_stamp - created_at))), 0) as total_seconds
      FROM session
      WHERE user_id = $1 
-     AND created_at >= CURRENT_DATE - INTERVAL '7 days'`,
+     AND created_at >= CURRENT_DATE - INTERVAL '7 days'
+     AND (type = 'focus' OR type IS NULL)`,
     [userId]
   );
   const weeklyStudyTime = Math.floor(weeklyStudyTimeResult.rows[0].total_seconds / 60); // in minutes
 
-  // Get active communities count
+  // Get active communities count - only accepted memberships
   const activeCommunitiesResult = await pool.query(
     `SELECT COUNT(*) as count
      FROM community_participants
-     WHERE user_id = $1 AND member_status = \'Accepted\'`,
+     WHERE user_id = $1 AND member_status = 'Accepted'`,
     [userId]
   );
   const activeCommunities = parseInt(activeCommunitiesResult.rows[0].count);

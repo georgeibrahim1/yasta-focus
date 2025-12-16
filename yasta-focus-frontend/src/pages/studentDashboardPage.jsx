@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useUser } from '../services/authServices'
 import { useDashboardStats } from '../services/dashboardServices'
-import { Clock, BookOpen, Trophy, Users, Target } from 'lucide-react'
+import { Clock, BookOpen, Trophy, Users, Award, BarChart3 } from 'lucide-react'
 
 export default function StudentDashboardPage() {
   const { data: currentUser } = useUser()
@@ -16,8 +16,6 @@ export default function StudentDashboardPage() {
     xp: 0,
     currentRank: 0
   }
-
-  const weeklyProgress = Math.min(100, (stats.weeklyStudyTime / stats.weeklyGoal) * 100)
 
   if (statsLoading) {
     return (
@@ -48,7 +46,7 @@ export default function StudentDashboardPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-extrabold text-white mb-2">
-            Welcome back, {user?.user_name || 'Student'}!
+            Welcome back, {user?.username || user?.user_name || 'Student'}!
           </h1>
           <p className="text-slate-400">
             Here&apos;s your study overview and progress
@@ -80,35 +78,10 @@ export default function StudentDashboardPage() {
           />
         </div>
 
-        {/* Weekly Goal Progress */}
-        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50 mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-white font-semibold text-lg flex items-center gap-2">
-                <Target size={20} className="text-indigo-400" />
-                Weekly Goal
-              </h3>
-              <p className="text-slate-400 text-sm mt-1">
-                {stats.weeklyStudyTime} / {stats.weeklyGoal} minutes
-              </p>
-            </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold text-white">{Math.round(weeklyProgress)}%</div>
-              <div className="text-slate-400 text-xs">Complete</div>
-            </div>
-          </div>
-          <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">
-            <div 
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 h-full transition-all duration-500"
-              style={{ width: `${weeklyProgress}%` }}
-            />
-          </div>
-        </div>
-
         {/* Quick Actions */}
         <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
           <h3 className="text-white font-semibold text-lg mb-4">Quick Actions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link
               to="/timer"
               className="p-4 bg-slate-700/50 hover:bg-slate-700 rounded-lg border border-slate-600/50 transition-colors group"
@@ -126,12 +99,20 @@ export default function StudentDashboardPage() {
               <div className="text-slate-400 text-sm">Find study groups</div>
             </Link>
             <Link
-              to="/leaderboard"
+              to="/achievements"
               className="p-4 bg-slate-700/50 hover:bg-slate-700 rounded-lg border border-slate-600/50 transition-colors group"
             >
-              <Trophy size={20} className="text-yellow-400 mb-2" />
-              <div className="text-white font-medium mb-1">View Rankings</div>
-              <div className="text-slate-400 text-sm">Check leaderboard</div>
+              <Award size={20} className="text-yellow-400 mb-2" />
+              <div className="text-white font-medium mb-1">Achievements</div>
+              <div className="text-slate-400 text-sm">View your achievements</div>
+            </Link>
+            <Link
+              to="/statistics"
+              className="p-4 bg-slate-700/50 hover:bg-slate-700 rounded-lg border border-slate-600/50 transition-colors group"
+            >
+              <BarChart3 size={20} className="text-green-400 mb-2" />
+              <div className="text-white font-medium mb-1">Statistics</div>
+              <div className="text-slate-400 text-sm">View your stats</div>
             </Link>
           </div>
         </div>

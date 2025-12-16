@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useGetUserProfile } from '../services/userServices'
+import { useGetUserProfile, useUpdateUserProfile } from '../services/userServices'
 import {
   useGetFriends,
   useGetFriendRequests,
@@ -14,6 +14,7 @@ import { useUser } from '../services/authServices'
 import { useGetAllAchievements } from '../services/achievementServices'
 import ProtectedComponent from '../components/ProtectedComponent'
 import AchievementCard from '../components/AchievementCard'
+import { api } from '../services/api'
 import { 
   User, 
   Mail, 
@@ -27,7 +28,11 @@ import {
   X,
   Edit,
   Trophy,
-  Star
+  Star,
+  Save,
+  Lock,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 
 // Component for Gift XP button with per-friend check-in status
@@ -65,8 +70,30 @@ export default function ProfilePage() {
   const respondToRequest = useRespondToFriendRequest()
   const removeFriendMutation = useRemoveFriend()
   const giveXPMutation = useGiveXPToFriend()
+  const updateProfileMutation = useUpdateUserProfile()
 
   const isOwnProfile = !userId || userId === currentUser?.user?.user_id
+  
+  // Editing states
+  const [isEditingUsername, setIsEditingUsername] = useState(false)
+  const [isEditingBio, setIsEditingBio] = useState(false)
+  const [isEditingInterests, setIsEditingInterests] = useState(false)
+  const [editedUsername, setEditedUsername] = useState('')
+  const [editedBio, setEditedBio] = useState('')
+  const [editedInterests, setEditedInterests] = useState([])
+  const [newInterest, setNewInterest] = useState('')
+  
+  // Password change states
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+  const [passwordData, setPasswordData] = useState({
+    passwordCurrent: '',
+    password: '',
+    passwordConfirm: ''
+  })
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' })
   
   // Filter unlocked achievements
   const unlockedAchievements = achievements.filter(a => a.unlocked)
@@ -120,6 +147,89 @@ export default function ProfilePage() {
       await giveXPMutation.mutateAsync(friendId)
     } catch {
       alert('Error giving XP')
+    }
+  }
+
+  const handleSaveUsername = async () => {
+    if (editedUsername && editedUsername !== profile.username) {
+      try {
+        await updateProfileMutation.mutateAsync({ username: editedUsername })
+        setIsEditingUsername(false)
+      } catch {
+        alert('Error updating username')
+      }
+    } else {
+      setIsEditingUsername(false)
+    }
+  }
+
+  const handleSaveBio = async () => {
+    if (editedBio !== profile.bio) {
+      try {
+        await updateProfileMutation.mutateAsync({ bio: editedBio })
+        setIsEditingBio(false)
+      } catch {
+        alert('Error updating bio')
+      }
+    } else {
+      setIsEditingBio(false)
+    }
+  }
+
+  const handleSaveInterests = async () => {
+    if (JSON.stringify(editedInterests) !== JSON.stringify(profile.interests)) {
+      try {
+        await updateProfileMutation.mutateAsync({ interests: editedInterests })
+        setIsEditingInterests(false)
+      } catch {
+        alert('Error updating interests')
+      }
+    } else {
+      setIsEditingInterests(false)
+    }
+  }
+
+  const handleAddInterest = () => {
+    if (newInterest.trim() && !editedInterests.includes(newInterest.trim())) {
+      setEditedInterests([...editedInterests, newInterest.trim()])
+      setNewInterest('')
+    }
+  }
+
+  const handleRemoveInterest = (interest) => {
+    setEditedInterests(editedInterests.filter(i => i !== interest))
+  }
+
+  const handlePasswordUpdate = async (e) => {
+    e.preventDefault()
+    setPasswordMessage({ type: '', text: '' })
+
+    if (passwordData.password !== passwordData.passwordConfirm) {
+      setPasswordMessage({ type: 'error', text: 'Passwords do not match' })
+      return
+    }
+
+    if (passwordData.password.length < 8) {
+      setPasswordMessage({ type: 'error', text: 'Password must be at least 8 characters' })
+      return
+    }
+
+    try {
+      await api.patch('/api/auth/updateMyPassword', passwordData)
+      setPasswordMessage({ type: 'success', text: 'Password updated successfully!' })
+      // Clear all password fields immediately
+      setPasswordData({ passwordCurrent: '', password: '', passwordConfirm: '' })
+      setShowCurrentPassword(false)
+      setShowNewPassword(false)
+      setShowConfirmPassword(false)
+      setTimeout(() => {
+        setPasswordMessage({ type: '', text: '' })
+      }, 2000)
+    } catch (error) {
+      setPasswordMessage({ 
+        type: 'error', 
+        text: error.response?.data?.message || 'Failed to update password' 
+      })
     }
   }
 
@@ -213,7 +323,49 @@ export default function ProfilePage() {
               </div>
               
               <div>
-                <h1 className="text-3xl font-bold text-white mb-2">{profile.username}</h1>
+                {/* Username Editing */}
+                {isOwnProfile && isEditingUsername ? (
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={editedUsername}
+                      onChange={(e) => setEditedUsername(e.target.value)}
+                      className="text-2xl font-bold bg-slate-700 text-white px-3 py-1 rounded-lg border border-purple-500 focus:outline-none"
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleSaveUsername}
+                      className="p-2 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded-lg transition-colors"
+                      title="Save"
+                    >
+                      <Save size={18} />
+                    </button>
+                    <button
+                      onClick={() => setIsEditingUsername(false)}
+                      className="p-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors"
+                      title="Cancel"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 mb-2">
+                    <h1 className="text-3xl font-bold text-white">{profile.username}</h1>
+                    {isOwnProfile && (
+                      <button
+                        onClick={() => {
+                          setEditedUsername(profile.username)
+                          setIsEditingUsername(true)
+                        }}
+                        className="p-1 text-slate-400 hover:text-white transition-colors"
+                        title="Edit username"
+                      >
+                        <Edit size={16} />
+                      </button>
+                    )}
+                  </div>
+                )}
+                
                 <div className="flex items-center gap-4 text-gray-400 text-sm mb-3">
                   <div className="flex items-center gap-1">
                     <Mail className="w-4 h-4" />
@@ -224,35 +376,166 @@ export default function ProfilePage() {
                     Joined {formatDate(profile.created_at)}
                   </div>
                 </div>
-                {profile.bio && (
-                  <p className="text-gray-300 max-w-2xl">{profile.bio}</p>
-                )}
-                {profile.interests && profile.interests.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {profile.interests.map((interest, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-purple-600/20 text-purple-300 rounded-full text-sm"
+                
+                {/* Bio Editing */}
+                {isOwnProfile && isEditingBio ? (
+                  <div className="mb-3">
+                    <textarea
+                      value={editedBio}
+                      onChange={(e) => setEditedBio(e.target.value)}
+                      className="w-full bg-slate-700 text-white px-3 py-2 rounded-lg border border-purple-500 focus:outline-none resize-none"
+                      rows="3"
+                      placeholder="Write your bio..."
+                      autoFocus
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={handleSaveBio}
+                        className="px-3 py-1 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded-lg transition-colors text-sm flex items-center gap-1"
                       >
-                        {interest}
-                      </span>
-                    ))}
+                        <Save size={14} />
+                        Save Bio
+                      </button>
+                      <button
+                        onClick={() => setIsEditingBio(false)}
+                        className="px-3 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
+                ) : (
+                  <>
+                    {profile.bio && (
+                      <div className="mb-3 flex items-start gap-2">
+                        <p className="text-gray-300 max-w-2xl">{profile.bio}</p>
+                        {isOwnProfile && (
+                          <button
+                            onClick={() => {
+                              setEditedBio(profile.bio || '')
+                              setIsEditingBio(true)
+                            }}
+                            className="p-1 text-slate-400 hover:text-white transition-colors"
+                            title="Edit bio"
+                          >
+                            <Edit size={14} />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {!profile.bio && isOwnProfile && (
+                      <button
+                        onClick={() => {
+                          setEditedBio('')
+                          setIsEditingBio(true)
+                        }}
+                        className="text-slate-400 hover:text-white text-sm mb-3 flex items-center gap-1"
+                      >
+                        <Edit size={14} />
+                        Add bio
+                      </button>
+                    )}
+                  </>
+                )}
+                
+                {/* Interests Editing */}
+                {isOwnProfile && isEditingInterests ? (
+                  <div>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {editedInterests.map((interest, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-purple-600/20 text-purple-300 rounded-full text-sm flex items-center gap-1"
+                        >
+                          {interest}
+                          <button
+                            onClick={() => handleRemoveInterest(interest)}
+                            className="text-red-400 hover:text-red-300"
+                          >
+                            <X size={14} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="text"
+                        value={newInterest}
+                        onChange={(e) => setNewInterest(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleAddInterest()}
+                        placeholder="Add interest..."
+                        className="flex-1 bg-slate-700 text-white px-3 py-1 rounded-lg border border-slate-600 focus:border-purple-500 focus:outline-none text-sm"
+                      />
+                      <button
+                        onClick={handleAddInterest}
+                        className="px-3 py-1 bg-purple-600/20 hover:bg-purple-600/30 text-purple-400 rounded-lg transition-colors text-sm"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveInterests}
+                        className="px-3 py-1 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded-lg transition-colors text-sm flex items-center gap-1"
+                      >
+                        <Save size={14} />
+                        Save Interests
+                      </button>
+                      <button
+                        onClick={() => setIsEditingInterests(false)}
+                        className="px-3 py-1 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {profile.interests && profile.interests.length > 0 && (
+                      <div className="flex items-start gap-2">
+                        <div className="flex flex-wrap gap-2">
+                          {profile.interests.map((interest, index) => (
+                            <span
+                              key={index}
+                              className="px-3 py-1 bg-purple-600/20 text-purple-300 rounded-full text-sm"
+                            >
+                              {interest}
+                            </span>
+                          ))}
+                        </div>
+                        {isOwnProfile && (
+                          <button
+                            onClick={() => {
+                              setEditedInterests(profile.interests || [])
+                              setIsEditingInterests(true)
+                            }}
+                            className="p-1 text-slate-400 hover:text-white transition-colors"
+                            title="Edit interests"
+                          >
+                            <Edit size={14} />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {(!profile.interests || profile.interests.length === 0) && isOwnProfile && (
+                      <button
+                        onClick={() => {
+                          setEditedInterests([])
+                          setIsEditingInterests(true)
+                        }}
+                        className="text-slate-400 hover:text-white text-sm flex items-center gap-1"
+                      >
+                        <Edit size={14} />
+                        Add interests
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             </div>
             
             <div className="flex gap-3">
               {getFriendshipButton()}
-              {isOwnProfile && (
-                <button
-                  onClick={() => navigate('/settings')}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-700/50 hover:bg-slate-700 text-white rounded-lg transition-colors"
-                >
-                  <Edit className="w-4 h-4" />
-                  Edit Profile
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -329,6 +612,21 @@ export default function ProfilePage() {
               </button>
             </>
           )}
+          {isOwnProfile && (
+            <button
+              onClick={() => setActiveTab('password')}
+              className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                activeTab === 'password'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-slate-800/50 text-gray-400 hover:bg-slate-800'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Lock className="w-4 h-4" />
+                Password
+              </div>
+            </button>
+          )}
         </div>
 
         {/* Tab Content */}
@@ -353,6 +651,21 @@ export default function ProfilePage() {
                   <div>
                     <p className="font-semibold text-gray-300 mb-2">Bio:</p>
                     <p className="text-gray-400">{profile.bio}</p>
+                  </div>
+                )}
+                {profile.interests && profile.interests.length > 0 && (
+                  <div>
+                    <p className="font-semibold text-gray-300 mb-2">Interests:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {profile.interests.map((interest, index) => (
+                        <span
+                          key={index}
+                          className="px-3 py-1 bg-purple-600/20 text-purple-300 rounded-full text-sm"
+                        >
+                          {interest}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -500,6 +813,103 @@ export default function ProfilePage() {
               ) : (
                 <p className="text-gray-400 text-center py-8">No friend requests</p>
               )}
+            </div>
+          )}
+
+          {activeTab === 'password' && isOwnProfile && (
+            <div>
+              <h2 className="text-2xl font-bold text-white mb-6">Change Password</h2>
+              
+              {passwordMessage.text && (
+                <div
+                  className={`mb-6 p-4 rounded-lg border flex items-center gap-3 ${
+                    passwordMessage.type === 'success'
+                      ? 'bg-green-600/20 border-green-500/50 text-green-400'
+                      : 'bg-red-600/20 border-red-500/50 text-red-400'
+                  }`}
+                >
+                  <span>{passwordMessage.text}</span>
+                </div>
+              )}
+
+              <form onSubmit={handlePasswordUpdate} className="space-y-6 max-w-md">
+                <div>
+                  <label className="block text-gray-300 mb-2 font-medium">
+                    Current Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={passwordData.passwordCurrent}
+                      onChange={(e) => setPasswordData({ ...passwordData, passwordCurrent: e.target.value })}
+                      className="w-full px-4 py-3 pr-12 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors"
+                      placeholder="Enter current password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+                    >
+                      {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-2 font-medium">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      value={passwordData.password}
+                      onChange={(e) => setPasswordData({ ...passwordData, password: e.target.value })}
+                      className="w-full px-4 py-3 pr-12 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors"
+                      placeholder="Enter new password (min 8 characters)"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+                    >
+                      {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 mb-2 font-medium">
+                    Confirm New Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={passwordData.passwordConfirm}
+                      onChange={(e) => setPasswordData({ ...passwordData, passwordConfirm: e.target.value })}
+                      className="w-full px-4 py-3 pr-12 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 transition-colors"
+                      placeholder="Confirm new password"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  <Save className="w-5 h-5" />
+                  Update Password
+                </button>
+              </form>
             </div>
           )}
         </div>

@@ -210,7 +210,7 @@ export const joinCommunity = catchAsync(async (req, res, next) => {
   );
 
   if (memberCheck.rows.length > 0) {
-    const status = memberCheck.rows[0].member_status;
+    const status = memberCheck.rows[0].member_status || memberCheck.rows[0].Member_Status;
     if (status === 'Pending') {
       return next(new AppError('Join request already pending', 400));
     }
@@ -258,7 +258,7 @@ export const leaveCommunity = catchAsync(async (req, res, next) => {
     return next(new AppError('You are not a member of this community', 400));
   }
 
-  const status = memberCheck.rows[0].member_status;
+  const status = memberCheck.rows[0].member_status || memberCheck.rows[0].Member_Status;
   if (status === 'Left') {
     return next(new AppError('You have already left this community', 400));
   }
@@ -380,19 +380,27 @@ export const createCommunity = catchAsync(async (req, res, next) => {
     }
   }
 
-
-  const createdCommunities = await checkCommunitiesCreatedAchievements(userId);
-  const unlockedAchievements = [...createdCommunities];
+  // Check for achievements
+  let unlockedAchievements = [];
+  try {
+    const createdCommunities = await checkCommunitiesCreatedAchievements(userId);
+    if (Array.isArray(createdCommunities)) {
+      unlockedAchievements = createdCommunities;
+    }
+  } catch (error) {
+    console.error('Error checking achievements:', error);
+    // Continue without achievements if there's an error
+  }
 
   res.status(201).json({
     status: 'success',
     data: {
       community,
       unlockedAchievements: unlockedAchievements.map(a => ({
-      id: a.id,
-      title: a.title,
-      xp: a.xp
-    }))
+        id: a.id,
+        title: a.title,
+        xp: a.xp
+      }))
     }
   });
 });
@@ -923,9 +931,22 @@ export const approveJoinRequest = catchAsync(async (req, res, next) => {
     return next(new AppError('Pending request not found', 404));
   }
 
-  const joinedCommunities = await checkCommunitiesJoinedAchievements(memberId);
-  const comMembersCount = await checkCommunityCountdAchievements(userId,communityId);
-  const unlockedAchievements = [...joinedCommunities, ...comMembersCount];
+  // Check for achievements with error handling
+  let unlockedAchievements = [];
+  try {
+    const joinedCommunities = await checkCommunitiesJoinedAchievements(memberId);
+    const comMembersCount = await checkCommunityCountdAchievements(userId, communityId);
+    
+    if (Array.isArray(joinedCommunities)) {
+      unlockedAchievements = [...unlockedAchievements, ...joinedCommunities];
+    }
+    if (Array.isArray(comMembersCount)) {
+      unlockedAchievements = [...unlockedAchievements, ...comMembersCount];
+    }
+  } catch (error) {
+    console.error('Error checking achievements:', error);
+    // Continue without achievements if there's an error
+  }
 
   res.status(200).json({
     status: 'success',
@@ -933,10 +954,10 @@ export const approveJoinRequest = catchAsync(async (req, res, next) => {
     data: {
       member: result.rows[0],
       unlockedAchievements: unlockedAchievements.map(a => ({
-      id: a.id,
-      title: a.title,
-      xp: a.xp
-    }))
+        id: a.id,
+        title: a.title,
+        xp: a.xp
+      }))
     }
   });
 });
@@ -977,6 +998,129 @@ export const rejectJoinRequest = catchAsync(async (req, res, next) => {
     message: 'Join request rejected'
   });
 });
+
+// Add member by username (managers only) - directly adds to pending requests
+export const addMemberByUsername = catchAsync(async (req, res, next) => {
+  const { communityId } = req.params;
+  const { username } = req.body;
+  const userId = req.user?.user_id;
+
+  // Check if user is admin or a manager
+  const isAdmin = req.user.role === 0;
+  
+  if (!isAdmin) {
+    const managerResult = await db.query(
+      'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+      [communityId, userId]
+    );
+
+    if (managerResult.rows.length === 0) {
+      return next(new AppError('Only community managers can add members', 403));
+    }
+  }
+
+  // Find user by username
+  const userResult = await db.query(
+    'SELECT user_id FROM users WHERE username = $1',
+    [username]
+  );
+
+  if (userResult.rows.length === 0) {
+    return next(new AppError('User not found', 404));
+  }
+
+  const targetUserId = userResult.rows[0].user_id;
+
+  // Check if user is already a member or has pending request
+  const memberCheck = await db.query(
+    'SELECT Member_Status FROM community_Participants WHERE community_ID = $1 AND user_id = $2',
+    [communityId, targetUserId]
+  );
+
+  if (memberCheck.rows.length > 0) {
+    const status = memberCheck.rows[0].member_status || memberCheck.rows[0].Member_Status;
+    if (status === 'Accepted') {
+      return next(new AppError('User is already a member', 400));
+    }
+    if (status === 'Pending') {
+      return next(new AppError('User already has a pending request', 400));
+    }
+  }
+
+  // Add as accepted member directly (managers can add without pending)
+  await db.query(
+    `INSERT INTO community_Participants (community_ID, user_id, Join_Date, Member_Status)
+     VALUES ($1, $2, NOW(), 'Accepted')
+     ON CONFLICT (community_ID, user_id) 
+     DO UPDATE SET Member_Status = 'Accepted', Join_Date = NOW(), Leave_Date = NULL`,
+    [communityId, targetUserId]
+  );
+
+  res.status(200).json({
+    status: 'success',
+    message: `${username} has been added as a member`
+  });
+});
+
+// Invite friend to community (any member) - sends pending request if accepted
+export const inviteFriendToCommunity = catchAsync(async (req, res, next) => {
+  const { communityId } = req.params;
+  const { friendId } = req.body;
+  const userId = req.user?.user_id;
+
+  // Check if requester is a member of the community
+  const memberCheck = await db.query(
+    'SELECT Member_Status FROM community_Participants WHERE community_ID = $1 AND user_id = $2',
+    [communityId, userId]
+  );
+
+  if (memberCheck.rows.length === 0 || memberCheck.rows[0].member_status !== 'Accepted') {
+    return next(new AppError('You must be a member to invite friends', 403));
+  }
+
+  // Check if they are friends
+  const friendshipCheck = await db.query(
+    `SELECT * FROM friendship 
+     WHERE ((requesterId = $1 AND requesteeId = $2) OR (requesterId = $2 AND requesteeId = $1))
+     AND status = 'Accepted'`,
+    [userId, friendId]
+  );
+
+  if (friendshipCheck.rows.length === 0) {
+    return next(new AppError('You can only invite your friends', 400));
+  }
+
+  // Check if friend is already a member or has pending request
+  const friendMemberCheck = await db.query(
+    'SELECT Member_Status FROM community_Participants WHERE community_ID = $1 AND user_id = $2',
+    [communityId, friendId]
+  );
+
+  if (friendMemberCheck.rows.length > 0) {
+    const status = friendMemberCheck.rows[0].member_status || friendMemberCheck.rows[0].Member_Status;
+    if (status === 'Accepted') {
+      return next(new AppError('Friend is already a member', 400));
+    }
+    if (status === 'Pending') {
+      return next(new AppError('Friend already has a pending request', 400));
+    }
+  }
+
+  // Add friend to pending requests
+  await db.query(
+    `INSERT INTO community_Participants (community_ID, user_id, Join_Date, Member_Status)
+     VALUES ($1, $2, NOW(), 'Pending')
+     ON CONFLICT (community_ID, user_id) 
+     DO UPDATE SET Member_Status = 'Pending', Join_Date = NOW(), Leave_Date = NULL`,
+    [communityId, friendId]
+  );
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Friend has been invited. They will appear in pending requests.'
+  });
+});
+
 
 // Get community competitions
 export const getCommunityCompetitions = catchAsync(async (req, res, next) => {

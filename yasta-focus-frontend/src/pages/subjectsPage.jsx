@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Plus, Trash2, Edit2, Bot } from 'lucide-react'
 import SubjectChat from '../components/SubjectChat'
-import { useGetSubjects, useGetNotes, useGetNote, useUpdateNote, useDeleteNote, useGetTasks, useUpdateTask, useToggleTask, useDeleteTask, useCreateSubject, useCreateNote } from '../services/subjectServices'
+import { useGetSubjects, useDeleteSubject, useGetNotes, useGetNote, useUpdateNote, useDeleteNote, useGetTasks, useUpdateTask, useToggleTask, useDeleteTask, useCreateSubject, useCreateNote } from '../services/subjectServices'
 import { useGetDecks, useDeleteDeck, useCreateDeck } from '../services/deckServices'
 import { useCreateTask } from '../services/subjectServices'
 import SubjectModal from '../components/SubjectModal'
@@ -33,6 +33,10 @@ export default function SubjectsPage() {
   const [newTask, setNewTask] = useState({ task_title: '', description: '', deadline: null, status: 'Not Started' })
   const [newDeck, setNewDeck] = useState({ deck_title: '', deck__desc: '', reminder_by: '' })
   const [chatMessages, setChatMessages] = useState([]) // Persist chat messages
+  const [subjectCreateError, setSubjectCreateError] = useState(null)
+  const [noteCreateError, setNoteCreateError] = useState(null)
+  const [taskCreateError, setTaskCreateError] = useState(null)
+  const [deckCreateError, setDeckCreateError] = useState(null)
 
   // Fetch subjects
   const { data: subjectsData } = useGetSubjects()
@@ -58,6 +62,7 @@ export default function SubjectsPage() {
   const deleteTaskMutation = useDeleteTask()
   const deleteDeckMutation = useDeleteDeck()
   const createSubjectMutation = useCreateSubject()
+  const deleteSubjectMutation = useDeleteSubject()
   const createNoteMutation = useCreateNote()
   const createTaskMutation = useCreateTask()
   const createDeckMutation = useCreateDeck()
@@ -67,8 +72,30 @@ export default function SubjectsPage() {
       onSuccess: () => {
         setShowSubjectModal(false)
         setNewSubject({ subject_name: '', description: '' })
+        setSubjectCreateError(null)
+      },
+      onError: (err) => {
+        setSubjectCreateError(err.response?.data?.message || 'An error occurred')
       }
     })
+  }
+
+  const handleDeleteSubject = (subjectName) => {
+    if (window.confirm(`Are you sure you want to delete "${subjectName}"? This will delete all notes, tasks, and decks in this subject.`)) {
+      deleteSubjectMutation.mutate(subjectName, {
+        onSuccess: () => {
+          // If deleted subject was selected, select first remaining subject
+          if (selectedSubject === subjectName && subjects.length > 1) {
+            const remaining = subjects.filter(s => s.subject_name !== subjectName)
+            if (remaining.length > 0) {
+              setSelectedSubject(remaining[0].subject_name)
+            } else {
+              setSelectedSubject(null)
+            }
+          }
+        }
+      })
+    }
   }
 
   const handleCreateNote = () => {
@@ -76,9 +103,13 @@ export default function SubjectsPage() {
       onSuccess: (data) => {
         setShowNoteModal(false)
         setNewNote({ note_title: '', note_text: '' })
+        setNoteCreateError(null)
         // Open editor immediately after creation
         setEditingNote({ note_title: newNote.note_title })
         setShowNoteEditor(true)
+      },
+      onError: (err) => {
+        setNoteCreateError(err.response?.data?.message || 'An error occurred')
       }
     })
   }
@@ -137,6 +168,10 @@ export default function SubjectsPage() {
         setShowTaskModal(false)
         setEditingTask(null)
         setNewTask({ task_title: '', description: '', deadline: null, status: 'Not Started' })
+        setTaskCreateError(null)
+      },
+      onError: (err) => {
+        setTaskCreateError(err.response?.data?.message || 'An error occurred')
       }
     })
   }
@@ -195,6 +230,10 @@ export default function SubjectsPage() {
       onSuccess: () => {
         setShowDeckModal(false)
         setNewDeck({ deck_title: '', deck__desc: '', reminder_by: '' })
+        setDeckCreateError(null)
+      },
+      onError: (err) => {
+        setDeckCreateError(err.response?.data?.message || 'An error occurred')
       }
     })
   }
@@ -284,11 +323,15 @@ export default function SubjectsPage() {
         {/* Subject Modal for empty state */}
         <SubjectModal
           isOpen={showSubjectModal}
-          onClose={() => setShowSubjectModal(false)}
+          onClose={() => {
+            setShowSubjectModal(false)
+            setSubjectCreateError(null)
+          }}
           onSubmit={handleCreateSubject}
           formData={newSubject}
           setFormData={setNewSubject}
           isLoading={createSubjectMutation.isPending}
+          error={subjectCreateError}
         />
       </>
     )
@@ -455,7 +498,12 @@ export default function SubjectsPage() {
                           {note.note_title}
                         </h3>
                       )}
-                      <p className="text-sm text-slate-400 mt-1">
+                      {note.note_text && (
+                        <p className="text-sm text-slate-400 mt-2 line-clamp-2">
+                          {note.note_text.substring(0, 100)}{note.note_text.length > 100 ? '...' : ''}
+                        </p>
+                      )}
+                      <p className="text-xs text-slate-500 mt-1">
                         Click to edit note content
                       </p>
                     </div>
@@ -621,27 +669,41 @@ export default function SubjectsPage() {
       <aside className="w-96 border-l border-slate-800 p-6">
         <div className="space-y-3">
           {subjects.map(subject => (
-            <button
+            <div
               key={subject.subject_name}
-              onClick={() => {
-                setSelectedSubject(subject.subject_name)
-                if (activeTab === 'chat') {
-                  setActiveTab('notes') // Switch back to notes when selecting a subject
-                }
-              }}
-              className={`w-full p-4 rounded-xl text-left transition-all ${
+              className={`relative group rounded-xl transition-all ${
                 subject.subject_name === selectedSubject && activeTab !== 'chat'
-                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/50'
-                  : 'bg-slate-800/50 text-slate-300 hover:bg-slate-800 border border-slate-700'
+                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg shadow-indigo-500/50'
+                  : 'bg-slate-800/50 border border-slate-700 hover:bg-slate-800'
               }`}
             >
-              <div className="flex-1">
-                <div className="font-semibold text-lg">{subject.subject_name}</div>
-                {subject.description && (
-                  <div className="text-sm opacity-80 mt-1">{subject.description}</div>
-                )}
-              </div>
-            </button>
+              <button
+                onClick={() => {
+                  setSelectedSubject(subject.subject_name)
+                  if (activeTab === 'chat') {
+                    setActiveTab('notes')
+                  }
+                }}
+                className="w-full p-4 text-left text-white"
+              >
+                <div className="flex-1 pr-8">
+                  <div className="font-semibold text-lg">{subject.subject_name}</div>
+                  {subject.description && (
+                    <div className="text-sm opacity-80 mt-1">{subject.description}</div>
+                  )}
+                </div>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleDeleteSubject(subject.subject_name)
+                }}
+                className="absolute right-3 top-3 p-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-600/20 hover:bg-red-600/40 text-red-400 rounded-lg"
+                title="Delete subject"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
           ))}
         </div>
 
@@ -674,20 +736,28 @@ export default function SubjectsPage() {
       {/* Modals */}
       <SubjectModal
         isOpen={showSubjectModal}
-        onClose={() => setShowSubjectModal(false)}
+        onClose={() => {
+          setShowSubjectModal(false)
+          setSubjectCreateError(null)
+        }}
         onSubmit={handleCreateSubject}
         formData={newSubject}
         setFormData={setNewSubject}
         isLoading={createSubjectMutation.isPending}
+        error={subjectCreateError}
       />
 
       <NoteModal
         isOpen={showNoteModal}
-        onClose={() => setShowNoteModal(false)}
+        onClose={() => {
+          setShowNoteModal(false)
+          setNoteCreateError(null)
+        }}
         onSubmit={handleCreateNote}
         formData={newNote}
         setFormData={setNewNote}
         isLoading={createNoteMutation.isPending}
+        error={noteCreateError}
       />
 
       <TaskModal
@@ -696,21 +766,27 @@ export default function SubjectsPage() {
           setShowTaskModal(false)
           setEditingTask(null)
           setNewTask({ task_title: '', description: '', deadline: null, status: 'Not Started' })
+          setTaskCreateError(null)
         }}
         onSubmit={editingTask ? handleUpdateTask : handleCreateTask}
         formData={newTask}
         setFormData={setNewTask}
         isLoading={editingTask ? updateTaskMutation.isPending : createTaskMutation.isPending}
         isEditing={!!editingTask}
+        error={taskCreateError}
       />
 
       <DeckModal
         isOpen={showDeckModal}
-        onClose={() => setShowDeckModal(false)}
+        onClose={() => {
+          setShowDeckModal(false)
+          setDeckCreateError(null)
+        }}
         onSubmit={handleCreateDeck}
         formData={newDeck}
         setFormData={setNewDeck}
         isLoading={createDeckMutation.isPending}
+        error={deckCreateError}
       />
 
       <NoteEditor

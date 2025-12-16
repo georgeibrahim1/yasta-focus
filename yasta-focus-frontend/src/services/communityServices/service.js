@@ -136,6 +136,18 @@ export const communityService = {
     return response.data
   },
 
+  // Add member by username (managers only)
+  addMemberByUsername: async (communityId, username) => {
+    const response = await api.post(`/api/communities/${communityId}/add-member`, { username })
+    return response.data
+  },
+
+  // Invite friend to community (any member)
+  inviteFriendToCommunity: async (communityId, friendId) => {
+    const response = await api.post(`/api/communities/${communityId}/invite-friend`, { friendId })
+    return response.data
+  },
+
   // Get community competitions
   getCommunityCompetitions: async (communityId) => {
     const response = await api.get(`/api/communities/${communityId}/competitions`)
