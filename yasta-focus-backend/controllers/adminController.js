@@ -388,3 +388,220 @@ export const updateUserRole = catchAsync(async (req, res, next) => {
     }
   });
 });
+
+// Delete user
+export const deleteUser = catchAsync(async (req, res, next) => {
+  // Ensure user is admin (role 0)
+  if (req.user.role !== 0) {
+    return next(new AppError('Access denied. Admin only.', 403));
+  }
+
+  const { userId } = req.params;
+
+  // Prevent admin from deleting themselves
+  if (userId === req.user.user_id) {
+    return next(new AppError('Cannot delete your own account', 400));
+  }
+
+  // Check if user exists
+  const userResult = await pool.query(
+    'SELECT user_id, username FROM users WHERE user_id = $1',
+    [userId]
+  );
+
+  if (userResult.rows.length === 0) {
+    return next(new AppError('User not found', 404));
+  }
+
+  try {
+    // Get all subjects for this user first
+    let subjectNames = [];
+    try {
+      const subjectsResult = await pool.query(
+        'SELECT subject_name FROM subject WHERE user_id = $1',
+        [userId]
+      );
+      subjectNames = subjectsResult.rows.map(row => row.subject_name);
+    } catch (err) {
+      console.log('Error fetching subjects:', err.message);
+    }
+
+    // Get all decks for this user's subjects
+    let deckTitles = [];
+    try {
+      if (subjectNames.length > 0) {
+        const decksResult = await pool.query(
+          'SELECT deck_title FROM deck WHERE subject_name = ANY($1::text[])',
+          [subjectNames]
+        );
+        deckTitles = decksResult.rows.map(row => row.deck_title);
+      }
+    } catch (err) {
+      console.log('Error fetching decks:', err.message);
+    }
+
+    // Get all communities owned by this user
+    let communityIds = [];
+    try {
+      const communitiesResult = await pool.query(
+        'SELECT community_ID FROM community WHERE community_Creator = $1',
+        [userId]
+      );
+      communityIds = communitiesResult.rows.map(row => row.community_id);
+    } catch (err) {
+      console.log('Error fetching communities:', err.message);
+    }
+
+    // Delete in proper order of dependencies with error handling
+    
+    // 1. Delete flashcard reviews
+    try {
+      if (deckTitles.length > 0) {
+        await pool.query(
+          'DELETE FROM flashcard_review WHERE card_id IN (SELECT card_id FROM flash_card WHERE deck_title = ANY($1::text[]))',
+          [deckTitles]
+        );
+      }
+    } catch (err) {
+      console.log('Error deleting flashcard_review, continuing...', err.message);
+    }
+    
+    // 2. Delete flashcards
+    try {
+      if (deckTitles.length > 0) {
+        await pool.query('DELETE FROM flash_card WHERE deck_title = ANY($1::text[])', [deckTitles]);
+      }
+    } catch (err) {
+      console.log('Error deleting flash_card, continuing...', err.message);
+    }
+    
+    // 3. Delete decks
+    try {
+      if (subjectNames.length > 0) {
+        await pool.query('DELETE FROM deck WHERE subject_name = ANY($1::text[])', [subjectNames]);
+      }
+    } catch (err) {
+      console.log('Error deleting deck, continuing...', err.message);
+    }
+    
+    // 4. Delete tasks
+    try {
+      if (subjectNames.length > 0) {
+        await pool.query('DELETE FROM task WHERE subject_name = ANY($1::text[])', [subjectNames]);
+      }
+    } catch (err) {
+      console.log('Error deleting task, continuing...', err.message);
+    }
+    
+    // 5. Delete notes
+    try {
+      if (subjectNames.length > 0) {
+        await pool.query('DELETE FROM note WHERE subject_name = ANY($1::text[])', [subjectNames]);
+      }
+    } catch (err) {
+      console.log('Error deleting note, continuing...', err.message);
+    }
+    
+    // 6. Delete sessions
+    try {
+      await pool.query('DELETE FROM session WHERE user_id = $1', [userId]);
+    } catch (err) {
+      console.log('Error deleting session, continuing...', err.message);
+    }
+    
+    // 7. Delete subjects
+    try {
+      await pool.query('DELETE FROM subject WHERE user_id = $1', [userId]);
+    } catch (err) {
+      console.log('Error deleting subject, continuing...', err.message);
+    }
+    
+    // 8. Delete community-related data
+    try {
+      await pool.query('DELETE FROM studyRoom_Members WHERE student_ID = $1', [userId]);
+    } catch (err) {
+      console.log('Error deleting studyRoom_Members, continuing...', err.message);
+    }
+    
+    try {
+      if (communityIds.length > 0) {
+        await pool.query('DELETE FROM studyRoom WHERE community_ID = ANY($1::integer[])', [communityIds]);
+      }
+    } catch (err) {
+      console.log('Error deleting studyRoom, continuing...', err.message);
+    }
+    
+    try {
+      await pool.query('DELETE FROM community_Participants WHERE user_id = $1', [userId]);
+    } catch (err) {
+      console.log('Error deleting community_Participants, continuing...', err.message);
+    }
+    
+    try {
+      await pool.query('DELETE FROM community WHERE community_Creator = $1', [userId]);
+    } catch (err) {
+      console.log('Error deleting community, continuing...', err.message);
+    }
+    
+    // 9. Delete events and competitions
+    try {
+      await pool.query('DELETE FROM event WHERE eventCreator = $1', [userId]);
+    } catch (err) {
+      console.log('Error deleting event, continuing...', err.message);
+    }
+    
+    try {
+      await pool.query('DELETE FROM CompetitionParticipants WHERE user_id = $1', [userId]);
+    } catch (err) {
+      console.log('Error deleting CompetitionParticipants, continuing...', err.message);
+    }
+    
+    // 10. Delete friendships
+    try {
+      await pool.query('DELETE FROM friendship WHERE requesterid = $1 OR requesteeid = $1', [userId]);
+    } catch (err) {
+      console.log('Error deleting friendship, continuing...', err.message);
+    }
+    
+    // 11. Delete reports
+    try {
+      await pool.query('DELETE FROM reports WHERE reporterid = $1 OR reporteeid = $1', [userId]);
+    } catch (err) {
+      console.log('Error deleting reports, continuing...', err.message);
+    }
+    
+    // 12. Delete announcements
+    try {
+      await pool.query('DELETE FROM announcement WHERE moderator_id = $1', [userId]);
+    } catch (err) {
+      console.log('Error deleting announcement, continuing...', err.message);
+    }
+    
+    // 13. Delete daily check-ins
+    try {
+      await pool.query('DELETE FROM daily_checkin WHERE user_id = $1 OR to_user_id = $1', [userId]);
+    } catch (err) {
+      console.log('Error deleting daily_checkin, continuing...', err.message);
+    }
+    
+    // 14. Delete user achievements
+    try {
+      await pool.query('DELETE FROM user_achievements WHERE user_id = $1', [userId]);
+    } catch (err) {
+      console.log('Error deleting user_achievements, continuing...', err.message);
+    }
+    
+    // 15. Finally, delete the user
+    await pool.query('DELETE FROM users WHERE user_id = $1', [userId]);
+
+    res.status(200).json({
+      status: 'success',
+      message: `User ${userResult.rows[0].username} and all related data have been deleted`
+    });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    console.error('Error details:', error.message);
+    console.error('Error code:', error.code);
+    return next(new AppError(`Failed to delete user: ${error.message}`, 500));
+  }
+});
