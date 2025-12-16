@@ -16,6 +16,7 @@ import AdminStatisticsPage from './pages/adminStatisticsPage'
 import AdminReportsPage from './pages/adminReportsPage'
 import RoomInterfacePage from './pages/roomInterfacePage'
 import ProtectedRoute from './components/ProtectedRoute'
+import AchievementsPage from './pages/achievementsPage' 
 
 
 export default function App() {
@@ -39,7 +40,8 @@ export default function App() {
         <Route path="profile/:userId" element={<ProfilePage/>}/>
         <Route path="settings" element={<SettingsPage/>}/>
         <Route path="decks/:subjectName/:deckTitle" element={<DeckDetailPage/>}/>
-        
+        <Route path="achievements" element={<AchievementsPage/>}/>
+
         {/* Admin-only Routes */}
         <Route path="admin/statistics" element={
           <ProtectedRoute requiredRole={0}>

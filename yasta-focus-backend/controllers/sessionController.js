@@ -1,6 +1,7 @@
 import db from '../db.js';
 import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/appError.js';
+import {checkStudyFocusSessionAchievements,checkStudySessionAchievements, checkStudyTimeAchievements, checkTodaySessionAchievements } from '../utils/achievementHelper.js';
 
 export const getAllSessions = catchAsync(async (req, res, next) => {
   const userId = req.user.user_id;
@@ -125,10 +126,21 @@ export const createSession = catchAsync(async (req, res, next) => {
     ended_at || new Date().toISOString()
   ]);
 
+  const sessionAchievements = await checkStudySessionAchievements(userId);
+  const timeAchievements = await checkStudyTimeAchievements(userId);
+  const focusSessionAchievement = await checkStudyFocusSessionAchievements(userId);
+  const TodaySessionAchievements = await checkTodaySessionAchievements(userId);
+  const unlockedAchievements = [...sessionAchievements, ...timeAchievements, ...focusSessionAchievement, ...TodaySessionAchievements]; //Total achievements unlocked during creation of a session
+
   res.status(201).json({
     status: 'success',
     data: {
-      session: result.rows[0]
+      session: result.rows[0],
+      unlockedAchievements: unlockedAchievements.map(a => ({
+      id: a.id,
+      title: a.title,
+      xp: a.xp
+    }))
     }
   });
 });

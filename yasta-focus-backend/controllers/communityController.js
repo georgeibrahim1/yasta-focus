@@ -1,6 +1,7 @@
 import db from '../db.js';
 import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/appError.js';
+import {checkCommunitiesJoinedAchievements,checkCommunitiesCreatedAchievements, checkCommunityCountdAchievements } from '../utils/achievementHelper.js';
 
 // Get all communities with pagination, filters, and user join status
 export const getAllCommunities = catchAsync(async (req, res, next) => {
@@ -373,10 +374,19 @@ export const createCommunity = catchAsync(async (req, res, next) => {
     }
   }
 
+
+  const createdCommunities = await checkCommunitiesCreatedAchievements(userId);
+  const unlockedAchievements = [...createdCommunities];
+
   res.status(201).json({
     status: 'success',
     data: {
-      community
+      community,
+      unlockedAchievements: unlockedAchievements.map(a => ({
+      id: a.id,
+      title: a.title,
+      xp: a.xp
+    }))
     }
   });
 });
@@ -875,11 +885,20 @@ export const approveJoinRequest = catchAsync(async (req, res, next) => {
     return next(new AppError('Pending request not found', 404));
   }
 
+  const joinedCommunities = await checkCommunitiesJoinedAchievements(userId);
+  const comMembersCount = await checkCommunityCountdAchievements(userId);
+  const unlockedAchievements = [...joinedCommunities, ...comMembersCount];
+
   res.status(200).json({
     status: 'success',
     message: 'Join request approved',
     data: {
-      member: result.rows[0]
+      member: result.rows[0],
+         unlockedAchievements: unlockedAchievements.map(a => ({
+      id: a.id,
+      title: a.title,
+      xp: a.xp
+    }))
     }
   });
 });
