@@ -212,7 +212,7 @@ export const getDashboardStats = catchAsync(async (req, res, next) => {
   const activeCommunitiesResult = await pool.query(
     `SELECT COUNT(*) as count
      FROM community_participants
-     WHERE user_id = $1`,
+     WHERE user_id = $1 AND member_status = \'Accepted\'`,
     [userId]
   );
   const activeCommunities = parseInt(activeCommunitiesResult.rows[0].count);
