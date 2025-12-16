@@ -11,7 +11,9 @@ import {
 import { leaderboardService } from '../services/leaderboardServices/service'
 import { useCheckInStatus } from '../services/leaderboardServices'
 import { useUser } from '../services/authServices'
+import { useGetAllAchievements } from '../services/achievementServices'
 import ProtectedComponent from '../components/ProtectedComponent'
+import AchievementCard from '../components/AchievementCard'
 import { 
   User, 
   Mail, 
@@ -56,6 +58,7 @@ export default function ProfilePage() {
   
   const { data: currentUser } = useUser()
   const { data: profile, isLoading: profileLoading } = useGetUserProfile(userId)
+  const { data: achievements = [], isLoading: achievementsLoading } = useGetAllAchievements()
   const { data: friends = [], isLoading: friendsLoading } = useGetFriends()
   const { data: friendRequests = [], isLoading: requestsLoading } = useGetFriendRequests()
   
@@ -64,6 +67,10 @@ export default function ProfilePage() {
   const giveXPMutation = useGiveXPToFriend()
 
   const isOwnProfile = !userId || userId === currentUser?.user?.user_id
+  
+  // Filter unlocked achievements
+  const unlockedAchievements = achievements.filter(a => a.unlocked)
+  const achievementCount = unlockedAchievements.length
 
   if (profileLoading) {
     return (
@@ -274,9 +281,9 @@ export default function ProfilePage() {
               <div className="flex items-center gap-2">
                 <Trophy className="w-4 h-4" />
                 Achievements
-                {profile.achievements && (
+                {achievementCount > 0 && (
                   <span className="px-2 py-0.5 bg-purple-500/30 rounded-full text-xs">
-                    {profile.achievements.length}
+                    {achievementCount}
                   </span>
                 )}
               </div>
@@ -335,11 +342,13 @@ export default function ProfilePage() {
                   <span className="font-semibold">Total XP:</span>
                   <span>{profile.xp}</span>
                 </div>
-                <div className="flex items-center gap-3 text-gray-300">
-                  <Award className="w-5 h-5 text-purple-400" />
-                  <span className="font-semibold">Achievements:</span>
-                  <span>{profile.achievements?.length || 0}</span>
-                </div>
+                <ProtectedComponent requiredRole={1}>
+                  <div className="flex items-center gap-3 text-gray-300">
+                    <Award className="w-5 h-5 text-purple-400" />
+                    <span className="font-semibold">Achievements:</span>
+                    <span>{achievementCount}</span>
+                  </div>
+                </ProtectedComponent>
                 {profile.bio && (
                   <div>
                     <p className="font-semibold text-gray-300 mb-2">Bio:</p>
@@ -351,35 +360,27 @@ export default function ProfilePage() {
           )}
 
           {activeTab === 'achievements' && (
-            <div>
-              <h2 className="text-2xl font-bold text-white mb-6">Achievements</h2>
-              {profile.achievements && profile.achievements.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {profile.achievements.map((achievement) => (
-                    <div
-                      key={achievement.id}
-                      className="bg-slate-700/30 rounded-xl p-4 border border-slate-600/50 hover:border-purple-500/50 transition-colors"
-                    >
-                      {achievement.picture && (
-                        <img
-                          src={achievement.picture}
-                          alt={achievement.title}
-                          className="w-16 h-16 mb-3 rounded-lg"
-                        />
-                      )}
-                      <h3 className="text-lg font-semibold text-white mb-2">{achievement.title}</h3>
-                      <p className="text-gray-400 text-sm mb-3">{achievement.description}</p>
-                      <div className="flex items-center gap-2 text-purple-400">
-                        <Star className="w-4 h-4" />
-                        <span className="font-semibold">{achievement.xp} XP</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-400 text-center py-8">No achievements yet</p>
-              )}
-            </div>
+            <ProtectedComponent requiredRole={1}>
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-6">Achievements</h2>
+                {achievementsLoading ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500"></div>
+                  </div>
+                ) : unlockedAchievements.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {unlockedAchievements.map((achievement) => (
+                      <AchievementCard
+                        key={achievement.id}
+                        achievement={achievement}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-400 text-center py-8">No achievements unlocked yet</p>
+                )}
+              </div>
+            </ProtectedComponent>
           )}
 
           {activeTab === 'friends' && isOwnProfile && (
