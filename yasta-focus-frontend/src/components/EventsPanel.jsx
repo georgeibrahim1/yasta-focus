@@ -7,6 +7,7 @@ export default function EventsPanel({
   onViewEvent = () => {}, 
   onJoinEvent = () => {},
   onInfoEvent = () => {},
+  onDeleteEvent = () => {},
   onJoinCompetition = () => {}, 
   onViewCompetition = () => {},
   onInfoCompetition = () => {},
@@ -43,6 +44,15 @@ export default function EventsPanel({
                     {ev.is_live && <span className="ml-2 text-green-400">● Live</span>}
                   </div>
                 </div>
+                {isAdmin && (
+                  <button
+                    onClick={() => onDeleteEvent(ev)}
+                    className="text-red-400 hover:text-red-300 text-xs px-2 py-1"
+                    title="Delete event"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
               <div className="flex gap-2">
                 <button
