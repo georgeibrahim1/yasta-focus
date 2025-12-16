@@ -52,6 +52,12 @@ export const communityService = {
     return response.data
   },
 
+  // Create a new event
+  createEvent: async (eventData) => {
+    const response = await api.post('/api/events', eventData)
+    return response.data
+  },
+
   // Get all competitions
   getCompetitions: async () => {
     const response = await api.get('/api/competitions/all')
@@ -160,3 +166,33 @@ export const communityService = {
     return response.data
   }
 }
+
+// Export individual functions for convenience
+export const { 
+  getCommunities,
+  getAllTags,
+  getCommunityMembers,
+  joinCommunity,
+  leaveCommunity,
+  createCommunity,
+  getEvents,
+  createEvent,
+  getCompetitions,
+  joinCompetition,
+  getCommunityStats,
+  updateCommunityInfo,
+  deleteCommunity,
+  updateMemberBio,
+  exitCommunity,
+  removeMember,
+  promoteMember,
+  demoteMember,
+  getPendingRequests,
+  approveJoinRequest,
+  rejectJoinRequest,
+  getCommunityCompetitions,
+  createCommunityCompetition,
+  joinCommunityCompetition,
+  getCommunityCompetitionEntries,
+  deleteCommunityCompetition
+} = communityService
