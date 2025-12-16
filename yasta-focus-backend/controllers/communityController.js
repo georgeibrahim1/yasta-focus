@@ -886,7 +886,7 @@ export const approveJoinRequest = catchAsync(async (req, res, next) => {
   }
 
   const joinedCommunities = await checkCommunitiesJoinedAchievements(userId);
-  const comMembersCount = await checkCommunityCountdAchievements(userId);
+  const comMembersCount = await checkCommunityCountdAchievements(userId,communityId);
   const unlockedAchievements = [...joinedCommunities, ...comMembersCount];
 
   res.status(200).json({
@@ -894,7 +894,7 @@ export const approveJoinRequest = catchAsync(async (req, res, next) => {
     message: 'Join request approved',
     data: {
       member: result.rows[0],
-         unlockedAchievements: unlockedAchievements.map(a => ({
+      unlockedAchievements: unlockedAchievements.map(a => ({
       id: a.id,
       title: a.title,
       xp: a.xp

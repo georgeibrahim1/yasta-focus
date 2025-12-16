@@ -17,8 +17,8 @@ export const useCreateCommunity = () => {
       const unlocked = data?.data?.unlockedAchievements || []
       if (unlocked.length > 0) {
         // Refresh achievement queries
-        queryClient.invalidateQueries({ queryKey: ['achievements'] })
-        queryClient.invalidateQueries({ queryKey: ['achievementStats'] })
+        qc.invalidateQueries({ queryKey: ['achievements'] })
+        qc.invalidateQueries({ queryKey: ['achievementStats'] })
         
         // Dispatch event for global notification system
         // window.dispatchEvent(

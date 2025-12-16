@@ -137,21 +137,23 @@ export const checkCommunitiesCreatedAchievements = catchAsync(async (user_id) =>
   return await checkAndUnlockAchievements(user_id, 'communitiesCreated', groupCount);
 });
 
-export const checkCommunityCountdAchievements = catchAsync(async (user_id) => {
+export const checkCommunityCountdAchievements = catchAsync(async (user_id,community_id) => {
   // Check number of members joined to user's community
   const { rows } = await db.query(
-    `SELECT COALESCE(MAX(member_count), 0) as max_members
-     FROM (
-       SELECT COUNT(*) as member_count
-       FROM community_participants cp
-       JOIN community c ON cp.community_id = c.community_id
-       WHERE c.community_creator = $1
-       GROUP BY c.community_id
-     ) as community_sizes`, [user_id]
+  'SELECT COUNT(*) as count FROM community_participants WHERE community_id = $1 AND user_id != $2',
+    [community_id,user_id]
   );
-  const groupCount = parseInt(rows[0].max_members);
+  const groupCount = parseInt(rows[0].count);
   return await checkAndUnlockAchievements(user_id, 'communitiesCount', groupCount);
 });
+
+export const checkLevelAchievement = catchAsync(async (user_id,level) => {
+    return await checkAndUnlockAchievements(user_id,'Level',level)
+})
+
+export const checkXPAchievement = catchAsync(async (user_id,xp) => {
+    return await checkAndUnlockAchievements(user_id,'XP',xp)
+})
 
 /**
  * Check achievements for leaderboard position

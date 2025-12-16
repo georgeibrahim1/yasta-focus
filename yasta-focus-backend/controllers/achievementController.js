@@ -1,6 +1,7 @@
 import db from '../db.js';
 import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/appError.js';
+import {checkLevelAchievement,checkXPAchievement} from '../utils/achievementHelper.js';
 
 // Get all achievements
 export const getAllAchievements = catchAsync(async (req, res, next) =>{
@@ -32,7 +33,6 @@ export const getUserAchievementStats = catchAsync(async (req, res, next) => {
       (SELECT COUNT(*) FROM achievement) as "totalAchievements"
     FROM users u
     LEFT JOIN userachievements ua ON ua.userid = u.user_id
-    LEFT JOIN achievement a ON ua.achievementid = a.id
     WHERE u.user_id = $1
     GROUP BY u.xp, u.user_id
   `;
@@ -54,6 +54,10 @@ export const getUserAchievementStats = catchAsync(async (req, res, next) => {
   const xpInCurrentLevel = stats.totalXP % xpPerLevel;
   const xpToNextLevel = xpPerLevel - xpInCurrentLevel;
 
+  const lvl = await checkLevelAchievement(userId,level);
+  const xp = await checkXPAchievement(userId,stats.totalXP);
+  const unlockedAchievements = [...(lvl,[]),...(xp||[])];
+
   res.status(200).json({
     status: 'success',
     data: {
@@ -62,7 +66,12 @@ export const getUserAchievementStats = catchAsync(async (req, res, next) => {
       xpInCurrentLevel,
       xpToNextLevel,
       unlockedCount: parseInt(stats.unlockedCount),
-      totalAchievements: parseInt(stats.totalAchievements)
+      totalAchievements: parseInt(stats.totalAchievements),
+      unlockedAchievements: unlockedAchievements.map(a => ({
+      id: a.id,
+      title: a.title,
+      xp: a.xp
+    }))
     }
   });
 });
