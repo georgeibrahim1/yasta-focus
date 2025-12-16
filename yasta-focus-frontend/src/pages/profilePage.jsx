@@ -11,6 +11,7 @@ import {
 import { leaderboardService } from '../services/leaderboardServices/service'
 import { useCheckInStatus } from '../services/leaderboardServices'
 import { useUser } from '../services/authServices'
+import ProtectedComponent from '../components/ProtectedComponent'
 import { 
   User, 
   Mail, 
@@ -261,24 +262,26 @@ export default function ProfilePage() {
           >
             About
           </button>
-          <button
-            onClick={() => setActiveTab('achievements')}
-            className={`px-6 py-3 rounded-lg font-medium transition-all ${
-              activeTab === 'achievements'
-                ? 'bg-purple-600 text-white'
-                : 'bg-slate-800/50 text-gray-400 hover:bg-slate-800'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Trophy className="w-4 h-4" />
-              Achievements
-              {profile.achievements && (
-                <span className="px-2 py-0.5 bg-purple-500/30 rounded-full text-xs">
-                  {profile.achievements.length}
-                </span>
-              )}
-            </div>
-          </button>
+          <ProtectedComponent requiredRole={1}>
+            <button
+              onClick={() => setActiveTab('achievements')}
+              className={`px-6 py-3 rounded-lg font-medium transition-all ${
+                activeTab === 'achievements'
+                  ? 'bg-purple-600 text-white'
+                  : 'bg-slate-800/50 text-gray-400 hover:bg-slate-800'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Trophy className="w-4 h-4" />
+                Achievements
+                {profile.achievements && (
+                  <span className="px-2 py-0.5 bg-purple-500/30 rounded-full text-xs">
+                    {profile.achievements.length}
+                  </span>
+                )}
+              </div>
+            </button>
+          </ProtectedComponent>
           {isOwnProfile && (
             <>
               <button
