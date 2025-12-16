@@ -25,5 +25,7 @@ router.get('/stats/study-activity', adminController.getStudyActivity);
 
 // Reports
 router.get('/reports', adminController.getReports);
+router.patch('/reports/:reporterId/:reportedId/status', adminController.updateReportStatus);
+router.delete('/reports/:reporterId/:reportedId', adminController.deleteReport);
 
 export default router;

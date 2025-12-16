@@ -286,6 +286,68 @@ export const getReports = catchAsync(async (req, res, next) => {
   });
 });
 
+// Update report status
+export const updateReportStatus = catchAsync(async (req, res, next) => {
+  // Ensure user is admin (role 0)
+  if (req.user.role !== 0) {
+    return next(new AppError('Access denied. Admin only.', 403));
+  }
+
+  const { reporterId, reportedId } = req.params;
+  const { status } = req.body;
+
+  // Validate status
+  const validStatuses = ['Under review by the team', 'Resolved', 'Rejected'];
+  if (!validStatuses.includes(status)) {
+    return next(new AppError('Invalid status value', 400));
+  }
+
+  const result = await pool.query(
+    `UPDATE reports 
+     SET status = $1 
+     WHERE reporterid = $2 AND reporteeid = $3
+     RETURNING *`,
+    [status, reporterId, reportedId]
+  );
+
+  if (result.rows.length === 0) {
+    return next(new AppError('Report not found', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      report: result.rows[0]
+    }
+  });
+});
+
+// Delete report
+export const deleteReport = catchAsync(async (req, res, next) => {
+  // Ensure user is admin (role 0)
+  if (req.user.role !== 0) {
+    return next(new AppError('Access denied. Admin only.', 403));
+  }
+
+  const { reporterId, reportedId } = req.params;
+
+  const result = await pool.query(
+    `DELETE FROM reports 
+     WHERE reporterid = $1 AND reporteeid = $2
+     RETURNING *`,
+    [reporterId, reportedId]
+  );
+
+  if (result.rows.length === 0) {
+    return next(new AppError('Report not found', 404));
+  }
+
+  res.status(204).json({
+    status: 'success',
+    data: null
+  });
+});
+
 // Update user role
 export const updateUserRole = catchAsync(async (req, res, next) => {
   // Ensure user is admin (role 0)

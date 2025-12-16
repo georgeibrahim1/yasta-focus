@@ -89,6 +89,36 @@ export const useGetReports = () => {
   })
 }
 
+// Update report status
+export const useUpdateReportStatus = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async ({ reporterId, reportedId, status }) => {
+      const { data } = await api.patch(`/api/admin/reports/${reporterId}/${reportedId}/status`, { status })
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'reports'] })
+    },
+  })
+}
+
+// Delete report
+export const useDeleteReport = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async ({ reporterId, reportedId }) => {
+      const { data } = await api.delete(`/api/admin/reports/${reporterId}/${reportedId}`)
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'reports'] })
+    },
+  })
+}
+
 // Update user role
 export const useUpdateUserRole = () => {
   const queryClient = useQueryClient()
