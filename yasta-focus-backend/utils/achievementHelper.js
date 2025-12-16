@@ -8,7 +8,7 @@ import catchAsync from './catchAsync.js';
  * @param {number} currentvalue - Current count/value for the criteria
  * @returns {Promise<Array>} Array of newly unlocked achievements
  */
-export const checkAndUnlockAchievements = catchAsync(async (user_id, criteriatype, currentvalue) => {
+export const checkAndUnlockAchievements = catchAsync(async (user_id, criteriatype, currentvalue,skip=false) => {
     // Find achievements that should be unlocked but aren't yet
     const query = `
       SELECT a.id, a.title, a.xp
@@ -33,14 +33,25 @@ export const checkAndUnlockAchievements = catchAsync(async (user_id, criteriatyp
         [user_id, achievement.id]
       );
       // Update user's XP by adding the achievement's XP
-      await db.query(
-        'UPDATE users SET xp = xp + $1 WHERE user_id = $2',
+     const {rows} = await db.query(
+        'UPDATE users SET xp = xp + $1 WHERE user_id = $2 RETURNING xp',
         [achievement.xp, user_id]
       );
+
+      //To check if any achievement of criteriaType = "Level" or "XP" will be unlocked when XP is updated
+      //It happens only once to prevent multiple loops by using the boolean 'skip'
+        if(!skip)
+        {
+          const xpPerLevel = 100;
+          const level = Math.floor(rows[0].xp / xpPerLevel);
+          await checkAndUnlockAchievements(user_id,'Level',level,true);
+          await checkAndUnlockAchievements(user_id,'XP',rows[0].xp,true);
+        }
       unlockedAchievements.push(achievement);
     }
     return unlockedAchievements;
 });
+
 
 /**
  * Check achievements for study sessions
@@ -92,6 +103,9 @@ export const checkTodaySessionAchievements = catchAsync(async (user_id) => {
   return await checkAndUnlockAchievements(user_id,'SessionCount',count)
 });
 
+
+
+
 // /**
 //  * Check achievements for tasks completed
 //  * @param {string} user_id 
@@ -105,6 +119,9 @@ export const checkTodaySessionAchievements = catchAsync(async (user_id) => {
 //   const taskCount = parseInt(rows[0].count);
 //   return await checkAndUnlockAchievements(user_id, 'tasks', taskCount);
 // });
+
+
+
 
 /**
  * Check achievements for groups/communities
@@ -147,14 +164,35 @@ export const checkCommunityCountdAchievements = catchAsync(async (user_id,commun
   return await checkAndUnlockAchievements(user_id, 'communitiesCount', groupCount);
 });
 
+
+
+
 export const checkLevelAchievement = catchAsync(async (user_id,level) => {
-    return await checkAndUnlockAchievements(user_id,'Level',level)
+  return await checkAndUnlockAchievements(user_id,'Level',level)
 })
 
 export const checkXPAchievement = catchAsync(async (user_id,xp) => {
-    return await checkAndUnlockAchievements(user_id,'XP',xp)
+  return await checkAndUnlockAchievements(user_id,'XP',xp)
 })
 
+
+export const FriendCountAchievement = catchAsync(async (user_id) => {
+  const { rows } = await db.query(
+  'SELECT COUNT(*) as count FROM friendship WHERE (requesteeid = $1 OR requesterid = $1) AND status = \'Accepted\'',
+    [user_id]
+  );
+  const Count = parseInt(rows[0].count);
+  return await checkAndUnlockAchievements(user_id,'Friend',Count)
+})
+
+export const FriendReqCountAchievement = catchAsync(async (user_id) => {
+  const { rows } = await db.query(
+  'SELECT COUNT(*) as count FROM friendship WHERE requesterid = $1',
+    [user_id]
+  );
+  const Count = parseInt(rows[0].count);
+  return await checkAndUnlockAchievements(user_id,'FriendRequest',Count)
+})
 /**
  * Check achievements for leaderboard position
  * @param {string} user_id 
