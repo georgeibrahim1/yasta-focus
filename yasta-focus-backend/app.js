@@ -19,6 +19,7 @@ import friendshipRouter from './routes/friendshipRouter.js';
 import studyRoomRouter from './routes/studyRoomRouter.js';
 import announcementRouter from './routes/announcementRouter.js';
 import aiRouter from './routes/aiRouter.js';
+import achievementRouter from './routes/achievementRouter.js';
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use('/api/friendships', friendshipRouter);
 app.use('/api', studyRoomRouter);
 app.use('/api', announcementRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/achievements', achievementRouter);
 
 app.use((req, res, next) => {
   next(new AppError(`${req.originalUrl} isn't in the server!`, 404));

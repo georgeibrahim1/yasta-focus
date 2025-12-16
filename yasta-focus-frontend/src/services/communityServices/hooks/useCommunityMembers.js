@@ -60,6 +60,21 @@ export const useApproveJoinRequest = () => {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['pendingRequests', variables.communityId] })
       queryClient.invalidateQueries({ queryKey: ['communityMembers', variables.communityId] })
+   
+      const unlocked = data?.data?.unlockedAchievements || []
+      if (unlocked.length > 0) {
+        // Refresh achievement queries
+        queryClient.invalidateQueries({ queryKey: ['achievements'] })
+        queryClient.invalidateQueries({ queryKey: ['achievementStats'] })
+        
+        // Dispatch event for global notification system
+        // window.dispatchEvent(
+        //   new CustomEvent('achievements-unlocked', { 
+        //     detail: unlocked 
+        //   })
+        // )
+      } 
+      return data                     
     }
   })
 }
