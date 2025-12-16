@@ -10,7 +10,7 @@ import {
 } from '../services/friendshipServices'
 import { leaderboardService } from '../services/leaderboardServices/service'
 import { useCheckInStatus } from '../services/leaderboardServices'
-import { useUser } from '../services/authServices'
+import { useUser, useLogout } from '../services/authServices'
 import { useGetAllAchievements } from '../services/achievementServices'
 import ProtectedComponent from '../components/ProtectedComponent'
 import AchievementCard from '../components/AchievementCard'
@@ -32,7 +32,8 @@ import {
   Save,
   Lock,
   Eye,
-  EyeOff
+  EyeOff,
+  LogOut
 } from 'lucide-react'
 
 // Component for Gift XP button with per-friend check-in status
@@ -71,6 +72,7 @@ export default function ProfilePage() {
   const removeFriendMutation = useRemoveFriend()
   const giveXPMutation = useGiveXPToFriend()
   const updateProfileMutation = useUpdateUserProfile()
+  const logoutMutation = useLogout()
 
   const isOwnProfile = !userId || userId === currentUser?.user?.user_id
   
@@ -536,6 +538,15 @@ export default function ProfilePage() {
             
             <div className="flex gap-3">
               {getFriendshipButton()}
+              {isOwnProfile && (
+                <button
+                  onClick={() => logoutMutation.mutate()}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
+              )}
             </div>
           </div>
         </div>
