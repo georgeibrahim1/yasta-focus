@@ -5,6 +5,8 @@ import './index.css'
 import App from './App.jsx'
 import { ThemeProvider } from './context/themeContext'
 import {QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import {ReactQueryDevtools} from '@tanstack/react-query-devtools'
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,6 +24,7 @@ createRoot(document.getElementById('root')).render(
         <ThemeProvider>
           <App />
         </ThemeProvider>
+        <ReactQueryDevtools />
       </QueryClientProvider>
     </BrowserRouter>
   </StrictMode>

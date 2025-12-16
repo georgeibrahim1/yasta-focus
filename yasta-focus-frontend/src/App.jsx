@@ -18,7 +18,6 @@ import RoomInterfacePage from './pages/roomInterfacePage'
 import ProtectedRoute from './components/ProtectedRoute'
 import AchievementsPage from './pages/achievementsPage' 
 
-
 export default function App() {
   return (
     <Routes>
