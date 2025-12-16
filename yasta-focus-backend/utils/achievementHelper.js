@@ -140,7 +140,7 @@ export const checkCommunitiesCreatedAchievements = catchAsync(async (user_id) =>
 export const checkCommunityCountdAchievements = catchAsync(async (user_id,community_id) => {
   // Check number of members joined to user's community
   const { rows } = await db.query(
-  'SELECT COUNT(*) as count FROM community_participants WHERE community_id = $1 AND user_id != $2',
+  'SELECT COUNT(*) as count FROM community_participants WHERE community_id = $1 AND user_id != $2 AND member_status = \'Accepted\'',
     [community_id,user_id]
   );
   const groupCount = parseInt(rows[0].count);

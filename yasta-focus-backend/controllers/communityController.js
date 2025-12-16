@@ -885,7 +885,7 @@ export const approveJoinRequest = catchAsync(async (req, res, next) => {
     return next(new AppError('Pending request not found', 404));
   }
 
-  const joinedCommunities = await checkCommunitiesJoinedAchievements(userId);
+  const joinedCommunities = await checkCommunitiesJoinedAchievements(memberId);
   const comMembersCount = await checkCommunityCountdAchievements(userId,communityId);
   const unlockedAchievements = [...joinedCommunities, ...comMembersCount];
 
