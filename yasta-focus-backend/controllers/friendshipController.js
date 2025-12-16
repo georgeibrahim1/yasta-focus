@@ -1,6 +1,7 @@
 import pool from '../db.js';
 import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/appError.js';
+import {checkLevelAchievement,checkXPAchievement,FriendCountAchievement} from '../utils/achievementHelper.js';
 
 // Get user's friends list
 export const getFriends = catchAsync(async (req, res, next) => {
@@ -124,9 +125,21 @@ export const respondToFriendRequest = catchAsync(async (req, res, next) => {
       [requesterId, userId]
     );
 
+   // Check friend achievements for BOTH users
+    const [requesterAchievements, requesteeAchievements] = await Promise.all([
+      FriendCountAchievement(requesterId),  // Check for requester
+      FriendCountAchievement(userId)        // Check for requestee (current user)
+    ]); 
+
     res.status(200).json({
       status: 'success',
-      message: 'Friend request accepted'
+      message: 'Friend request accepted',
+      data: {
+        unlockedAchievements: {
+          requester: Array.isArray(requesterAchievements) ? requesterAchievements : [],
+          requestee: Array.isArray(requesteeAchievements) ? requesteeAchievements : []
+        }
+      }
     });
   } else {
     // Reject the request - delete it
@@ -243,6 +256,11 @@ export const giveXPToFriend = catchAsync(async (req, res, next) => {
       pool.query('SELECT user_id, username, xp FROM users WHERE user_id = $1', [userId]),
       pool.query('SELECT user_id, username, xp FROM users WHERE user_id = $1', [friendId])
     ]);
+
+    const xpPerLevel = 100;
+    const level = Math.floor(friendUpdated.rows[0].xp / xpPerLevel);
+    await checkLevelAchievement(friendId,level);
+    await checkXPAchievement(friendId,friendUpdated.rows[0].xp); //Data not sent because achievement is not relevant to xpGiver 
 
     res.status(200).json({
       status: 'success',

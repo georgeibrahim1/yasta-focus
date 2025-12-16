@@ -1,6 +1,7 @@
 import db from '../db.js';
 import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/appError.js';
+import {checkXPAchievement,checkLevelAchievement,FriendReqCountAchievement} from '../utils/achievementHelper.js'
 
 // Get leaderboard with top 100 users by study time (with time period filter)
 export const getLeaderboard = catchAsync(async (req, res, next) => {
@@ -163,6 +164,13 @@ export const giveXP = catchAsync(async (req, res, next) => {
       [giverId]
     );
 
+
+    const receiverNewXP = updateResult.rows[0].xp;
+    const xpPerLevel = 100;
+    const level = Math.floor(receiverNewXP / xpPerLevel);
+    await checkLevelAchievement(userId, level);
+    await checkXPAchievement(userId, receiverNewXP); //Data not sent because achievement is not relevant to xpGiver 
+
     res.status(200).json({
       status: 'success',
       data: {
@@ -209,10 +217,18 @@ export const sendFriendRequest = catchAsync(async (req, res, next) => {
   `;
   const result = await db.query(query, [requesterId, userId]);
 
+  const reqAchievement = await FriendReqCountAchievement(requesterId);
+  const unlockedAchievements = Array.isArray(reqAchievement) ? reqAchievement : [];
+
   res.status(201).json({
     status: 'success',
     data: {
-      friendship: result.rows[0]
+      friendship: result.rows[0],
+      unlockedAchievements: unlockedAchievements.map(a => ({
+      id: a.id,
+      title: a.title,
+      xp: a.xp
+    }))
     }
   });
 });

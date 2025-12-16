@@ -1,7 +1,23 @@
 import React, { useState, useMemo } from 'react';
-import { Trophy, Star, Award, Lock } from 'lucide-react';
+import { Trophy, Star, Award, Lock, Users, Clock, Target, Zap } from 'lucide-react';
 import { useGetAllAchievements, useGetAchievementStats } from '../services/achievementServices/hooks/useAchievements';
 import AchievementCard from '../components/AchievementCard';
+
+// Define custom category mappings
+const CATEGORY_MAPPINGS = {
+  'Study': ['sessions', 'Focus_sessions', 'SessionCount'],
+  'Time': ['time'],
+  'Social': ['communitiesJoined', 'communitiesCreated', 'communitiesCount', 'Friend', 'FriendRequest'],
+  'Milestones': ['Level', 'XP']
+};
+
+// Category icons for visual appeal
+const CATEGORY_ICONS = {
+  'Study': Clock,
+  'Time': Target,
+  'Social': Users,
+  'Milestones': Zap
+};
 
 export default function AchievementsPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -19,30 +35,43 @@ export default function AchievementsPage() {
     totalAchievements: 0
   };
 
-  // Get unique categories
+  // Get available categories based on achievements
   const categories = useMemo(() => {
-    const cats = ['All', ...new Set(achievements.map(a => a.criteriatype))];
-    return cats;
+    const availableCategories = ['All'];
+    const criteriaTypesInData = new Set(achievements.map(a => a.criteriatype));
+    
+    // Only add categories that have achievements
+    Object.keys(CATEGORY_MAPPINGS).forEach(category => {
+      const hasAchievements = CATEGORY_MAPPINGS[category].some(type => 
+        criteriaTypesInData.has(type)
+      );
+      if (hasAchievements) {
+        availableCategories.push(category);
+      }
+    });
+    
+    return availableCategories;
   }, [achievements]);
 
-  // Filter achievements by category
+  // Filter achievements by custom category and sort by unlocked status
   const filteredAchievements = useMemo(() => {
-    if (selectedCategory === 'All') return achievements;
-    return achievements.filter(a => a.criteriatype === selectedCategory);
-  }, [achievements, selectedCategory]);
-
-  // Group achievements by category for display
-  const groupedAchievements = useMemo(() => {
-    const grouped = {};
-    filteredAchievements.forEach(achievement => {
-      const category = achievement.criteriatype;
-      if (!grouped[category]) {
-        grouped[category] = [];
-      }
-      grouped[category].push(achievement);
+    let filtered = achievements;
+    
+    if (selectedCategory !== 'All') {
+      const criteriaTypes = CATEGORY_MAPPINGS[selectedCategory] || [];
+      filtered = achievements.filter(a => criteriaTypes.includes(a.criteriatype));
+    }
+    
+    // Sort: unlocked first (unlocked = true), then locked (unlocked = false)
+    return [...filtered].sort((a, b) => {
+      // If a is unlocked and b is not, a comes first
+      if (a.unlocked && !b.unlocked) return -1;
+      // If b is unlocked and a is not, b comes first
+      if (!a.unlocked && b.unlocked) return 1;
+      // Both same status, maintain order
+      return 0;
     });
-    return grouped;
-  }, [filteredAchievements]);
+  }, [achievements, selectedCategory]);
 
   const levelProgress = (stats.xpInCurrentLevel / (stats.xpInCurrentLevel + stats.xpToNextLevel)) * 100;
 
@@ -142,51 +171,41 @@ export default function AchievementsPage() {
         {/* Category Filters */}
         <div className="mb-6">
           <div className="flex gap-2 flex-wrap">
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  selectedCategory === category
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/50 border border-slate-700/50'
-                }`}
-              >
-                {category}
-              </button>
-            ))}
+            {categories.map((category) => {
+              const Icon = CATEGORY_ICONS[category];
+              return (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+                    selectedCategory === category
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-800/50 text-slate-300 hover:bg-slate-700/50 border border-slate-700/50'
+                  }`}
+                >
+                  {Icon && <Icon size={18} />}
+                  {category}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Achievements Grid - Grouped by Category */}
-        {Object.keys(groupedAchievements).length === 0 ? (
+        {/* Achievements Grid */}
+        {filteredAchievements.length === 0 ? (
           <div className="text-slate-400 text-center py-12 bg-slate-800/30 rounded-xl border border-slate-700/50">
             <Lock size={48} className="mx-auto mb-4 text-slate-600" />
             <p>No achievements found in this category</p>
           </div>
         ) : (
-          Object.entries(groupedAchievements).map(([category, categoryAchievements]) => (
-            <div key={category} className="mb-8">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-1 flex-1 bg-slate-700/50 rounded" />
-                <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                  <span className="px-3 py-1 bg-indigo-600 text-white text-sm font-medium rounded-full">
-                    {category}
-                  </span>
-                </h2>
-                <div className="h-1 flex-1 bg-slate-700/50 rounded" />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {categoryAchievements.map((achievement) => (
-                  <AchievementCard
-                    key={achievement.id}
-                    achievement={achievement}
-                  />
-                ))}
-              </div>
-            </div>
-          ))
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredAchievements.map((achievement) => (
+              <AchievementCard
+                key={achievement.id}
+                achievement={achievement}
+              />
+            ))}
+          </div>
         )}
       </div>
     </div>
