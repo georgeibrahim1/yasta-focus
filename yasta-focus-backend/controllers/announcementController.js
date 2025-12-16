@@ -40,14 +40,18 @@ export const createAnnouncement = catchAsync(async (req, res, next) => {
     return next(new AppError('Announcement content is required', 400));
   }
 
-  // Check if user is a manager of the community
-  const managerCheck = await db.query(
-    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
-    [communityId, userId]
-  );
+  // Check if user is admin or a manager of the community
+  const isAdmin = req.user.role === 0;
+  
+  if (!isAdmin) {
+    const managerCheck = await db.query(
+      'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+      [communityId, userId]
+    );
 
-  if (managerCheck.rows.length === 0) {
-    return next(new AppError('Only community managers can create announcements', 403));
+    if (managerCheck.rows.length === 0) {
+      return next(new AppError('Only community managers can create announcements', 403));
+    }
   }
 
   // Get the next announcement_num for this community and moderator
@@ -102,14 +106,18 @@ export const deleteAnnouncement = catchAsync(async (req, res, next) => {
 
   const announcement = announcementResult.rows[0];
 
-  // Check if user is the creator or a manager
-  const managerCheck = await db.query(
-    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
-    [announcement.community_id, userId]
-  );
+  // Check if user is admin, the creator, or a manager
+  const isAdmin = req.user.role === 0;
+  
+  if (!isAdmin && announcement.moderator_id !== userId) {
+    const managerCheck = await db.query(
+      'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+      [announcement.community_id, userId]
+    );
 
-  if (announcement.moderator_id !== userId && managerCheck.rows.length === 0) {
-    return next(new AppError('You do not have permission to delete this announcement', 403));
+    if (managerCheck.rows.length === 0) {
+      return next(new AppError('You do not have permission to delete this announcement', 403));
+    }
   }
 
   // Delete the announcement

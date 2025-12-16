@@ -9,6 +9,7 @@ import { useGetAllTags } from '../services/communityServices/hooks/useGetAllTags
 import { useJoinCommunity } from '../services/communityServices/hooks/useJoinCommunity'
 import { useUser } from '../services/authServices'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+import ProtectedComponent from '../components/ProtectedComponent'
 
 export default function CommunitiesPage() {
   const navigate = useNavigate()
@@ -79,39 +80,41 @@ export default function CommunitiesPage() {
 
       {/* Filters Row */}
       <div className="flex gap-4 mb-6 flex-wrap items-end">
-        {/* Show Joined Filter */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => { setShowJoined('all'); setPage(1) }}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              showJoined === 'all' 
-                ? 'bg-indigo-600 text-white' 
-                : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => { setShowJoined('joined'); setPage(1) }}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              showJoined === 'joined' 
-                ? 'bg-indigo-600 text-white' 
-                : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            Joined
-          </button>
-          <button
-            onClick={() => { setShowJoined('not-joined'); setPage(1) }}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              showJoined === 'not-joined' 
-                ? 'bg-indigo-600 text-white' 
-                : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
-            }`}
-          >
-            Not Joined
-          </button>
-        </div>
+        {/* Show Joined Filter - Hidden for admins */}
+        <ProtectedComponent requiredRole={1}>
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setShowJoined('all'); setPage(1) }}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                showJoined === 'all' 
+                  ? 'bg-indigo-600 text-white' 
+                  : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => { setShowJoined('joined'); setPage(1) }}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                showJoined === 'joined' 
+                  ? 'bg-indigo-600 text-white' 
+                  : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              Joined
+            </button>
+            <button
+              onClick={() => { setShowJoined('not-joined'); setPage(1) }}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                showJoined === 'not-joined' 
+                  ? 'bg-indigo-600 text-white' 
+                  : 'bg-slate-700/50 text-slate-300 hover:bg-slate-700'
+              }`}
+            >
+              Not Joined
+            </button>
+          </div>
+        </ProtectedComponent>
 
         {/* Tags Filter */}
         <div className="flex-1 min-w-[200px]">

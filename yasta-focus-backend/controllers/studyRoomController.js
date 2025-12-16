@@ -203,7 +203,7 @@ export const joinRoom = catchAsync(async (req, res, next) => {
     return next(new AppError('You must be a member of this community to join this room', 403));
   }
 
-  const isManager = memberCheck.rows[0].moderator_id !== null;
+  const isManagerOrAdmin = req.user.role === 0 || memberCheck.rows[0].moderator_id !== null;
 
   // Check if already a member of THIS room
   const existingMember = await db.query(
@@ -215,8 +215,8 @@ export const joinRoom = catchAsync(async (req, res, next) => {
     return next(new AppError('You are already a member of this room', 400));
   }
 
-  // Check if user is a member of ANY other room (skip for managers)
-  if (!isManager) {
+  // Check if user is a member of ANY other room (skip for managers and admins)
+  if (!isManagerOrAdmin) {
     const otherRoomCheck = await db.query(
       `SELECT srm.room_Code, srm.community_ID, sr.room_name
        FROM studyRoom_Members srm

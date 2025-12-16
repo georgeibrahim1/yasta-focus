@@ -11,6 +11,7 @@ import { useUser } from '../services/authServices'
 import Select from '../components/Select'
 import CreateRoomModal from '../components/CreateRoomModal'
 import ReportModal from '../components/ReportModal'
+import ProtectedComponent from '../components/ProtectedComponent'
 
 export default function StudyRoomsPage() {
   const { communityId } = useParams()
@@ -570,18 +571,20 @@ export default function StudyRoomsPage() {
         <div className="space-y-6">
           {/* User Actions */}
           <div className="flex gap-2">
-            {/* Edit My Member Bio - Available to all members */}
-            <button
-              onClick={() => {
-                setNewBio(currentUserMember?.member_bio || '')
-                setShowBioModal(true)
-              }}
-              className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 rounded-xl transition-colors text-sm font-medium border border-indigo-600/30"
-              title="Edit your bio in this community"
-            >
-              <Edit3 size={16} />
-              Edit My Bio
-            </button>
+            {/* Edit My Member Bio - Available to all non-admin members */}
+            <ProtectedComponent requiredRole={1}>
+              <button
+                onClick={() => {
+                  setNewBio(currentUserMember?.member_bio || '')
+                  setShowBioModal(true)
+                }}
+                className="flex-1 flex items-center justify-center gap-2 py-2 px-3 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-400 rounded-xl transition-colors text-sm font-medium border border-indigo-600/30"
+                title="Edit your bio in this community"
+              >
+                <Edit3 size={16} />
+                Edit My Bio
+              </button>
+            </ProtectedComponent>
             
             {/* Pending Requests - Managers only */}
             {currentUserIsManager && (

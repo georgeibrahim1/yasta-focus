@@ -149,11 +149,17 @@ export const getAllCommunities = catchAsync(async (req, res, next) => {
   const totalRows = countResult.rows[0].total;
   const totalPages = Math.ceil(totalRows / l);
 
+  // Mark admin users as managers for all communities
+  const communities = dataResult.rows.map(community => ({
+    ...community,
+    ismanager: req.user?.role === 0 ? true : community.is_moderator
+  }));
+
   res.status(200).json({
     status: 'success',
-    results: dataResult.rows.length,
+    results: communities.length,
     data: {
-      communities: dataResult.rows,
+      communities,
       page: p,
       limit: l,
       totalRows,
@@ -406,14 +412,18 @@ export const getCommunityStats = catchAsync(async (req, res, next) => {
     return next(new AppError('Community not found', 404));
   }
 
-  // Check if user is a manager
-  const managerResult = await db.query(
-    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
-    [communityId, userId]
-  );
+  // Check if user is admin or a manager
+  const isAdmin = req.user.role === 0;
+  
+  if (!isAdmin) {
+    const managerResult = await db.query(
+      'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+      [communityId, userId]
+    );
 
-  if (managerResult.rows.length === 0) {
-    return next(new AppError('Only community managers can view statistics', 403));
+    if (managerResult.rows.length === 0) {
+      return next(new AppError('Only community managers can view statistics', 403));
+    }
   }
 
   // Get total member count (current)
@@ -517,14 +527,18 @@ export const updateCommunityInfo = catchAsync(async (req, res, next) => {
   const userId = req.user?.user_id;
   const { community_Name, community_Description } = req.body;
 
-  // Check if user is a manager
-  const managerResult = await db.query(
-    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
-    [communityId, userId]
-  );
+  // Check if user is admin or a manager
+  const isAdmin = req.user.role === 0;
+  
+  if (!isAdmin) {
+    const managerResult = await db.query(
+      'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+      [communityId, userId]
+    );
 
-  if (managerResult.rows.length === 0) {
-    return next(new AppError('Only community managers can update community info', 403));
+    if (managerResult.rows.length === 0) {
+      return next(new AppError('Only community managers can update community info', 403));
+    }
   }
 
   const updates = [];
@@ -605,14 +619,18 @@ export const removeMember = catchAsync(async (req, res, next) => {
   const { communityId, memberId } = req.params;
   const userId = req.user?.user_id;
 
-  // Check if user is a manager
-  const managerResult = await db.query(
-    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
-    [communityId, userId]
-  );
+  // Check if user is admin or a manager
+  const isAdmin = req.user.role === 0;
+  
+  if (!isAdmin) {
+    const managerResult = await db.query(
+      'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+      [communityId, userId]
+    );
 
-  if (managerResult.rows.length === 0) {
-    return next(new AppError('Only community managers can remove members', 403));
+    if (managerResult.rows.length === 0) {
+      return next(new AppError('Only community managers can remove members', 403));
+    }
   }
 
   // Cannot remove other managers
@@ -688,8 +706,8 @@ export const getCommunityMembers = catchAsync(async (req, res, next) => {
     ORDER BY is_manager DESC, u.username ASC
   `, [communityId, userId]);
 
-  // Check if current user is a manager
-  const currentUserIsManager = membersResult.rows.some(
+  // Check if current user is a manager or admin
+  const currentUserIsManager = req.user?.role === 0 || membersResult.rows.some(
     member => member.user_id === userId && member.is_manager
   );
 
@@ -722,14 +740,18 @@ export const deleteCommunity = catchAsync(async (req, res, next) => {
   const { communityId } = req.params;
   const userId = req.user?.user_id;
 
-  // Check if user is a manager
-  const managerResult = await db.query(
-    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_id = $2',
-    [communityId, userId]
-  );
+  // Check if user is admin or a manager
+  const isAdmin = req.user.role === 0;
+  
+  if (!isAdmin) {
+    const managerResult = await db.query(
+      'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_id = $2',
+      [communityId, userId]
+    );
 
-  if (managerResult.rows.length === 0) {
-    return next(new AppError('Only community managers can delete the community', 403));
+    if (managerResult.rows.length === 0) {
+      return next(new AppError('Only community managers can delete the community', 403));
+    }
   }
 
   // Delete announcements first (if foreign key doesn't have CASCADE)
@@ -768,14 +790,18 @@ export const getPendingRequests = catchAsync(async (req, res, next) => {
   const { communityId } = req.params;
   const userId = req.user?.user_id;
 
-  // Check if user is a manager
-  const managerResult = await db.query(
-    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
-    [communityId, userId]
-  );
+  // Check if user is admin or a manager
+  const isAdmin = req.user.role === 0;
+  
+  if (!isAdmin) {
+    const managerResult = await db.query(
+      'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+      [communityId, userId]
+    );
 
-  if (managerResult.rows.length === 0) {
-    return next(new AppError('Only community managers can view pending requests', 403));
+    if (managerResult.rows.length === 0) {
+      return next(new AppError('Only community managers can view pending requests', 403));
+    }
   }
 
   // Get all pending members
@@ -811,10 +837,14 @@ export const promoteMember = catchAsync(async (req, res, next) => {
   const communityResult = await db.query('SELECT * FROM community WHERE community_ID = $1', [communityId]);
   if (communityResult.rows.length === 0) return next(new AppError('Community not found', 404));
 
-  // Check if requester is community creator or manager
+  // Check if requester is admin, community creator or manager
+  const isAdmin = req.user.role === 0;
   const isCreator = communityResult.rows[0].community_creator === userId;
   const managerCheck = await db.query('SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2', [communityId, userId]);
-  if (!isCreator && managerCheck.rows.length === 0) return next(new AppError('Only community creator or managers can promote members', 403));
+  
+  if (!isAdmin && !isCreator && managerCheck.rows.length === 0) {
+    return next(new AppError('Only community creator or managers can promote members', 403));
+  }
 
   // Ensure target is a member
   const memberCheck = await db.query('SELECT * FROM community_Participants WHERE community_ID = $1 AND user_id = $2 AND Member_Status = $3', [communityId, memberId, 'Accepted']);
@@ -839,10 +869,14 @@ export const demoteMember = catchAsync(async (req, res, next) => {
   const communityResult = await db.query('SELECT * FROM community WHERE community_ID = $1', [communityId]);
   if (communityResult.rows.length === 0) return next(new AppError('Community not found', 404));
 
-  // Check if requester is community creator or manager
+  // Check if requester is admin, community creator or manager
+  const isAdmin = req.user.role === 0;
   const isCreator = communityResult.rows[0].community_creator === userId;
   const managerCheck = await db.query('SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2', [communityId, userId]);
-  if (!isCreator && managerCheck.rows.length === 0) return next(new AppError('Only community creator or managers can demote managers', 403));
+  
+  if (!isAdmin && !isCreator && managerCheck.rows.length === 0) {
+    return next(new AppError('Only community creator or managers can demote managers', 403));
+  }
 
   // Prevent demoting the community creator
   if (communityResult.rows[0].community_creator === memberId) return next(new AppError('Cannot demote the community creator', 400));
@@ -862,14 +896,18 @@ export const approveJoinRequest = catchAsync(async (req, res, next) => {
   const { communityId, memberId } = req.params;
   const userId = req.user?.user_id;
 
-  // Check if user is a manager
-  const managerResult = await db.query(
-    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
-    [communityId, userId]
-  );
+  // Check if user is admin or a manager
+  const isAdmin = req.user.role === 0;
+  
+  if (!isAdmin) {
+    const managerResult = await db.query(
+      'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+      [communityId, userId]
+    );
 
-  if (managerResult.rows.length === 0) {
-    return next(new AppError('Only community managers can approve requests', 403));
+    if (managerResult.rows.length === 0) {
+      return next(new AppError('Only community managers can approve requests', 403));
+    }
   }
 
   // Update member status to Accepted
@@ -908,14 +946,18 @@ export const rejectJoinRequest = catchAsync(async (req, res, next) => {
   const { communityId, memberId } = req.params;
   const userId = req.user?.user_id;
 
-  // Check if user is a manager
-  const managerResult = await db.query(
-    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
-    [communityId, userId]
-  );
+  // Check if user is admin or a manager
+  const isAdmin = req.user.role === 0;
+  
+  if (!isAdmin) {
+    const managerResult = await db.query(
+      'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+      [communityId, userId]
+    );
 
-  if (managerResult.rows.length === 0) {
-    return next(new AppError('Only community managers can reject requests', 403));
+    if (managerResult.rows.length === 0) {
+      return next(new AppError('Only community managers can reject requests', 403));
+    }
   }
 
   // Delete the pending request
@@ -968,14 +1010,18 @@ export const createCommunityCompetition = catchAsync(async (req, res, next) => {
   const userId = req.user?.user_id;
   const { comp_name, comp_description, deadline, max_subjects, max_participants } = req.body;
 
-  // Check if user is a manager
-  const managerResult = await db.query(
-    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
-    [communityId, userId]
-  );
+  // Check if user is admin or a manager
+  const isAdmin = req.user.role === 0;
+  
+  if (!isAdmin) {
+    const managerResult = await db.query(
+      'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+      [communityId, userId]
+    );
 
-  if (managerResult.rows.length === 0) {
-    return next(new AppError('Only community managers can create competitions', 403));
+    if (managerResult.rows.length === 0) {
+      return next(new AppError('Only community managers can create competitions', 403));
+    }
   }
 
   // Create the competition
@@ -1106,14 +1152,18 @@ export const deleteCommunityCompetition = catchAsync(async (req, res, next) => {
   const { communityId, competitionId } = req.params;
   const userId = req.user?.user_id;
 
-  // Check if user is a manager
-  const managerResult = await db.query(
-    'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
-    [communityId, userId]
-  );
+  // Check if user is admin or a manager
+  const isAdmin = req.user.role === 0;
+  
+  if (!isAdmin) {
+    const managerResult = await db.query(
+      'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+      [communityId, userId]
+    );
 
-  if (managerResult.rows.length === 0) {
-    return next(new AppError('Only community managers can delete competitions', 403));
+    if (managerResult.rows.length === 0) {
+      return next(new AppError('Only community managers can delete competitions', 403));
+    }
   }
 
   // Delete competition participants first (if not cascading)
