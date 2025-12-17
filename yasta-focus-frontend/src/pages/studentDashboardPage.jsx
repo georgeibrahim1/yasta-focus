@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useUser } from '../services/authServices'
 import { useDashboardStats } from '../services/dashboardServices'
-import { Clock, BookOpen, Trophy, Users, Award, BarChart3 } from 'lucide-react'
+import { Clock, BookOpen, Trophy, Users, Award, BarChart3, LayoutDashboard } from 'lucide-react'
 
 export default function StudentDashboardPage() {
   const { data: currentUser } = useUser()
@@ -45,12 +45,20 @@ export default function StudentDashboardPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-extrabold text-white mb-2">
-            Welcome back, {user?.username || user?.user_name || 'Student'}!
+          <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+            <LayoutDashboard className="text-indigo-400" size={40} />
+            Dashboard
           </h1>
           <p className="text-slate-400">
-            Here&apos;s your study overview and progress
+            Overview of your study activities and progress.
           </p>
+        </div>
+
+        {/* Welcome Message */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-white">
+            Welcome back, {user?.username || user?.user_name || 'Student'}!
+          </h2>
         </div>
 
         {/* Stats Grid */}

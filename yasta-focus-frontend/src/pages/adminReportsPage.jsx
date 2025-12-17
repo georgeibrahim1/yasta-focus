@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useUser } from '../services/authServices'
 import { useGetReports, useUpdateReportStatus, useDeleteReport, useGetLogs } from '../services/adminServices'
-import { Search, Filter, AlertTriangle, Activity, Calendar, User, Check, X, Trash2, Eye, Clock } from 'lucide-react'
+import { Search, Filter, AlertTriangle, Activity, Calendar, User, Check, X, Trash2, Eye, Clock, Shield } from 'lucide-react'
 
 export default function AdminReportsPage() {
   const [activeTab, setActiveTab] = useState('reports') // 'reports' or 'logs'
@@ -117,11 +117,12 @@ export default function AdminReportsPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-extrabold text-white mb-2">
+          <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+            <Shield className="text-red-400" size={40} />
             Reports & Logs
           </h1>
           <p className="text-slate-400">
-            Monitor user reports and system activity logs
+            Monitor user reports and system activity logs.
           </p>
         </div>
 

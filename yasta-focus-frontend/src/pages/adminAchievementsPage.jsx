@@ -146,7 +146,7 @@ export default function AdminAchievementsPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
+          <div className="flex items-center gap-4 mb-6">
             <button
               onClick={() => navigate(-1)}
               className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition"
@@ -154,11 +154,13 @@ export default function AdminAchievementsPage() {
               <ArrowLeft size={20} />
             </button>
             <div className="flex-1">
-              <h1 className="text-4xl font-extrabold text-white flex items-center gap-3">
-                <Trophy className="text-yellow-400" size={36} />
+              <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+                <Trophy className="text-yellow-400" size={40} />
                 Achievement Management
               </h1>
-              <p className="text-slate-400 mt-2">Create and manage achievements for your platform</p>
+              <p className="text-slate-400">
+                Create and manage achievements for the platform.
+              </p>
             </div>
             <button
               onClick={() => handleOpenModal()}

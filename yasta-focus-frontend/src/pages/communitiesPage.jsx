@@ -8,7 +8,7 @@ import { useGetCommunities } from '../services/communityServices/hooks/useGetCom
 import { useGetAllTags } from '../services/communityServices/hooks/useGetAllTags'
 import { useJoinCommunity } from '../services/communityServices/hooks/useJoinCommunity'
 import { useUser } from '../services/authServices'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Users } from 'lucide-react'
 import ProtectedComponent from '../components/ProtectedComponent'
 
 export default function CommunitiesPage() {
@@ -63,7 +63,15 @@ export default function CommunitiesPage() {
   return (
     <div className="flex">
       <div className="flex-1 p-6">
-        <h1 className="text-3xl font-extrabold text-white mb-6">Communities</h1>
+        <div className="mb-8">
+          <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+            <Users className="text-emerald-400" size={40} />
+            Communities
+          </h1>
+          <p className="text-slate-400">
+            Join study groups and collaborate with fellow students.
+          </p>
+        </div>
 
       {/* Search Bar */}
       <div className="mb-4">

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus, Trash2, Edit2, Bot, ArrowLeft } from 'lucide-react'
+import { Search, Plus, Trash2, Edit2, Bot, ArrowLeft, Book } from 'lucide-react'
 import SubjectChat from '../components/SubjectChat'
 import { useGetSubjects, useDeleteSubject, useGetNotes, useGetNote, useUpdateNote, useDeleteNote, useGetTasks, useUpdateTask, useToggleTask, useDeleteTask, useCreateSubject, useCreateNote } from '../services/subjectServices'
 import { useGetDecks, useDeleteDeck, useCreateDeck } from '../services/deckServices'
@@ -342,8 +342,19 @@ export default function SubjectsPage() {
       {/* Main Content Area */}
       <div className="flex-1 p-8">
         {/* Header */}
-        <div className="mb-8 flex items-center gap-4">
-          <h1 className="text-5xl font-bold text-white mb-3 flex-1">{selectedSubject || 'Select a Subject'}</h1>
+        <div className="mb-8">
+          <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+            <Book className="text-purple-400" size={40} />
+            My Subjects
+          </h1>
+          <p className="text-slate-400">
+            Organize your notes, tasks, and flashcards by subject.
+          </p>
+        </div>
+
+        {/* Subject and AI Chat Controls */}
+        <div className="mb-6 flex items-center gap-4">
+          <h2 className="text-3xl font-bold text-white flex-1">{selectedSubject || 'Select a Subject'}</h2>
           {activeTab === 'chat' && (
             <button
               onClick={() => setActiveTab('notes')}

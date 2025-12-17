@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Search, Users, ArrowLeft, Plus, Trash2, UserPlus, Flag, UserX, Megaphone, Shield, Edit3, Clock, Check, X, Settings, LogOut, BarChart3, TrendingUp } from 'lucide-react'
+import { Search, Users, ArrowLeft, Plus, Trash2, UserPlus, Flag, UserX, Megaphone, Shield, Edit3, Clock, Check, X, Settings, LogOut, BarChart3, TrendingUp, Video } from 'lucide-react'
 import { useStudyRooms, useJoinRoom, useLeaveRoom, useDeleteRoom } from '../services/studyRoomServices'
 import { useAnnouncements, useCreateAnnouncement, useDeleteAnnouncement } from '../services/announcementServices'
 import { useCommunityMembers, useKickMember, usePendingRequests, useApproveJoinRequest, useRejectJoinRequest, useCommunityStats, usePromoteMember, useDemoteMember, useAddMemberByUsername, useInviteFriendToCommunity, useCreateCommunityCompetition, useJoinCommunityCompetition, useDeleteCommunityCompetition } from '../services/communityServices'
@@ -380,6 +380,17 @@ export default function StudyRoomsPage() {
       {/* Main Content */}
       <div className="flex-1 p-6">
         {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+            <Video className="text-rose-400" size={40} />
+            Study Rooms
+          </h1>
+          <p className="text-slate-400">
+            Join live video study sessions with your peers.
+          </p>
+        </div>
+
+        {/* Community Info and Controls */}
         <div className="mb-6">
           <div className="flex items-center gap-4 mb-3">
             <button
@@ -390,9 +401,9 @@ export default function StudyRoomsPage() {
             </button>
             <div className="flex-1">
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-extrabold text-white">
-                  {community.community_name || 'Study Rooms'}
-                </h1>
+                <h2 className="text-2xl font-bold text-white">
+                  {community.community_name || 'Community'}
+                </h2>
                 {currentUserIsManager && (
                   <>
                     <button

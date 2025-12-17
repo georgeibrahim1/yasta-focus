@@ -54,11 +54,13 @@ export default function AdminUsersPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Users className="w-10 h-10 text-indigo-400" />
-            <h1 className="text-4xl font-extrabold text-white">User Management</h1>
-          </div>
-          <p className="text-slate-400">Manage user roles and permissions</p>
+          <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+            <Users className="text-cyan-400" size={40} />
+            User Management
+          </h1>
+          <p className="text-slate-400">
+            View and manage user accounts across the platform.
+          </p>
         </div>
 
         {/* Search Bar */}

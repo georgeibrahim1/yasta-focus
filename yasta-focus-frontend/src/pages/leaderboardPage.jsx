@@ -37,10 +37,13 @@ export default function LeaderboardPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-extrabold text-white mb-2">Leaderboard</h1>
+      <div className="mb-8">
+        <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+            <Trophy className="text-orange-400" size={40} />
+          Leaderboard
+        </h1>
         <p className="text-slate-400">
-          Top 100 students ranked by total study time
+          Compete with others and track your ranking.
         </p>
       </div>
 
