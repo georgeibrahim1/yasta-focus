@@ -6,14 +6,16 @@ import { StreamClient } from '@stream-io/node-sdk';
 export const getEvents = catchAsync(async (req, res, next) => {
     const query = `
         SELECT 
-            *,
+            e.*,
+            u.username as creator_name,
             CASE 
-                WHEN date <= NOW() AND date >= NOW() - INTERVAL '2 hours' THEN true
+                WHEN e.date <= NOW() AND e.date >= NOW() - INTERVAL '2 hours' THEN true
                 ELSE false
             END as is_live
-        FROM event 
-        WHERE date >= NOW() - INTERVAL '2 hours'
-        ORDER BY date ASC
+        FROM event e
+        LEFT JOIN users u ON e.eventCreator = u.user_id
+        WHERE e.date >= NOW() - INTERVAL '2 hours'
+        ORDER BY e.date ASC
     `;
     const result = await db.query(query);
     
