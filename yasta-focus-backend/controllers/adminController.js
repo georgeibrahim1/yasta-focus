@@ -314,6 +314,18 @@ export const updateReportStatus = catchAsync(async (req, res, next) => {
     return next(new AppError('Report not found', 404));
   }
 
+  // Log the report status update
+  try {
+    await import('../utils/logHelper.js').then(({ insertLog }) => insertLog({
+      user_id: req.user.user_id,
+      action_type: 'ADMIN_UPDATE_REPORT_STATUS',
+      action_content: `Updated report status: reporter ${reporterId}, reported ${reportedId}, new status: ${status}`,
+      actor_type: 'admin',
+    }));
+  } catch (logErr) {
+    console.error('Failed to log report status update:', logErr);
+  }
+
   res.status(200).json({
     status: 'success',
     data: {
@@ -340,6 +352,18 @@ export const deleteReport = catchAsync(async (req, res, next) => {
 
   if (result.rows.length === 0) {
     return next(new AppError('Report not found', 404));
+  }
+
+  // Log the report deletion
+  try {
+    await import('../utils/logHelper.js').then(({ insertLog }) => insertLog({
+      user_id: req.user.user_id,
+      action_type: 'ADMIN_DELETE_REPORT',
+      action_content: `Deleted report: reporter ${reporterId}, reported ${reportedId}`,
+      actor_type: 'admin',
+    }));
+  } catch (logErr) {
+    console.error('Failed to log report deletion:', logErr);
   }
 
   res.status(204).json({
@@ -379,6 +403,18 @@ export const updateUserRole = catchAsync(async (req, res, next) => {
 
   if (updateResult.rows.length === 0) {
     return next(new AppError('User not found', 404));
+  }
+
+  // Log the user role update
+  try {
+    await import('../utils/logHelper.js').then(({ insertLog }) => insertLog({
+      user_id: req.user.user_id,
+      action_type: 'ADMIN_UPDATE_USER_ROLE',
+      action_content: `Updated user role: user ${userId}, new role: ${role}`,
+      actor_type: 'admin',
+    }));
+  } catch (logErr) {
+    console.error('Failed to log user role update:', logErr);
   }
 
   res.status(200).json({
@@ -593,6 +629,18 @@ export const deleteUser = catchAsync(async (req, res, next) => {
     
     // 15. Finally, delete the user
     await pool.query('DELETE FROM users WHERE user_id = $1', [userId]);
+
+    // Log the user deletion
+    try {
+      await import('../utils/logHelper.js').then(({ insertLog }) => insertLog({
+        user_id: req.user.user_id,
+        action_type: 'ADMIN_DELETE_USER',
+        action_content: `Deleted user: ${userResult.rows[0].username} (ID: ${userId})`,
+        actor_type: 'admin',
+      }));
+    } catch (logErr) {
+      console.error('Failed to log user deletion:', logErr);
+    }
 
     res.status(200).json({
       status: 'success',

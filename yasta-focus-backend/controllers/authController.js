@@ -5,6 +5,7 @@ import { promisify } from 'util';
 import db from '../db.js';
 import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/appError.js';
+import { insertLog } from '../utils/logHelper.js';
 
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -61,6 +62,18 @@ export const signup = catchAsync(async (req, res, next) => {
   const result = await db.query(query, [username, email, password_hash]);
   const newUser = result.rows[0];
 
+  // Log the signup action
+  try {
+    await insertLog({
+      user_id: newUser.user_id,
+      action_type: 'SIGNUP',
+      action_content: `${username} signed up`,
+      actor_type: 'user',
+    });
+  } catch (logErr) {
+    console.error('Failed to log signup action:', logErr);
+  }
+
   createSendToken(newUser, 201, req, res);
 });
 
@@ -85,14 +98,28 @@ export const login = catchAsync(async (req, res, next) => {
     return next(new AppError('Incorrect email or password', 401));
   }
 
+  try {
+    await insertLog({
+      user_id: user.user_id,
+      action_type: 'LOGIN',
+      action_content: 'User logged in',
+      actor_type: 'user',
+    });
+  } catch (logErr) {
+   
+    console.error('Failed to log login action:', logErr);
+  }
+
   createSendToken(user, 200, req, res);
 });
+
 
 export const logout = (req, res) => {
   res.cookie('jwt', 'loggedout', {
     expires: new Date(Date.now() + 10 * 1000),
     httpOnly: true
   });
+
   res.status(200).json({ status: 'success' });
 };
 
@@ -182,6 +209,7 @@ export const restrictTo = (...roles) => {
 export const forgotPassword = catchAsync(async (req, res, next) => {
   const { email, newPassword, confirmPassword } = req.body;
 
+
   // Check if user exists
   const query = `SELECT * FROM users WHERE email = $1`;
   const result = await db.query(query, [email]);
@@ -190,8 +218,21 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
     return next(new AppError('There is no user with that email address', 404));
   }
 
+  const user = result.rows[0];
+
   // If only email is provided, confirm user exists
   if (!newPassword) {
+    // Log the password reset request (email verified)
+    try {
+      await insertLog({
+        user_id: user.user_id,
+        action_type: 'FORGOT_PASSWORD_REQUEST',
+        action_content: 'Password reset requested (email verified)',
+        actor_type: 'user',
+      });
+    } catch (logErr) {
+      console.error('Failed to log forgot password request:', logErr);
+    }
     return res.status(200).json({
       status: 'success',
       message: 'Email verified. You can now set a new password.',
@@ -216,6 +257,18 @@ export const forgotPassword = catchAsync(async (req, res, next) => {
   const hashedPassword = await bcrypt.hash(newPassword, 10);
   const updateQuery = `UPDATE users SET password_hash = $1 WHERE email = $2 RETURNING *`;
   const updateResult = await db.query(updateQuery, [hashedPassword, email]);
+
+  // Log the password reset completion
+  try {
+    await insertLog({
+      user_id: user.user_id,
+      action_type: 'FORGOT_PASSWORD_RESET',
+      action_content: 'Password has been reset via forgot password',
+      actor_type: 'user',
+    });
+  } catch (logErr) {
+    console.error('Failed to log forgot password reset:', logErr);
+  }
 
   res.status(200).json({
     status: 'success',
@@ -256,6 +309,18 @@ export const resetPassword = catchAsync(async (req, res, next) => {
   `;
   const updateResult = await db.query(updateQuery, [password_hash, user.user_id]);
 
+  // Log the password reset action
+  try {
+    await insertLog({
+      user_id: user.user_id,
+      action_type: 'RESET_PASSWORD',
+      action_content: 'Password has been reset using token',
+      actor_type: 'user',
+    });
+  } catch (logErr) {
+    console.error('Failed to log reset password action:', logErr);
+  }
+
   createSendToken(updateResult.rows[0], 200, req, res);
 });
 
@@ -292,6 +357,18 @@ export const updatePassword = catchAsync(async (req, res, next) => {
     RETURNING user_id, username, email, created_at
   `;
   const updateResult = await db.query(updateQuery, [password_hash, user.user_id]);
+
+  // Log the password update action
+  try {
+    await insertLog({
+      user_id: user.user_id,
+      action_type: 'UPDATE_PASSWORD',
+      action_content: 'Password updated by user',
+      actor_type: 'user',
+    });
+  } catch (logErr) {
+    console.error('Failed to log update password action:', logErr);
+  }
 
   // Don't send new token, just return success
   res.status(200).json({
