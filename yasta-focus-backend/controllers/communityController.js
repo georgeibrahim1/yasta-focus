@@ -380,17 +380,9 @@ export const createCommunity = catchAsync(async (req, res, next) => {
     }
   }
 
-  // Check for achievements
-  let unlockedAchievements = [];
-  try {
-    const createdCommunities = await checkCommunitiesCreatedAchievements(userId);
-    if (Array.isArray(createdCommunities)) {
-      unlockedAchievements = createdCommunities;
-    }
-  } catch (error) {
-    console.error('Error checking achievements:', error);
-    // Continue without achievements if there's an error
-  }
+
+  const createdCommunities = await checkCommunitiesCreatedAchievements(userId);
+  const unlockedAchievements = Array.isArray(createdCommunities) ? createdCommunities : [];
 
   res.status(201).json({
     status: 'success',
@@ -931,22 +923,13 @@ export const approveJoinRequest = catchAsync(async (req, res, next) => {
     return next(new AppError('Pending request not found', 404));
   }
 
-  // Check for achievements with error handling
-  let unlockedAchievements = [];
-  try {
-    const joinedCommunities = await checkCommunitiesJoinedAchievements(memberId);
-    const comMembersCount = await checkCommunityCountdAchievements(userId, communityId);
-    
-    if (Array.isArray(joinedCommunities)) {
-      unlockedAchievements = [...unlockedAchievements, ...joinedCommunities];
-    }
-    if (Array.isArray(comMembersCount)) {
-      unlockedAchievements = [...unlockedAchievements, ...comMembersCount];
-    }
-  } catch (error) {
-    console.error('Error checking achievements:', error);
-    // Continue without achievements if there's an error
-  }
+  await checkCommunitiesJoinedAchievements(memberId);
+  const comMembersCount = await checkCommunityCountdAchievements(userId, communityId);
+
+  const unlockedAchievements = [
+    // ...(Array.isArray(joinedCommunities) ? joinedCommunities : []), // won't be sent to front side as this belongs to other community members not the moderator himself
+    ...(Array.isArray(comMembersCount) ? comMembersCount : [])
+  ];
 
   res.status(200).json({
     status: 'success',

@@ -102,12 +102,21 @@ export const useApproveJoinRequest = () => {
       console.log('[useApproveJoinRequest] onSettled - invalidating community members')
       // Only invalidate community members to update the accepted members list
       queryClient.invalidateQueries({ queryKey: ['communityMembers', variables.communityId] })
-      
-      // Handle achievements if any
-      if (data?.data?.unlockedAchievements?.length > 0) {
+        toast.success('Approved!')
+        const unlocked = data?.data?.unlockedAchievements || []
+        if (unlocked.length > 0) {
+        // Refresh achievement queries
         queryClient.invalidateQueries({ queryKey: ['achievements'] })
         queryClient.invalidateQueries({ queryKey: ['achievementStats'] })
-      }
+  
+        // Show achievement toasts
+          unlocked.forEach(achievement => {
+          toast.success(`🏆 ${achievement.title} (+${achievement.xp} XP)`, {
+          duration: 4000,
+      })
+    })}
+      
+      // return data                     
     }
   })
 }

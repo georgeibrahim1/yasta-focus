@@ -11,6 +11,7 @@
   "description": "",
   "dependencies": {
     "@google/genai": "^1.33.0",
+    "@tanstack/react-query-devtools": "^5.91.1",
     "@stream-io/node-sdk": "^0.7.27",
     "axios": "^1.13.2",
     "bcryptjs": "^3.0.3",

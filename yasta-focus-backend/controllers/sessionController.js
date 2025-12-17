@@ -130,7 +130,13 @@ export const createSession = catchAsync(async (req, res, next) => {
   const timeAchievements = await checkStudyTimeAchievements(userId);
   const focusSessionAchievement = await checkStudyFocusSessionAchievements(userId);
   const TodaySessionAchievements = await checkTodaySessionAchievements(userId);
-  const unlockedAchievements = [...sessionAchievements, ...timeAchievements, ...focusSessionAchievement, ...TodaySessionAchievements]; //Total achievements unlocked during creation of a session
+  const unlockedAchievements = [
+    ...(Array.isArray(sessionAchievements) ? sessionAchievements : []),
+    ...(Array.isArray(timeAchievements) ? timeAchievements : []),
+    ...(Array.isArray(focusSessionAchievement) ? focusSessionAchievement : []),
+    ...(Array.isArray(TodaySessionAchievements) ? TodaySessionAchievements : [])
+  ];
+  // Total achievements unlocked during creation of a session
 
   res.status(201).json({
     status: 'success',
