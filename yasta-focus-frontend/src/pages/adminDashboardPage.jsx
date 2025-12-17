@@ -5,7 +5,7 @@ import {
   useGetRecentUsers, 
   useGetActiveCommunities 
 } from '../services/adminServices'
-import { Users, BookOpen, Clock, Target, TrendingUp, Award } from 'lucide-react'
+import { Users, BookOpen, Clock, Target, TrendingUp, Award, LayoutDashboard } from 'lucide-react'
 
 export default function AdminDashboardPage() {
   const { data: currentUser } = useUser()
@@ -26,11 +26,12 @@ export default function AdminDashboardPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-extrabold text-white mb-2">
+          <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+            <LayoutDashboard className="text-indigo-400" size={40} />
             Admin Dashboard
           </h1>
           <p className="text-slate-400">
-            Welcome back, {user?.username || 'Admin'}
+            Manage and monitor platform activities and statistics.
           </p>
         </div>
 

@@ -11,7 +11,8 @@ import {
   ArrowLeft,
   AlertCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  Settings
 } from 'lucide-react'
 import { api } from '../services/api'
 
@@ -126,8 +127,13 @@ export default function SettingsPage() {
             <ArrowLeft className="w-5 h-5" />
             Back
           </button>
-          <h1 className="text-3xl font-bold text-white">Settings</h1>
-          <p className="text-gray-400 mt-2">Manage your account settings and preferences</p>
+          <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+            <Settings className="text-slate-400" size={40} />
+            Settings
+          </h1>
+          <p className="text-slate-400">
+            Manage your account preferences and privacy.
+          </p>
         </div>
 
         {/* Message Alert */}

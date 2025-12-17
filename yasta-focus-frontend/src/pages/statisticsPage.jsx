@@ -3,7 +3,7 @@
 
 import React, { useState } from 'react'
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown } from 'lucide-react'
+import { ChevronLeft, ChevronRight, TrendingUp, TrendingDown, BarChart3 } from 'lucide-react'
 import { useGetWeeklyStudyTime, useGetSessionTrends, useGetSubjectStats, useGetHeatmapData } from '../services/statisticsServices'
 
 export default function StatisticsPage() {
@@ -116,9 +116,14 @@ export default function StatisticsPage() {
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-extrabold text-white mb-2">Statistics</h1>
-        <p className="text-slate-400">Track your study progress and performance</p>
+      <div className="mb-8">
+        <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+            <BarChart3 className="text-blue-400" size={40} />
+          Statistics
+        </h1>
+        <p className="text-slate-400">
+          Track your study progress and performance over time.
+        </p>
       </div>
 
       {/* Tab Navigation */}

@@ -118,14 +118,21 @@ export default function TimerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#10121A] flex items-center justify-center p-6">
-      <div className="w-full max-w-2xl">
+    <div className="min-h-screen p-6">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">Start a Timer Session</h1>
-          <p className="text-slate-400">Configure your timer and stay focused</p>
+        <div className="mb-8">
+          <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+            <Clock className="text-cyan-400" size={40} />
+            Study Timer
+          </h1>
+          <p className="text-slate-400">
+            Focus on your studies with customizable timer sessions.
+          </p>
         </div>
 
+        <div className="flex items-center justify-center">
+          <div className="w-full max-w-2xl">
         {/* Form Container */}
         <div className="relative">
           {/* Glow Effect */}
@@ -234,6 +241,8 @@ export default function TimerPage() {
             <li>• Task selection is optional for focus sessions</li>
             <li>• Sessions are saved only when you click &quot;End Session&quot;</li>
           </ul>
+        </div>
+      </div>
         </div>
       </div>
     </div>

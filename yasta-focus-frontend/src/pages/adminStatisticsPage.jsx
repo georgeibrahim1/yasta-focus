@@ -1,5 +1,5 @@
 import { useUser } from '../services/authServices'
-import { Users, BookOpen, Trophy, MessageSquare, TrendingUp, Activity } from 'lucide-react'
+import { Users, BookOpen, Trophy, MessageSquare, TrendingUp, Activity, BarChart3 } from 'lucide-react'
 
 export default function AdminStatisticsPage() {
   // Mock data - will be replaced with real API calls
@@ -39,11 +39,12 @@ export default function AdminStatisticsPage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-extrabold text-white mb-2">
+          <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+            <BarChart3 className="text-violet-400" size={40} />
             Platform Statistics
           </h1>
           <p className="text-slate-400">
-            Overview of all platform activities and metrics
+            Analyze platform-wide metrics and user engagement.
           </p>
         </div>
 
