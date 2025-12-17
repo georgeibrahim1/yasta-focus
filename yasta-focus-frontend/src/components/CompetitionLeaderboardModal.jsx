@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { X, Trophy, Medal, Award } from 'lucide-react';
 import axios from 'axios';
 
@@ -65,7 +66,7 @@ export default function CompetitionLeaderboardModal({ competition, isOpen, onClo
     return null;
   };
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-slate-800 rounded-2xl border border-slate-700 max-w-4xl w-full max-h-[90vh] overflow-hidden">
         {/* Header */}
@@ -104,11 +105,10 @@ export default function CompetitionLeaderboardModal({ competition, isOpen, onClo
                   <button
                     key={subject}
                     onClick={() => setSelectedSubject(subject)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                      selectedSubject === subject
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                    }`}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${selectedSubject === subject
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                      }`}
                   >
                     {subject}
                   </button>
@@ -179,6 +179,7 @@ export default function CompetitionLeaderboardModal({ competition, isOpen, onClo
           </button>
         </div>
       </div>
-    </div>
-  );
+    </div>,
+    document.body
+  )
 }

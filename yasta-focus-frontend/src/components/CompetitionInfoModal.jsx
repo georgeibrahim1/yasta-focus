@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import ReactDOM from 'react-dom'
 import { X } from 'lucide-react'
 import axios from 'axios'
 
@@ -19,13 +20,13 @@ export default function CompetitionInfoModal({ competition, isOpen, onClose, com
     setLoading(true)
     try {
       const token = localStorage.getItem('token')
-      
+
       if (isManager) {
         // Fetch participants for manager (always show, regardless of join status)
-        const endpoint = isGlobal 
+        const endpoint = isGlobal
           ? `${API_URL}/api/competitions/${competition.competition_id}/participants`
           : `${API_URL}/api/communities/${communityId}/competitions/${competition.competition_id}/participants`
-        
+
         const response = await axios.get(endpoint, {
           headers: { Authorization: `Bearer ${token}` }
         })
@@ -35,7 +36,7 @@ export default function CompetitionInfoModal({ competition, isOpen, onClose, com
         const endpoint = isGlobal
           ? `${API_URL}/api/competitions/${competition.competition_id}/my-subjects`
           : `${API_URL}/api/communities/${communityId}/competitions/${competition.competition_id}/my-subjects`
-        
+
         const response = await axios.get(endpoint, {
           headers: { Authorization: `Bearer ${token}` }
         })
@@ -50,7 +51,7 @@ export default function CompetitionInfoModal({ competition, isOpen, onClose, com
 
   if (!isOpen || !competition) return null
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
       <div className="bg-slate-800 rounded-2xl border border-slate-700 max-w-2xl w-full max-h-[80vh] overflow-hidden">
         {/* Header */}
@@ -149,6 +150,7 @@ export default function CompetitionInfoModal({ competition, isOpen, onClose, com
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

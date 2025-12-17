@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
+import ReactDOM from 'react-dom'
 
-export default function CompetitionJoinModal({ competition, isOpen = false, onClose = () => {}, onSubmit = () => {}, subjects = [] }) {
+export default function CompetitionJoinModal({ competition, isOpen = false, onClose = () => { }, onSubmit = () => { }, subjects = [] }) {
   const [selectedSubjectId, setSelectedSubjectId] = useState('')
   const [addedSubjects, setAddedSubjects] = useState([])
   const [addMessage, setAddMessage] = useState('')
@@ -14,7 +15,7 @@ export default function CompetitionJoinModal({ competition, isOpen = false, onCl
     if (selectedSubjectId) {
       const subject = subjects.find(s => String(getSubjectKey(s)) === String(selectedSubjectId))
       const already = addedSubjects.find(s => String(getSubjectKey(s)) === String(selectedSubjectId))
-      
+
       if (subject && !already) {
         setAddedSubjects([...addedSubjects, subject])
         setAddMessage(`${subject.name || subject.subject_name} has been added`)
@@ -47,7 +48,7 @@ export default function CompetitionJoinModal({ competition, isOpen = false, onCl
     }
   }
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-md p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-6">
@@ -155,6 +156,7 @@ export default function CompetitionJoinModal({ competition, isOpen = false, onCl
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

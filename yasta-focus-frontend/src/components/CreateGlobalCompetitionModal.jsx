@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import ReactDOM from 'react-dom'
 import axios from 'axios'
 import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
@@ -51,7 +52,7 @@ export default function CreateGlobalCompetitionModal({ isOpen, onClose }) {
 
       queryClient.invalidateQueries({ queryKey: ['competitions', 'all'] })
       toast.success('Global competition created successfully! 🏆')
-      
+
       setFormData({
         competition_name: '',
         comp_description: '',
@@ -69,7 +70,7 @@ export default function CreateGlobalCompetitionModal({ isOpen, onClose }) {
     }
   }
 
-  return (
+  return ReactDOM.createPortal(
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-md p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-6">
@@ -182,6 +183,7 @@ export default function CreateGlobalCompetitionModal({ isOpen, onClose }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
