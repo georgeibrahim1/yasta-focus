@@ -18,6 +18,8 @@ export const useSendFriendRequest = () => {
         // Refresh achievement queries
         qc.invalidateQueries({ queryKey: ['achievements'] })
         qc.invalidateQueries({ queryKey: ['achievementStats'] })
+        qc.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'userProfile' })
+        qc.invalidateQueries({ queryKey: ['user'] })
         
         // Show achievement toasts
       unlocked.forEach(achievement => {

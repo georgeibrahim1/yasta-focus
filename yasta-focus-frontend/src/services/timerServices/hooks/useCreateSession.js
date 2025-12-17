@@ -23,6 +23,8 @@ export const useCreateSession = () => {
         // Refresh achievement queries
         queryClient.invalidateQueries({ queryKey: ['achievements'] })
         queryClient.invalidateQueries({ queryKey: ['achievementStats'] })
+        queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'userProfile' })
+        queryClient.invalidateQueries({ queryKey: ['user'] })
   
         // Show achievement toasts
       unlocked.forEach(achievement => {

@@ -11,7 +11,8 @@ export const useGetAllAchievements = () => {
   return useQuery({
     queryKey: ['achievements'],
     queryFn: getAllAchievements,
-    staleTime: 0, 
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 };
 
@@ -21,5 +22,7 @@ export const useGetAchievementStats = () => {
     queryKey: ['achievementStats'],
     queryFn: getUserAchievementStats,
     staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 };

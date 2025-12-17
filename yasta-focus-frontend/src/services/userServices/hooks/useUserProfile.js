@@ -5,7 +5,8 @@ export const useGetUserProfile = (userId) => {
   return useQuery({
     queryKey: userId ? ['userProfile', userId] : ['userProfile', 'me'],
     queryFn: () => getUserProfile(userId),
-    staleTime: 60000,
+    staleTime: 0,
+    refetchOnMount: 'always',
   })
 }
 
