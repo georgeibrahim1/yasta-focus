@@ -9,15 +9,16 @@ export default function CompetitionJoinModal({ competition, isOpen = false, onCl
 
   if (!isOpen || !competition) return null
 
+  const getSubjectKey = (s) => s.id ?? s._id ?? s.subject_name
+
   const handleAddSubject = () => {
     if (selectedSubjectId) {
-      const subject = subjects.find(s => String(s.id ?? s._id) === String(selectedSubjectId) || String(s.subject_name) === String(selectedSubjectId))
-      const already = addedSubjects.find(s => String(s.id ?? s._id) === String(selectedSubjectId) || String(s.subject_name) === String(selectedSubjectId))
+      const subject = subjects.find(s => String(getSubjectKey(s)) === String(selectedSubjectId))
+      const already = addedSubjects.find(s => String(getSubjectKey(s)) === String(selectedSubjectId))
+      
       if (subject && !already) {
-        // normalize subject to include an id field for submission
-        const normalized = { ...(subject || {}), id: subject.id ?? subject._id ?? subject.subject_name }
-        setAddedSubjects([...addedSubjects, normalized])
-        setAddMessage(`${normalized.name || normalized.subject_name} has been added`)
+        setAddedSubjects([...addedSubjects, subject])
+        setAddMessage(`${subject.name || subject.subject_name} has been added`)
         setSelectedSubjectId('')
         setTimeout(() => setAddMessage(''), 2000)
       } else if (!subject) {
@@ -28,20 +29,17 @@ export default function CompetitionJoinModal({ competition, isOpen = false, onCl
   }
 
   const handleRemoveSubject = (subjectId) => {
-    setAddedSubjects(addedSubjects.filter(s => String(s.id) !== String(subjectId) && String(s.subject_name) !== String(subjectId)))
+    setAddedSubjects(addedSubjects.filter(s => String(getSubjectKey(s)) !== String(subjectId)))
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setIsLoading(true)
     try {
-      const subjectIds = addedSubjects.map(s => s.id ?? s._id ?? s.subject_name)
-      console.log('[CompetitionJoinModal] submitting subjects', subjectIds)
+      const subjectIds = addedSubjects.map(s => getSubjectKey(s))
       await onSubmit({
-        competitionId: competition.id,
-        payload: {
-          subjects: subjectIds
-        }
+        competitionId: competition.competition_id,
+        subjects: subjectIds // Directly pass subjects
       })
       setAddedSubjects([])
       setSelectedSubjectId('')
@@ -75,7 +73,7 @@ export default function CompetitionJoinModal({ competition, isOpen = false, onCl
               <option value="">Subject 1</option>
               {subjects && subjects.length > 0 ? (
                 subjects.map(s => (
-                  <option key={s.id ?? s._id ?? s.subject_name} value={s.id ?? s._id ?? s.subject_name}>
+                  <option key={getSubjectKey(s)} value={getSubjectKey(s)}>
                     {s.name || s.subject_name || s.title}
                   </option>
                 ))
@@ -109,13 +107,13 @@ export default function CompetitionJoinModal({ competition, isOpen = false, onCl
               <div className="space-y-2">
                 {addedSubjects.map(subject => (
                   <div
-                    key={subject.id || subject.subject_name}
+                    key={getSubjectKey(subject)}
                     className="flex items-center justify-between p-3 rounded-lg bg-slate-700/50 border border-slate-600"
                   >
                     <span className="text-white text-sm font-medium">{subject.name || subject.subject_name}</span>
                     <button
                       type="button"
-                      onClick={() => handleRemoveSubject(subject.id || subject.subject_name)}
+                      onClick={() => handleRemoveSubject(getSubjectKey(subject))}
                       className="text-slate-400 hover:text-red-400 transition"
                     >
                       <X size={16} />
@@ -136,10 +134,10 @@ export default function CompetitionJoinModal({ competition, isOpen = false, onCl
             </button>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || addedSubjects.length === 0}
               className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl text-white font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
             >
-              {isLoading ? 'Requesting...' : 'Request Join'}
+              {isLoading ? 'Joining...' : 'Join'}
             </button>
           </div>
         </form>

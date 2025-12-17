@@ -50,6 +50,12 @@ router.post('/:communityId/pending/:memberId/approve', protect, communityControl
 // Reject pending join request (managers only)
 router.delete('/:communityId/pending/:memberId/reject', protect, communityController.rejectJoinRequest);
 
+// Add member by username (managers only)
+router.post('/:communityId/add-member', protect, communityController.addMemberByUsername);
+
+// Invite friend to community (any member)
+router.post('/:communityId/invite-friend', protect, communityController.inviteFriendToCommunity);
+
 // Get community competitions
 router.get('/:communityId/competitions', protect, communityController.getCommunityCompetitions);
 

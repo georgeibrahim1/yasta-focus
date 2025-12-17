@@ -10,5 +10,7 @@ router.use(protect);
 router.route('/upcoming').get(eventController.getEvents);
 router.route('/').post(eventController.createEvent);
 router.route('/:id').get(eventController.getEvent);
+router.route('/:id').delete(eventController.deleteEvent);
+router.route('/stream/token').get(eventController.generateStreamToken);
 
 export default router;

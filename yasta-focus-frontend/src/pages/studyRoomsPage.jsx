@@ -1,17 +1,18 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Search, Users, ArrowLeft, Plus, Trash2, UserPlus, Flag, UserX, Megaphone, Shield, Edit3, Clock, Check, X, Settings, LogOut, BarChart3, TrendingUp, Trophy, Calendar } from 'lucide-react'
+import { Search, Users, ArrowLeft, Plus, Trash2, UserPlus, Flag, UserX, Megaphone, Shield, Edit3, Clock, Check, X, Settings, LogOut, BarChart3, TrendingUp } from 'lucide-react'
 import { useStudyRooms, useJoinRoom, useLeaveRoom, useDeleteRoom } from '../services/studyRoomServices'
 import { useAnnouncements, useCreateAnnouncement, useDeleteAnnouncement } from '../services/announcementServices'
-import { useCommunityMembers, useKickMember, usePendingRequests, useApproveJoinRequest, useRejectJoinRequest, useCommunityStats, usePromoteMember, useDemoteMember } from '../services/communityServices'
+import { useCommunityMembers, useKickMember, usePendingRequests, useApproveJoinRequest, useRejectJoinRequest, useCommunityStats, usePromoteMember, useDemoteMember, useAddMemberByUsername, useInviteFriendToCommunity, useCreateCommunityCompetition, useJoinCommunityCompetition, useDeleteCommunityCompetition } from '../services/communityServices'
 import { useUpdateCommunityInfo, useDeleteCommunity, useExitCommunity, useUpdateMemberBio } from '../services/communityServices'
-import { useCommunityCompetitions, useCreateCommunityCompetition, useJoinCommunityCompetition, useDeleteCommunityCompetition } from '../services/communityServices'
 import { useSendFriendRequest, useReportUser } from '../services/leaderboardServices'
+import { useGetFriends } from '../services/friendshipServices'
 import { useUser } from '../services/authServices'
 import Select from '../components/Select'
 import CreateRoomModal from '../components/CreateRoomModal'
 import ReportModal from '../components/ReportModal'
 import ProtectedComponent from '../components/ProtectedComponent'
+import CompetitionWidget from '../components/CompetitionWidget'
 
 export default function StudyRoomsPage() {
   const { communityId } = useParams()
@@ -32,21 +33,26 @@ export default function StudyRoomsPage() {
   const [communityName, setCommunityName] = useState('')
   const [communityDescription, setCommunityDescription] = useState('')
   const [showStatsModal, setShowStatsModal] = useState(false)
+  const [joiningRoomCode, setJoiningRoomCode] = useState(null)
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false)
+  const [showInviteFriendModal, setShowInviteFriendModal] = useState(false)
+  const [addMemberUsername, setAddMemberUsername] = useState('')
+  const [selectedFriendToInvite, setSelectedFriendToInvite] = useState(null)
+  const [addMemberError, setAddMemberError] = useState('')
+  const [inviteFriendError, setInviteFriendError] = useState('')
   const [showCreateCompetitionModal, setShowCreateCompetitionModal] = useState(false)
   const [showJoinCompetitionModal, setShowJoinCompetitionModal] = useState(false)
-  const [selectedCompetition, setSelectedCompetition] = useState(null)
   const [competitionName, setCompetitionName] = useState('')
   const [competitionDescription, setCompetitionDescription] = useState('')
   const [competitionDeadline, setCompetitionDeadline] = useState('')
   const [maxSubjects, setMaxSubjects] = useState(3)
   const [maxParticipants, setMaxParticipants] = useState(20)
+  const [selectedCompetition, setSelectedCompetition] = useState(null)
   const [selectedSubjects, setSelectedSubjects] = useState([])
-  const [joiningRoomCode, setJoiningRoomCode] = useState(null)
 
   const { data: currentUser } = useUser()
   const { data: rooms = [], isLoading } = useStudyRooms(communityId, search)
   const { data: announcements = [] } = useAnnouncements(communityId)
-  const { data: competitions = [] } = useCommunityCompetitions(communityId)
   const { data: membersData } = useCommunityMembers(communityId)
   const joinRoom = useJoinRoom()
   const leaveRoom = useLeaveRoom()
@@ -67,8 +73,11 @@ export default function StudyRoomsPage() {
   const createCompetitionMutation = useCreateCommunityCompetition()
   const joinCompetitionMutation = useJoinCommunityCompetition()
   const deleteCompetitionMutation = useDeleteCommunityCompetition()
+  const addMemberMutation = useAddMemberByUsername()
+  const inviteFriendMutation = useInviteFriendToCommunity()
   
   const { data: stats } = useCommunityStats(communityId)
+  const { data: friendsList = [] } = useGetFriends()
 
   const user = currentUser?.data?.user || currentUser?.user || currentUser
   const userId = user?.user_id
@@ -198,8 +207,8 @@ export default function StudyRoomsPage() {
     }
   }
 
-  const handleFriendRequest = (member) => {
-    sendFriendRequest(member.user_id)
+  const handleFriendRequest = async (member) => {
+    await sendFriendRequest(member.user_id)
   }
 
   const handleReport = (member) => {
@@ -321,6 +330,38 @@ export default function StudyRoomsPage() {
       } catch {
         // Error handled by mutation
       }
+    }
+  }
+
+
+
+  const handleAddMember = async () => {
+    if (!addMemberUsername.trim()) {
+      setAddMemberError('Please enter a username')
+      return
+    }
+    setAddMemberError('')
+    try {
+      await addMemberMutation.mutateAsync({ communityId, username: addMemberUsername.trim() })
+      setAddMemberUsername('')
+      setShowAddMemberModal(false)
+    } catch (error) {
+      setAddMemberError(error.response?.data?.message || 'Failed to add member')
+    }
+  }
+
+  const handleInviteFriend = async () => {
+    if (!selectedFriendToInvite) {
+      setInviteFriendError('Please select a friend')
+      return
+    }
+    setInviteFriendError('')
+    try {
+      await inviteFriendMutation.mutateAsync({ communityId, friendId: selectedFriendToInvite })
+      setSelectedFriendToInvite(null)
+      setShowInviteFriendModal(false)
+    } catch (error) {
+      setInviteFriendError(error.response?.data?.message || 'Failed to invite friend')
     }
   }
 
@@ -606,10 +647,20 @@ export default function StudyRoomsPage() {
 
           {/* Members Section */}
           <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50">
-            <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-              <Users size={18} />
-              Members ({members.length})
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-semibold flex items-center gap-2">
+                <Users size={18} />
+                Members ({members.length})
+              </h3>
+              {/* Add/Invite Member Icon */}
+              <button
+                onClick={() => currentUserIsManager ? setShowAddMemberModal(true) : setShowInviteFriendModal(true)}
+                className="p-1.5 hover:bg-slate-600 rounded-lg transition-colors"
+                title={currentUserIsManager ? "Add member by username" : "Invite a friend"}
+              >
+                <UserPlus className="w-4 h-4 text-indigo-400" />
+              </button>
+            </div>
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {members.map((member) => (
                 <div key={member.user_id} className="flex items-center gap-3 group">
@@ -806,70 +857,7 @@ export default function StudyRoomsPage() {
           </div>
 
           {/* Competitions Section */}
-          <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-semibold flex items-center gap-2">
-                <Trophy size={18} />
-                Competitions
-              </h3>
-              {currentUserIsManager && (
-                <button
-                  onClick={() => setShowCreateCompetitionModal(true)}
-                  className="p-1.5 hover:bg-slate-600 rounded-lg transition-colors"
-                  title="Create competition"
-                >
-                  <Plus className="w-4 h-4 text-yellow-400" />
-                </button>
-              )}
-            </div>
-
-            <div className="space-y-3 max-h-40 overflow-y-auto">
-              {competitions.slice(0, 5).map((competition) => (
-                <div key={competition.competition_id} className="group bg-slate-900/50 rounded-lg p-3 border border-slate-700/50">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <h4 className="text-white font-medium text-sm">{competition.title}</h4>
-                      <p className="text-slate-400 text-xs mt-1 line-clamp-1">{competition.description}</p>
-                      <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                        <span className="flex items-center gap-1">
-                          <Calendar size={12} />
-                          {new Date(competition.end_time).toLocaleDateString()}
-                        </span>
-                        <span>{competition.max_participants} max</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {competition.entry_status === 'joined' ? (
-                        <span className="px-2 py-1 bg-green-900/30 text-green-400 text-xs rounded-full">
-                          Joined
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleOpenJoinCompetition(competition)}
-                          className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-full transition-colors"
-                        >
-                          Join
-                        </button>
-                      )}
-                      {currentUserIsManager && (
-                        <button
-                          onClick={() => handleDeleteCompetition(competition.competition_id)}
-                          disabled={deleteCompetitionMutation.isPending}
-                          className="hidden group-hover:block p-1.5 hover:bg-red-900/20 rounded-lg transition-colors"
-                          title="Delete competition"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-red-500" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {competitions.length === 0 && (
-                <p className="text-slate-400 text-sm text-center py-2">No competitions</p>
-              )}
-            </div>
-          </div>
+          <CompetitionWidget communityId={communityId} isAdmin={currentUserIsManager} />
 
           {/* Create Room Button - Only if XP >= 100 */}
           {canCreateRoom ? (
@@ -1212,191 +1200,6 @@ export default function StudyRoomsPage() {
         </div>
       )}
 
-      {/* Create Competition Modal */}
-      {showCreateCompetitionModal && currentUserIsManager && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-700">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Trophy size={20} className="text-yellow-400" />
-                Create Competition
-              </h2>
-              <button
-                onClick={() => setShowCreateCompetitionModal(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-slate-300 text-sm mb-2">Competition Name</label>
-                <input
-                  type="text"
-                  value={competitionName}
-                  onChange={(e) => setCompetitionName(e.target.value)}
-                  placeholder="e.g., Monthly Study Challenge"
-                  className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 text-sm mb-2">Description</label>
-                <textarea
-                  value={competitionDescription}
-                  onChange={(e) => setCompetitionDescription(e.target.value)}
-                  placeholder="Competition description..."
-                  className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 resize-none"
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 text-sm mb-2">Deadline</label>
-                <input
-                  type="datetime-local"
-                  value={competitionDeadline}
-                  onChange={(e) => setCompetitionDeadline(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-slate-300 text-sm mb-2">Max Subjects</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={maxSubjects}
-                    onChange={(e) => setMaxSubjects(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 text-sm mb-2">Max Participants</label>
-                  <input
-                    type="number"
-                    min="2"
-                    max="100"
-                    value={maxParticipants}
-                    onChange={(e) => setMaxParticipants(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={handleCreateCompetition}
-                  disabled={createCompetitionMutation.isPending || !competitionName.trim() || !competitionDeadline}
-                  className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {createCompetitionMutation.isPending ? 'Creating...' : 'Create'}
-                </button>
-                <button
-                  onClick={() => setShowCreateCompetitionModal(false)}
-                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Join Competition Modal */}
-      {showJoinCompetitionModal && selectedCompetition && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-700">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Trophy size={20} className="text-yellow-400" />
-                Join Competition
-              </h2>
-              <button
-                onClick={() => {
-                  setShowJoinCompetitionModal(false)
-                  setSelectedCompetition(null)
-                }}
-                className="text-slate-400 hover:text-white"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-white font-semibold">{selectedCompetition.title}</h3>
-                <p className="text-slate-400 text-sm mt-1">{selectedCompetition.description}</p>
-                <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                  <span className="flex items-center gap-1">
-                    <Calendar size={12} />
-                    Deadline: {new Date(selectedCompetition.end_time).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 text-sm mb-2">
-                  Select Subjects (max {selectedCompetition.max_subjects})
-                </label>
-                <div className="space-y-2">
-                  {user?.subjects?.map((subject) => (
-                    <label key={subject} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedSubjects.includes(subject)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            if (selectedSubjects.length < selectedCompetition.max_subjects) {
-                              setSelectedSubjects([...selectedSubjects, subject])
-                            }
-                          } else {
-                            setSelectedSubjects(selectedSubjects.filter(s => s !== subject))
-                          }
-                        }}
-                        disabled={
-                          !selectedSubjects.includes(subject) &&
-                          selectedSubjects.length >= selectedCompetition.max_subjects
-                        }
-                        className="form-checkbox h-4 w-4 text-indigo-600 rounded border-slate-600 bg-slate-900"
-                      />
-                      <span className="text-slate-300 text-sm">{subject}</span>
-                    </label>
-                  ))}
-                </div>
-                {(!user?.subjects || user.subjects.length === 0) && (
-                  <p className="text-slate-500 text-sm">No subjects available. Add subjects in your profile.</p>
-                )}
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={handleJoinCompetition}
-                  disabled={joinCompetitionMutation.isPending || selectedSubjects.length === 0}
-                  className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {joinCompetitionMutation.isPending ? 'Joining...' : 'Join Competition'}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowJoinCompetitionModal(false)
-                    setSelectedCompetition(null)
-                  }}
-                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Join by Code Modal */}
       {showJoinByCodeModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -1450,6 +1253,156 @@ export default function StudyRoomsPage() {
                 className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-colors font-medium"
               >
                 {joinRoom.isPending ? 'Joining...' : 'Join Room'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Member by Username Modal (Managers only) */}
+      {showAddMemberModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md border border-slate-700/50 shadow-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <UserPlus size={20} className="text-indigo-400" />
+                Add Member
+              </h2>
+              <button
+                onClick={() => {
+                  setShowAddMemberModal(false)
+                  setAddMemberUsername('')
+                  setAddMemberError('')
+                }}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <p className="text-slate-400 text-sm mb-4">
+              Enter a username to add them as a member directly.
+            </p>
+            
+            <input
+              type="text"
+              value={addMemberUsername}
+              onChange={(e) => setAddMemberUsername(e.target.value)}
+              placeholder="Enter username"
+              className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 mb-2"
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleAddMember()
+                }
+              }}
+            />
+            {addMemberError && (
+              <p className="text-red-400 text-sm mb-4">{addMemberError}</p>
+            )}
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowAddMemberModal(false)
+                  setAddMemberUsername('')
+                  setAddMemberError('')
+                }}
+                className="flex-1 py-2 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddMember}
+                disabled={!addMemberUsername.trim() || addMemberMutation.isPending}
+                className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-colors font-medium"
+              >
+                {addMemberMutation.isPending ? 'Adding...' : 'Add Member'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invite Friend Modal (Any member) */}
+      {showInviteFriendModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md border border-slate-700/50 shadow-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <UserPlus size={20} className="text-indigo-400" />
+                Invite Friend
+              </h2>
+              <button
+                onClick={() => {
+                  setShowInviteFriendModal(false)
+                  setSelectedFriendToInvite(null)
+                  setInviteFriendError('')
+                }}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <p className="text-slate-400 text-sm mb-4">
+              Invite a friend to join this community. They will be added to pending requests for manager approval.
+            </p>
+            
+            {friendsList.length === 0 ? (
+              <p className="text-slate-500 text-sm mb-4">You have no friends to invite.</p>
+            ) : (
+              <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
+                {friendsList.map((friend) => (
+                  <button
+                    key={friend.user_id}
+                    onClick={() => setSelectedFriendToInvite(friend.user_id)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                      selectedFriendToInvite === friend.user_id
+                        ? 'bg-indigo-600/20 border-indigo-500/50'
+                        : 'bg-slate-700/30 border-slate-600/50 hover:bg-slate-700/50'
+                    } border`}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                      {friend.profile_picture ? (
+                        <img src={friend.profile_picture} alt={friend.username} className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        friend.username?.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-white text-sm font-medium">{friend.username}</p>
+                      {friend.xp !== undefined && (
+                        <p className="text-slate-400 text-xs">{friend.xp} XP</p>
+                      )}
+                    </div>
+                    {selectedFriendToInvite === friend.user_id && (
+                      <Check className="w-5 h-5 text-indigo-400" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+            {inviteFriendError && (
+              <p className="text-red-400 text-sm mb-4">{inviteFriendError}</p>
+            )}
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowInviteFriendModal(false)
+                  setSelectedFriendToInvite(null)
+                  setInviteFriendError('')
+                }}
+                className="flex-1 py-2 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleInviteFriend}
+                disabled={!selectedFriendToInvite || inviteFriendMutation.isPending || friendsList.length === 0}
+                className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-colors font-medium"
+              >
+                {inviteFriendMutation.isPending ? 'Inviting...' : 'Invite Friend'}
               </button>
             </div>
           </div>

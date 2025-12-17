@@ -15,6 +15,7 @@ import DashboardPage from './pages/dashboardPage'
 import AdminUsersPage from './pages/adminUsersPage'
 import AdminReportsPage from './pages/adminReportsPage'
 import RoomInterfacePage from './pages/roomInterfacePage'
+import LiveEventPage from './pages/liveEventPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import AchievementsPage from './pages/achievementsPage' 
 
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="communities/:communityId" element={<CommunityDetailPage/>}/>
         <Route path="communities/:communityId/rooms" element={<StudyRoomsPage/>}/>
         <Route path="communities/:communityId/rooms/:roomCode" element={<RoomInterfacePage/>}/>
+        <Route path="event/:eventId/live" element={<LiveEventPage/>}/>
         <Route path="leaderboard" element={<LeaderboardPage/>}/>
         <Route path="statistics" element={<StatisticsPage/>}/>
         <Route path="profile" element={<ProfilePage/>}/>

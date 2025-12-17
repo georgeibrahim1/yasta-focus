@@ -12,6 +12,7 @@ export default function DeckDetailPage() {
   const [editingFlashcard, setEditingFlashcard] = useState(null)
   const [showReviewSession, setShowReviewSession] = useState(false)
   const [newFlashcard, setNewFlashcard] = useState({ question: '', answer: '' })
+  const [flashcardCreateError, setFlashcardCreateError] = useState(null)
 
   const { data: flashcardsData } = useGetFlashcards(subjectName, deckTitle)
   const createFlashcardMutation = useCreateFlashcard()
@@ -29,6 +30,10 @@ export default function DeckDetailPage() {
       onSuccess: () => {
         setShowFlashcardModal(false)
         setNewFlashcard({ question: '', answer: '' })
+        setFlashcardCreateError(null)
+      },
+      onError: (err) => {
+        setFlashcardCreateError(err.response?.data?.message || 'An error occurred')
       }
     })
   }
@@ -209,12 +214,14 @@ export default function DeckDetailPage() {
           setShowFlashcardModal(false)
           setEditingFlashcard(null)
           setNewFlashcard({ question: '', answer: '' })
+          setFlashcardCreateError(null)
         }}
         onSubmit={editingFlashcard ? handleUpdateFlashcard : handleCreateFlashcard}
         formData={newFlashcard}
         setFormData={setNewFlashcard}
         isLoading={editingFlashcard ? updateFlashcardMutation.isPending : createFlashcardMutation.isPending}
         isEditing={!!editingFlashcard}
+        error={flashcardCreateError}
       />
     </div>
   )

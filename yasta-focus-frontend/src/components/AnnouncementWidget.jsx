@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Megaphone, Plus, Trash2 } from 'lucide-react'
 import { useAnnouncements, useCreateAnnouncement, useDeleteAnnouncement } from '../services/announcementServices'
 import ProtectedComponent from './ProtectedComponent'
@@ -10,6 +10,16 @@ export default function AnnouncementWidget({ communityId, isManager }) {
   const { data: announcements, isLoading } = useAnnouncements(communityId)
   const createAnnouncement = useCreateAnnouncement()
   const deleteAnnouncement = useDeleteAnnouncement()
+
+  const uniqueAnnouncements = useMemo(() => {
+    if (!announcements) return []
+    const seen = new Set()
+    return announcements.filter(announcement => {
+      const duplicate = seen.has(announcement.announcement_id)
+      seen.add(announcement.announcement_id)
+      return !duplicate
+    })
+  }, [announcements])
 
   const handleCreate = async (e) => {
     e.preventDefault()
@@ -119,8 +129,8 @@ export default function AnnouncementWidget({ communityId, isManager }) {
 
       {/* Announcements List */}
       <div className="space-y-4">
-        {announcements && announcements.length > 0 ? (
-          announcements.map((announcement) => (
+        {uniqueAnnouncements && uniqueAnnouncements.length > 0 ? (
+          uniqueAnnouncements.map((announcement) => (
             <div
               key={announcement.announcement_id}
               className="border-l-4 border-blue-600 bg-blue-50 dark:bg-blue-900/10 p-4 rounded-r-lg"

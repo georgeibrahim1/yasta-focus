@@ -38,6 +38,27 @@ export const useRespondToFriendRequest = () => {
   
   return useMutation({
     mutationFn: respondToFriendRequest,
+    onMutate: async ({ requesterId, action }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['friendRequests'] })
+      
+      // Snapshot previous value
+      const previousRequests = queryClient.getQueryData(['friendRequests'])
+      
+      // Optimistically remove from requests list
+      queryClient.setQueryData(['friendRequests'], (old) => {
+        if (!old) return old
+        return old.filter(request => request.user_id !== requesterId)
+      })
+      
+      return { previousRequests }
+    },
+    onError: (err, variables, context) => {
+      // Revert on error
+      if (context?.previousRequests) {
+        queryClient.setQueryData(['friendRequests'], context.previousRequests)
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friendRequests'] })
       queryClient.invalidateQueries({ queryKey: ['friends'] })
