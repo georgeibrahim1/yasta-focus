@@ -86,7 +86,7 @@ export const getUserAchievementStats = catchAsync(async (req, res, next) => {
 export const createAchievement = catchAsync(async (req, res, next) => {
   const { picture, title, description, criteriatype, criteriavalue, xp } = req.body;
 
-  if (!title || !criteriatype || !description || criteriavalue === undefined || !xp) {
+  if (!title || !picture || !criteriatype || !description || criteriavalue === undefined || !xp) {
     return next(new AppError('Please provide title, criteriatype, criteriavalue, and xp', 400));
   }
 
@@ -97,7 +97,7 @@ export const createAchievement = catchAsync(async (req, res, next) => {
   `;
 
   const result = await db.query(query, [
-    picture || "🌟",
+    picture,
     title,
     description,
     criteriatype,
@@ -116,7 +116,7 @@ export const createAchievement = catchAsync(async (req, res, next) => {
 // Update achievement (ADMIN ONLY)
 export const updateAchievement = catchAsync(async (req, res, next) => {
   const { id } = req.params;
-  const { title, description, criteriatype, criteriavalue, xp } = req.body;
+  const { picture, title, description, criteriatype, criteriavalue, xp } = req.body;
 
   // Check if achievement exists
   const checkQuery = 'SELECT * FROM achievement WHERE id = $1';
@@ -133,8 +133,9 @@ export const updateAchievement = catchAsync(async (req, res, next) => {
       description = COALESCE($2, description),
       criteriatype = COALESCE($3, criteriatype),
       criteriavalue = COALESCE($4, criteriavalue),
-      xp = COALESCE($5, xp)
-    WHERE id = $6
+      xp = COALESCE($5, xp),
+      picture = COALESCE($6,picture)
+    WHERE id = $7
     RETURNING *
   `;
 
@@ -144,6 +145,7 @@ export const updateAchievement = catchAsync(async (req, res, next) => {
     criteriatype,
     criteriavalue,
     xp,
+    picture,
     id
   ]);
 
