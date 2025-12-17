@@ -16,13 +16,12 @@ export const useCreateCommunity = () => {
       qc.invalidateQueries({ 
         predicate: (query) => query.queryKey[0] === 'communities'
       })
-      
+      toast.success('Community Created Successfully!')
       const unlocked = data?.data?.unlockedAchievements || []
       if (unlocked.length > 0) {
         // Refresh achievement queries
         qc.invalidateQueries({ queryKey: ['achievements'] })
         qc.invalidateQueries({ queryKey: ['achievementStats'] })
-        toast.success('Community Created Successfully!')
         // Show success with achievement info
           // Show achievement toasts
         unlocked.forEach(achievement => {
