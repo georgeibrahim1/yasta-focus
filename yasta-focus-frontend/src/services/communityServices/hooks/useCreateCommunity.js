@@ -19,19 +19,14 @@ export const useCreateCommunity = () => {
         // Refresh achievement queries
         qc.invalidateQueries({ queryKey: ['achievements'] })
         qc.invalidateQueries({ queryKey: ['achievementStats'] })
-        
-        // Dispatch event for global notification system
-        // window.dispatchEvent(
-        //   new CustomEvent('achievements-unlocked', { 
-        //     detail: unlocked 
-        //   })
-        // )
-        
-        // Show success with achievement info
-        const totalXP = unlocked.reduce((sum, a) => sum + a.xp, 0)
-        toast.success(`Community created! +${totalXP} XP from ${unlocked.length} achievement(s)! 🎉`)
-      } else {
         toast.success('Community Created Successfully!')
+        // Show success with achievement info
+          // Show achievement toasts
+        unlocked.forEach(achievement => {
+        toast.success(`🏆 ${achievement.title} (+${achievement.xp} XP)`, {
+        duration: 4000,
+      })
+    })
       }
       return data
     },

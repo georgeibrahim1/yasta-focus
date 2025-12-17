@@ -219,7 +219,6 @@ export const sendFriendRequest = catchAsync(async (req, res, next) => {
 
   const reqAchievement = await FriendReqCountAchievement(requesterId);
   const unlockedAchievements = Array.isArray(reqAchievement) ? reqAchievement : [];
-
   res.status(201).json({
     status: 'success',
     data: {

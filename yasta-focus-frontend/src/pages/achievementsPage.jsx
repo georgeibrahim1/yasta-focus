@@ -142,7 +142,7 @@ export default function AchievementsPage() {
               </div>
             </div>
             <div className="text-4xl font-bold text-white mb-1">{stats.xpToNextLevel}</div>
-            <div className="text-slate-300 text-sm">XP to go</div>
+            <div className="text-slate-300 text-sm">XP to level {stats.level + 1}</div>
           </div>
         </div>
 
@@ -157,7 +157,7 @@ export default function AchievementsPage() {
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-white">{Math.round(levelProgress)}%</div>
-              <div className="text-slate-400 text-xs">to Level {stats.level + 1}</div>
+              <div className="text-slate-400 text-xs">Completed</div>
             </div>
           </div>
           <div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden">

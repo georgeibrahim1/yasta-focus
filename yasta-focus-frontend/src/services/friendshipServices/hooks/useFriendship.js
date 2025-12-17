@@ -41,6 +41,20 @@ export const useRespondToFriendRequest = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['friendRequests'] })
       queryClient.invalidateQueries({ queryKey: ['friends'] })
+      toast.success('Request Accepted!')
+      const unlocked = data?.data?.unlockedAchievements || []
+      console.log(unlocked);
+      if (unlocked.length > 0) {
+        // Refresh achievement queries
+        queryClient.invalidateQueries({ queryKey: ['achievements'] })
+        queryClient.invalidateQueries({ queryKey: ['achievementStats'] })
+  
+        // Show achievement toasts
+          unlocked.forEach(achievement => {
+          toast.success(`🏆 ${achievement.title} (+${achievement.xp} XP)`, {
+          duration: 4000,
+      })
+    })}
     },
   })
 }

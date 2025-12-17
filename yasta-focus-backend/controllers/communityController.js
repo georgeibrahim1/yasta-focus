@@ -382,7 +382,7 @@ export const createCommunity = catchAsync(async (req, res, next) => {
 
 
   const createdCommunities = await checkCommunitiesCreatedAchievements(userId);
-  const unlockedAchievements = [...createdCommunities];
+  const unlockedAchievements = Array.isArray(createdCommunities) ? createdCommunities : [];
 
   res.status(201).json({
     status: 'success',
@@ -923,9 +923,13 @@ export const approveJoinRequest = catchAsync(async (req, res, next) => {
     return next(new AppError('Pending request not found', 404));
   }
 
-  const joinedCommunities = await checkCommunitiesJoinedAchievements(memberId);
-  const comMembersCount = await checkCommunityCountdAchievements(userId,communityId);
-  const unlockedAchievements = [...joinedCommunities, ...comMembersCount];
+  await checkCommunitiesJoinedAchievements(memberId);
+  const comMembersCount = await checkCommunityCountdAchievements(userId, communityId);
+
+  const unlockedAchievements = [
+    // ...(Array.isArray(joinedCommunities) ? joinedCommunities : []), // won't be sent to front side as this belongs to other community members not the moderator himself
+    ...(Array.isArray(comMembersCount) ? comMembersCount : [])
+  ];
 
   res.status(200).json({
     status: 'success',

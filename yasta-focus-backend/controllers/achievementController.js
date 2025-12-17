@@ -56,7 +56,9 @@ export const getUserAchievementStats = catchAsync(async (req, res, next) => {
 
   const lvl = await checkLevelAchievement(userId,level);
   const xp = await checkXPAchievement(userId,stats.totalXP);
-  const unlockedAchievements = [...(lvl||[]),...(xp||[])];
+  const lvlArray = Array.isArray(lvl) ? lvl : [];
+  const xpArray = Array.isArray(xp) ? xp : [];
+  const unlockedAchievements = [...lvlArray, ...xpArray];
 
   res.status(200).json({
     status: 'success',
