@@ -1008,17 +1008,27 @@ export const getCommunityCompetitions = catchAsync(async (req, res, next) => {
 export const createCommunityCompetition = catchAsync(async (req, res, next) => {
   const { communityId } = req.params;
   const userId = req.user?.user_id;
-  const { comp_name, comp_description, deadline, max_subjects, max_participants } = req.body;
+  const {
+    competition_name,
+    comp_description,
+    start_time,
+    end_time,
+    max_subjects,
+    max_participants,
+    competition_type
+  } = req.body;
+
+  if (!competition_name || !start_time || !end_time) {
+    return next(new AppError('Competition name, start time, and end time are required.', 400));
+  }
 
   // Check if user is admin or a manager
   const isAdmin = req.user.role === 0;
-  
   if (!isAdmin) {
     const managerResult = await db.query(
       'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
       [communityId, userId]
     );
-
     if (managerResult.rows.length === 0) {
       return next(new AppError('Only community managers can create competitions', 403));
     }
@@ -1027,15 +1037,27 @@ export const createCommunityCompetition = catchAsync(async (req, res, next) => {
   // Create the competition
   const result = await db.query(
     `INSERT INTO competition 
-      (title, description, start_time, end_time, max_subjects, max_participants, creator_id, competition_type, community_id)
-    VALUES ($1, $2, NOW(), $3, $4, $5, $6, 'local', $7)
+      (competition_name, comp_description, start_time, end_time, max_subjects, max_participants, creator_id, competition_type, community_id)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
     RETURNING *`,
-    [comp_name, comp_description, deadline, max_subjects, max_participants, userId, communityId]
+    [
+      competition_name,
+      comp_description,
+      start_time,
+      end_time,
+      max_subjects,
+      max_participants,
+      userId,
+      competition_type,
+      communityId
+    ]
   );
 
   res.status(201).json({
     status: 'success',
-    data: result.rows[0]
+    data: {
+      competition: result.rows[0]
+    }
   });
 });
 
@@ -1189,3 +1211,6 @@ export const deleteCommunityCompetition = catchAsync(async (req, res, next) => {
     message: 'Competition deleted successfully'
   });
 });
+
+
+ 

@@ -143,8 +143,9 @@ export const communityService = {
   },
 
   // Join community competition
-  joinCommunityCompetition: async (communityId, competitionId, payload) => {
-    const response = await api.post(`/api/communities/${communityId}/competitions/${competitionId}/join`, payload)
+  joinCommunityCompetition: async (communityId, competitionId, payload) => { // Accept payload
+    const subjectsArray = payload.subjects; // Extract subjects array from payload
+    const response = await api.post(`/api/communities/${communityId}/competitions/${competitionId}/join`, { subjects: subjectsArray }) // Send as { subjects: [...] }
     return response.data
   },
 
