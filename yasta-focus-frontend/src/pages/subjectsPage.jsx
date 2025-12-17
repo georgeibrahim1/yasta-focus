@@ -684,7 +684,7 @@ export default function SubjectsPage() {
       </div>
 
       {/* Aside - Subject List */}
-      <aside className="w-96 border-l border-slate-700 p-6">
+      <aside className="w-80 h-screen sticky top-0 overflow-y-auto p-6 bg-slate-900/30 border-l border-slate-700/50">
         <div className="space-y-2">
           {subjects.map(subject => (
             <div
