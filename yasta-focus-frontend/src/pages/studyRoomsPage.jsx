@@ -5,7 +5,6 @@ import { useStudyRooms, useJoinRoom, useLeaveRoom, useDeleteRoom } from '../serv
 import { useAnnouncements, useCreateAnnouncement, useDeleteAnnouncement } from '../services/announcementServices'
 import { useCommunityMembers, useKickMember, usePendingRequests, useApproveJoinRequest, useRejectJoinRequest, useCommunityStats, usePromoteMember, useDemoteMember, useAddMemberByUsername, useInviteFriendToCommunity } from '../services/communityServices'
 import { useUpdateCommunityInfo, useDeleteCommunity, useExitCommunity, useUpdateMemberBio } from '../services/communityServices'
-import { useCommunityCompetitions, useCreateCommunityCompetition, useJoinCommunityCompetition, useDeleteCommunityCompetition } from '../services/communityServices'
 import { useSendFriendRequest, useReportUser } from '../services/leaderboardServices'
 import { useGetFriends } from '../services/friendshipServices'
 import { useUser } from '../services/authServices'
@@ -13,6 +12,7 @@ import Select from '../components/Select'
 import CreateRoomModal from '../components/CreateRoomModal'
 import ReportModal from '../components/ReportModal'
 import ProtectedComponent from '../components/ProtectedComponent'
+import CompetitionWidget from '../components/CompetitionWidget'
 
 export default function StudyRoomsPage() {
   const { communityId } = useParams()
@@ -33,15 +33,6 @@ export default function StudyRoomsPage() {
   const [communityName, setCommunityName] = useState('')
   const [communityDescription, setCommunityDescription] = useState('')
   const [showStatsModal, setShowStatsModal] = useState(false)
-  const [showCreateCompetitionModal, setShowCreateCompetitionModal] = useState(false)
-  const [showJoinCompetitionModal, setShowJoinCompetitionModal] = useState(false)
-  const [selectedCompetition, setSelectedCompetition] = useState(null)
-  const [competitionName, setCompetitionName] = useState('')
-  const [competitionDescription, setCompetitionDescription] = useState('')
-  const [competitionDeadline, setCompetitionDeadline] = useState('')
-  const [maxSubjects, setMaxSubjects] = useState(3)
-  const [maxParticipants, setMaxParticipants] = useState(20)
-  const [selectedSubjects, setSelectedSubjects] = useState([])
   const [joiningRoomCode, setJoiningRoomCode] = useState(null)
   const [showAddMemberModal, setShowAddMemberModal] = useState(false)
   const [showInviteFriendModal, setShowInviteFriendModal] = useState(false)
@@ -53,7 +44,6 @@ export default function StudyRoomsPage() {
   const { data: currentUser } = useUser()
   const { data: rooms = [], isLoading } = useStudyRooms(communityId, search)
   const { data: announcements = [] } = useAnnouncements(communityId)
-  const { data: competitions = [] } = useCommunityCompetitions(communityId)
   const { data: membersData } = useCommunityMembers(communityId)
   const joinRoom = useJoinRoom()
   const leaveRoom = useLeaveRoom()
@@ -856,70 +846,7 @@ export default function StudyRoomsPage() {
           </div>
 
           {/* Competitions Section */}
-          <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-white font-semibold flex items-center gap-2">
-                <Trophy size={18} />
-                Competitions
-              </h3>
-              {currentUserIsManager && (
-                <button
-                  onClick={() => setShowCreateCompetitionModal(true)}
-                  className="p-1.5 hover:bg-slate-600 rounded-lg transition-colors"
-                  title="Create competition"
-                >
-                  <Plus className="w-4 h-4 text-yellow-400" />
-                </button>
-              )}
-            </div>
-
-            <div className="space-y-3 max-h-40 overflow-y-auto">
-              {competitions.slice(0, 5).map((competition) => (
-                <div key={competition.competition_id} className="group bg-slate-900/50 rounded-lg p-3 border border-slate-700/50">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <h4 className="text-white font-medium text-sm">{competition.title}</h4>
-                      <p className="text-slate-400 text-xs mt-1 line-clamp-1">{competition.description}</p>
-                      <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                        <span className="flex items-center gap-1">
-                          <Calendar size={12} />
-                          {new Date(competition.end_time).toLocaleDateString()}
-                        </span>
-                        <span>{competition.max_participants} max</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {competition.entry_status === 'joined' ? (
-                        <span className="px-2 py-1 bg-green-900/30 text-green-400 text-xs rounded-full">
-                          Joined
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => handleOpenJoinCompetition(competition)}
-                          className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs rounded-full transition-colors"
-                        >
-                          Join
-                        </button>
-                      )}
-                      {currentUserIsManager && (
-                        <button
-                          onClick={() => handleDeleteCompetition(competition.competition_id)}
-                          disabled={deleteCompetitionMutation.isPending}
-                          className="hidden group-hover:block p-1.5 hover:bg-red-900/20 rounded-lg transition-colors"
-                          title="Delete competition"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-slate-400 hover:text-red-500" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-              {competitions.length === 0 && (
-                <p className="text-slate-400 text-sm text-center py-2">No competitions</p>
-              )}
-            </div>
-          </div>
+          <CompetitionWidget communityId={communityId} isAdmin={currentUserIsManager} />
 
           {/* Create Room Button - Only if XP >= 100 */}
           {canCreateRoom ? (
@@ -1258,191 +1185,6 @@ export default function StudyRoomsPage() {
             ) : (
               <p className="text-slate-400 text-center py-8">Loading statistics...</p>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* Create Competition Modal */}
-      {showCreateCompetitionModal && currentUserIsManager && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-700">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Trophy size={20} className="text-yellow-400" />
-                Create Competition
-              </h2>
-              <button
-                onClick={() => setShowCreateCompetitionModal(false)}
-                className="text-slate-400 hover:text-white"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-slate-300 text-sm mb-2">Competition Name</label>
-                <input
-                  type="text"
-                  value={competitionName}
-                  onChange={(e) => setCompetitionName(e.target.value)}
-                  placeholder="e.g., Monthly Study Challenge"
-                  className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 text-sm mb-2">Description</label>
-                <textarea
-                  value={competitionDescription}
-                  onChange={(e) => setCompetitionDescription(e.target.value)}
-                  placeholder="Competition description..."
-                  className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 resize-none"
-                  rows={3}
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-300 text-sm mb-2">Deadline</label>
-                <input
-                  type="datetime-local"
-                  value={competitionDeadline}
-                  onChange={(e) => setCompetitionDeadline(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-slate-300 text-sm mb-2">Max Subjects</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    value={maxSubjects}
-                    onChange={(e) => setMaxSubjects(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 text-sm mb-2">Max Participants</label>
-                  <input
-                    type="number"
-                    min="2"
-                    max="100"
-                    value={maxParticipants}
-                    onChange={(e) => setMaxParticipants(parseInt(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-900/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={handleCreateCompetition}
-                  disabled={createCompetitionMutation.isPending || !competitionName.trim() || !competitionDeadline}
-                  className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {createCompetitionMutation.isPending ? 'Creating...' : 'Create'}
-                </button>
-                <button
-                  onClick={() => setShowCreateCompetitionModal(false)}
-                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Join Competition Modal */}
-      {showJoinCompetitionModal && selectedCompetition && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-700">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Trophy size={20} className="text-yellow-400" />
-                Join Competition
-              </h2>
-              <button
-                onClick={() => {
-                  setShowJoinCompetitionModal(false)
-                  setSelectedCompetition(null)
-                }}
-                className="text-slate-400 hover:text-white"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-white font-semibold">{selectedCompetition.title}</h3>
-                <p className="text-slate-400 text-sm mt-1">{selectedCompetition.description}</p>
-                <div className="flex items-center gap-3 mt-2 text-xs text-slate-500">
-                  <span className="flex items-center gap-1">
-                    <Calendar size={12} />
-                    Deadline: {new Date(selectedCompetition.end_time).toLocaleDateString()}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 text-sm mb-2">
-                  Select Subjects (max {selectedCompetition.max_subjects})
-                </label>
-                <div className="space-y-2">
-                  {user?.subjects?.map((subject) => (
-                    <label key={subject} className="flex items-center gap-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selectedSubjects.includes(subject)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            if (selectedSubjects.length < selectedCompetition.max_subjects) {
-                              setSelectedSubjects([...selectedSubjects, subject])
-                            }
-                          } else {
-                            setSelectedSubjects(selectedSubjects.filter(s => s !== subject))
-                          }
-                        }}
-                        disabled={
-                          !selectedSubjects.includes(subject) &&
-                          selectedSubjects.length >= selectedCompetition.max_subjects
-                        }
-                        className="form-checkbox h-4 w-4 text-indigo-600 rounded border-slate-600 bg-slate-900"
-                      />
-                      <span className="text-slate-300 text-sm">{subject}</span>
-                    </label>
-                  ))}
-                </div>
-                {(!user?.subjects || user.subjects.length === 0) && (
-                  <p className="text-slate-500 text-sm">No subjects available. Add subjects in your profile.</p>
-                )}
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  onClick={handleJoinCompetition}
-                  disabled={joinCompetitionMutation.isPending || selectedSubjects.length === 0}
-                  className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {joinCompetitionMutation.isPending ? 'Joining...' : 'Join Competition'}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowJoinCompetitionModal(false)
-                    setSelectedCompetition(null)
-                  }}
-                  className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}

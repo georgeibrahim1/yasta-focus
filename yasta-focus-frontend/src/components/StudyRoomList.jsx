@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Search, Plus } from 'lucide-react'
 import StudyRoomCard from './StudyRoomCard'
 import CreateRoomModal from './CreateRoomModal'
@@ -8,6 +8,16 @@ export default function StudyRoomList({ communityId }) {
   const [search, setSearch] = useState('')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const { data: rooms, isLoading, error } = useStudyRooms(communityId, search)
+  
+  const uniqueRooms = useMemo(() => {
+    if (!rooms) return []
+    const seen = new Set()
+    return rooms.filter(room => {
+      const duplicate = seen.has(room.room_code)
+      seen.add(room.room_code)
+      return !duplicate
+    })
+  }, [rooms])
 
   if (isLoading) {
     return (
@@ -52,9 +62,9 @@ export default function StudyRoomList({ communityId }) {
       </div>
 
       {/* Rooms Grid */}
-      {rooms && rooms.length > 0 ? (
+      {uniqueRooms && uniqueRooms.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {rooms.map((room) => (
+          {uniqueRooms.map((room) => (
             <StudyRoomCard key={room.room_code} room={room} />
           ))}
         </div>

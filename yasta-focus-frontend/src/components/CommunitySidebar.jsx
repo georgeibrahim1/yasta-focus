@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
 import EventsPanel from './EventsPanel'
 import EventInfoModal from './EventInfoModal'
@@ -7,9 +8,8 @@ import CompetitionInfoModal from './CompetitionInfoModal'
 import CompetitionJoinModal from './CompetitionJoinModal'
 import CreateCommunityModal from './CreateCommunityModal'
 import ProtectedComponent from './ProtectedComponent'
+import CompetitionWidget from './CompetitionWidget'
 import { useUser } from '../services/authServices'
-import { useGetSubjects } from '../services/subjectServices/hooks/useGetSubjects'
-import { useJoinCompetition } from '../services/communityServices/hooks/useJoinCompetition'
 import { useCreateCommunity } from '../services/communityServices/hooks/useCreateCommunity'
 import { useCreateEvent } from '../services/communityServices/hooks/useCreateEvent'
 import { useDeleteEvent } from '../services/communityServices/hooks/useDeleteEvent'
@@ -19,6 +19,7 @@ export default function CommunitySidebar() {
   const { data: userData } = useUser()
   const user = userData?.data?.user
   const isAdmin = user?.role === 0
+  const { communityId } = useParams()
 
   const [showEventInfo, setShowEventInfo] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState(null)
@@ -28,9 +29,6 @@ export default function CommunitySidebar() {
   const [showCompetitionJoin, setShowCompetitionJoin] = useState(false)
   const [showCreateCommunity, setShowCreateCommunity] = useState(false)
 
-  const { data: subjectsData } = useGetSubjects()
-  const subjects = subjectsData?.data?.subjects || []
-  const { mutateAsync: joinCompetitionAsync } = useJoinCompetition()
   const { mutateAsync: createCommunityAsync } = useCreateCommunity()
   const { mutateAsync: createEventAsync } = useCreateEvent()
   const { mutateAsync: deleteEventAsync } = useDeleteEvent()
@@ -100,6 +98,8 @@ export default function CommunitySidebar() {
             isAdmin={isAdmin}
           />
 
+          {communityId && <CompetitionWidget communityId={communityId} isAdmin={isAdmin} />}
+
           {/* Create Community Button - Protected by XP >= 400 */}
           <ProtectedComponent
             fallback={
@@ -148,26 +148,6 @@ export default function CommunitySidebar() {
           setShowEventInfo(false)
           setSelectedEvent(null)
         }}
-      />
-
-      <CompetitionInfoModal
-        competition={selectedCompetition}
-        isOpen={showCompetitionInfo}
-        onClose={() => {
-          setShowCompetitionInfo(false)
-          setSelectedCompetition(null)
-        }}
-      />
-
-      <CompetitionJoinModal
-        competition={selectedCompetition}
-        isOpen={showCompetitionJoin}
-        onClose={() => {
-          setShowCompetitionJoin(false)
-          setSelectedCompetition(null)
-        }}
-        onSubmit={handleCompetitionSubmit}
-        subjects={subjects}
       />
 
       <CreateCommunityModal
