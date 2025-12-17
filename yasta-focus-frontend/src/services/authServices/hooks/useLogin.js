@@ -10,6 +10,7 @@ export const useLogin = () => {
     mutationFn: authService.login,
     onSuccess: (data) => {
       queryClient.setQueryData(['user'], data.data.user);
+      queryClient.invalidateQueries({ queryKey: ['user'] }); // Force refetch
       navigate('/');
     },
   })

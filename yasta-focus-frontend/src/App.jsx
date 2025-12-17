@@ -20,8 +20,40 @@ import RoomInterfacePage from './pages/roomInterfacePage'
 import LiveEventPage from './pages/liveEventPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import AchievementsPage from './pages/achievementsPage' 
+import { useEffect } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useUser } from './services/authServices'
+import { useQueryClient } from '@tanstack/react-query'
 
 export default function App() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const queryClient = useQueryClient()
+  const { data: userData, isLoading } = useUser()
+  const user = userData?.data?.user
+
+  // Invalidate user query on login/signup
+  useEffect(() => {
+    if (location.pathname === '/auth' && user) {
+      queryClient.invalidateQueries({ queryKey: ['user'] })
+    }
+  }, [user, location.pathname, queryClient])
+
+  useEffect(() => {
+    if (isLoading) return
+    // If not logged in, redirect to /auth
+    if (!user) {
+      if (location.pathname !== '/auth') {
+        navigate('/auth', { replace: true })
+      }
+    } else {
+      // If logged in, redirect to dashboard if on root or /auth
+      if (location.pathname === '/' || location.pathname === '/auth') {
+        navigate('/dashboard', { replace: true })
+      }
+    }
+  }, [user, isLoading, location.pathname, navigate])
+
   return (
     <Routes>
       <Route path='/auth' element={<AuthPage/>}/>
