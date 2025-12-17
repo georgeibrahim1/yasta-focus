@@ -1,0 +1,108 @@
+import React from 'react'
+import { useParams, useNavigate } from 'react-router'
+import { ArrowLeft, Trophy } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import axios from 'axios'
+import LeaderboardRow from '../components/LeaderboardRow'
+import { useUser } from '../services/authServices'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
+export default function CompetitionLeaderboardPage() {
+  const { communityId, competitionId } = useParams()
+  const navigate = useNavigate()
+
+  const { data: userData } = useUser()
+  const currentUserId = userData?.data?.user?.user_id || userData?.user?.user_id || userData?.user_id
+
+  // Fetch leaderboard data
+  const { data: leaderboardData = [], isLoading, isError } = useQuery({
+    queryKey: ['competitionLeaderboard', communityId, competitionId],
+    queryFn: async () => {
+      const token = localStorage.getItem('token')
+      const response = await axios.get(
+        `${API_URL}/api/communities/${communityId}/competitions/${competitionId}/leaderboard`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      )
+      return response.data.data
+    }
+  })
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
+      {/* Header with Back Arrow */}
+      <div className="mb-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-4"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span>Back to Community</span>
+        </button>
+        <h1 className="text-4xl font-extrabold text-white mb-2 flex items-center gap-3">
+          <Trophy className="w-10 h-10 text-yellow-400" />
+          Competition Leaderboard
+        </h1>
+        <p className="text-slate-400">
+          View competition rankings by subject
+        </p>
+      </div>
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="text-slate-400 text-center py-12">Loading leaderboard...</div>
+      )}
+
+      {/* Error State */}
+      {isError && (
+        <div className="text-red-400 text-center py-12">Error loading leaderboard data</div>
+      )}
+
+      {/* No Data State */}
+      {!isLoading && !isError && leaderboardData.length === 0 && (
+        <div className="text-slate-400 text-center py-12">No participants yet</div>
+      )}
+
+      {/* Leaderboard Content */}
+      {!isLoading && !isError && leaderboardData.length > 0 && (
+        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50">
+          <div className="p-6">
+            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Trophy className="w-6 h-6 text-indigo-400" />
+              Competition Rankings
+            </h2>
+            <div className="space-y-2">
+              {leaderboardData.map((entry, index) => {
+                // Transform competition entry to match LeaderboardRow format
+                const userForRow = {
+                  user_id: entry.user_id,
+                  username: entry.username,
+                  profile_picture: entry.profile_picture,
+                  total_study_time: entry.total_time,
+                  xp: entry.xp || 0,
+                  interests: entry.subjects || [], // Show subjects as interests
+                  most_studied_subject: null,
+                  friendship_status: 'none'
+                }
+                
+                return (
+                  <LeaderboardRow
+                    key={entry.user_id}
+                    user={userForRow}
+                    rank={index + 1}
+                    currentUserId={currentUserId}
+                    onFriendRequest={() => {}}
+                    onReport={() => {}}
+                    onGiveXP={() => {}}
+                  />
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

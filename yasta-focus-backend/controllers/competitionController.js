@@ -11,7 +11,8 @@ export const getCompetitions = catchAsync(async (req, res, next) => {
             CASE 
                 WHEN cp.user_id IS NOT NULL THEN 'joined'
                 ELSE 'not_joined'
-            END as entry_status
+            END as entry_status,
+            (SELECT COUNT(DISTINCT user_id) FROM CompetitionParticipants WHERE comp_id = c.competition_id) as participant_count
         FROM competition c
         LEFT JOIN CompetitionParticipants cp ON c.competition_id = cp.comp_id AND cp.user_id = $1
         ORDER BY c.start_time ASC
@@ -59,6 +60,19 @@ export const joinCompetition = catchAsync(async (req, res, next) => {
 
     const competition = compCheck.rows[0];
 
+    // Check if competition has reached max participants
+    if (competition.max_participants) {
+        const participantCountResult = await db.query(
+            'SELECT COUNT(DISTINCT user_id) as count FROM CompetitionParticipants WHERE comp_id = $1',
+            [competitionId]
+        );
+        const currentParticipants = parseInt(participantCountResult.rows[0].count);
+        
+        if (currentParticipants >= competition.max_participants) {
+            return next(new AppError('This competition has reached its maximum number of participants', 400));
+        }
+    }
+
     // Check if user is already a participant
     const existingEntry = await db.query(
         'SELECT 1 FROM CompetitionParticipants WHERE comp_id = $1 AND user_id = $2 LIMIT 1',
@@ -103,5 +117,167 @@ export const getEntries = catchAsync(async (req, res, next) => {
         status: 'success',
         results: result.rows.length,
         data: result.rows
+    });
+});
+
+// Admin: Create global competition
+export const createGlobalCompetition = catchAsync(async (req, res, next) => {
+    const { competition_name, comp_description, end_time, max_subjects, max_participants } = req.body;
+    
+    // Check if user is admin
+    if (req.user.role !== 0) {
+        return next(new AppError('Only admins can create global competitions', 403));
+    }
+
+    const query = `
+        INSERT INTO competition (
+            competition_name, comp_description, start_time, end_time, 
+            max_subjects, max_participants, competition_type
+        ) 
+        VALUES ($1, $2, NOW(), $3, $4, $5, 'global') 
+        RETURNING *
+    `;
+    
+    const result = await db.query(query, [
+        competition_name,
+        comp_description,
+        end_time,
+        max_subjects || null,
+        max_participants || null
+    ]);
+    
+    res.status(201).json({
+        status: 'success',
+        data: result.rows[0]
+    });
+});
+
+// Get competition leaderboard
+export const getCompetitionLeaderboard = catchAsync(async (req, res, next) => {
+    const { id: competitionId } = req.params;
+
+    // Verify competition exists
+    const competitionResult = await db.query(
+        `SELECT * FROM competition WHERE competition_id = $1`,
+        [competitionId]
+    );
+
+    if (competitionResult.rows.length === 0) {
+        return next(new AppError('Competition not found', 404));
+    }
+
+    const competition = competitionResult.rows[0];
+
+    // Get leaderboard data - total study time across all subjects per user during competition period
+    const result = await db.query(
+        `SELECT 
+            u.user_id,
+            u.username,
+            u.profile_picture,
+            u.xp,
+            COALESCE(SUM(EXTRACT(EPOCH FROM (s.time_stamp - s.created_at))), 0) as total_time,
+            COUNT(s.session_name) as session_count,
+            ARRAY_AGG(DISTINCT cp.subject_name ORDER BY cp.subject_name) as subjects
+        FROM CompetitionParticipants cp
+        JOIN users u ON cp.user_id = u.user_id
+        LEFT JOIN session s ON s.user_id = cp.user_id 
+            AND s.subject_name = cp.subject_name
+            AND s.created_at >= $1
+            AND s.created_at <= $2
+            AND s.type = 'focus'
+        WHERE cp.comp_id = $3
+        GROUP BY u.user_id, u.username, u.profile_picture, u.xp
+        ORDER BY total_time DESC`,
+        [competition.start_time, competition.end_time, competitionId]
+    );
+
+    res.status(200).json({
+        status: 'success',
+        data: result.rows
+    });
+});
+
+// Get competition participants (for admins/managers)
+export const getCompetitionParticipants = catchAsync(async (req, res, next) => {
+    const { id: competitionId } = req.params;
+
+    // Check if user is admin
+    if (req.user.role !== 0) {
+        return next(new AppError('Only admins can view participant details', 403));
+    }
+
+    // Get participants with their subject count
+    const result = await db.query(
+        `SELECT 
+            u.user_id,
+            u.username,
+            u.profile_picture,
+            COUNT(cp.subject_name) as subject_count
+        FROM CompetitionParticipants cp
+        JOIN users u ON cp.user_id = u.user_id
+        WHERE cp.comp_id = $1
+        GROUP BY u.user_id, u.username, u.profile_picture
+        ORDER BY u.username ASC`,
+        [competitionId]
+    );
+
+    res.status(200).json({
+        status: 'success',
+        data: result.rows
+    });
+});
+
+// Get user's selected subjects for a competition
+export const getMyCompetitionSubjects = catchAsync(async (req, res, next) => {
+    const { id: competitionId } = req.params;
+    const userId = req.user?.user_id;
+
+    const result = await db.query(
+        `SELECT subject_name
+        FROM CompetitionParticipants
+        WHERE comp_id = $1 AND user_id = $2
+        ORDER BY subject_name ASC`,
+        [competitionId, userId]
+    );
+
+    res.status(200).json({
+        status: 'success',
+        data: result.rows.map(row => row.subject_name)
+    });
+});
+
+// Delete global competition (admin only)
+export const deleteGlobalCompetition = catchAsync(async (req, res, next) => {
+    const { id: competitionId } = req.params;
+    const userId = req.user?.user_id;
+
+    // Check if user is admin
+    const isAdmin = req.user.role === 0;
+    
+    if (!isAdmin) {
+        return next(new AppError('Only admins can delete global competitions', 403));
+    }
+
+    // Delete competition participants first
+    await db.query(
+        'DELETE FROM CompetitionParticipants WHERE comp_id = $1',
+        [competitionId]
+    );
+
+    // Delete competition
+    const result = await db.query(
+        `DELETE FROM competition 
+         WHERE competition_id = $1 AND competition_type = 'global'
+         RETURNING *`,
+        [competitionId]
+    );
+
+    if (result.rows.length === 0) {
+        return next(new AppError('Global competition not found', 404));
+    }
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Competition deleted successfully'
     });
 });

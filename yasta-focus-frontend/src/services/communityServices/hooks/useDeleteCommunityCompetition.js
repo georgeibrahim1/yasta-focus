@@ -8,7 +8,7 @@ export const useDeleteCommunityCompetition = () => {
     mutationFn: ({ communityId, competitionId }) => 
       communityService.deleteCommunityCompetition(communityId, competitionId),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['communityCompetitions', variables.communityId] })
+      queryClient.invalidateQueries({ queryKey: ['competitions', variables.communityId] })
     }
   })
 }

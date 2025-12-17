@@ -4,11 +4,10 @@ import { useNavigate } from 'react-router-dom'
 import EventsPanel from './EventsPanel'
 import EventInfoModal from './EventInfoModal'
 import EventModal from './EventModal'
-import CompetitionInfoModal from './CompetitionInfoModal'
-import CompetitionJoinModal from './CompetitionJoinModal'
 import CreateCommunityModal from './CreateCommunityModal'
 import ProtectedComponent from './ProtectedComponent'
 import CompetitionWidget from './CompetitionWidget'
+import GlobalCompetitionWidget from './GlobalCompetitionWidget'
 import { useUser } from '../services/authServices'
 import { useCreateCommunity } from '../services/communityServices/hooks/useCreateCommunity'
 import { useCreateEvent } from '../services/communityServices/hooks/useCreateEvent'
@@ -24,9 +23,6 @@ export default function CommunitySidebar() {
   const [showEventInfo, setShowEventInfo] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [showCreateEvent, setShowCreateEvent] = useState(false)
-  const [showCompetitionInfo, setShowCompetitionInfo] = useState(false)
-  const [selectedCompetition, setSelectedCompetition] = useState(null)
-  const [showCompetitionJoin, setShowCompetitionJoin] = useState(false)
   const [showCreateCommunity, setShowCreateCommunity] = useState(false)
 
   const { mutateAsync: createCommunityAsync } = useCreateCommunity()
@@ -58,26 +54,6 @@ export default function CommunitySidebar() {
     }
   }
 
-  const handleJoinCompetition = (competition) => {
-    setSelectedCompetition(competition)
-    setShowCompetitionJoin(true)
-  }
-
-  const handleViewCompetition = (competition) => {
-    // TODO: Navigate to competition detail page
-    console.log('View competition:', competition.competition_id)
-  }
-
-  const handleInfoCompetition = (competition) => {
-    setSelectedCompetition(competition)
-    setShowCompetitionInfo(true)
-  }
-
-  const handleCompetitionSubmit = async ({ competitionId, payload }) => {
-    await joinCompetitionAsync({ competitionId, payload })
-    setShowCompetitionJoin(false)
-  }
-
   const handleCreateCommunity = async (formData) => {
     await createCommunityAsync(formData)
     setShowCreateCommunity(false)
@@ -92,11 +68,11 @@ export default function CommunitySidebar() {
             onJoinEvent={handleJoinEvent}
             onInfoEvent={handleInfoEvent}
             onDeleteEvent={handleDeleteEvent}
-            onJoinCompetition={handleJoinCompetition}
-            onViewCompetition={handleViewCompetition}
-            onInfoCompetition={handleInfoCompetition}
             isAdmin={isAdmin}
           />
+
+          {/* Global Competitions Widget */}
+          <GlobalCompetitionWidget isAdmin={isAdmin} />
 
           {communityId && <CompetitionWidget communityId={communityId} isAdmin={isAdmin} />}
 

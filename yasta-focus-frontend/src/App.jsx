@@ -6,6 +6,8 @@ import SubjectsPage from './pages/subjectsPage'
 import DeckDetailPage from './pages/deckDetailPage'
 import CommunitiesPage from './pages/communitiesPage'
 import CommunityDetailPage from './pages/communityDetailPage'
+import CompetitionLeaderboardPage from './pages/competitionLeaderboardPage'
+import GlobalCompetitionLeaderboardPage from './pages/globalCompetitionLeaderboardPage'
 import StudyRoomsPage from './pages/studyRoomsPage'
 import LeaderboardPage from './pages/leaderboardPage'
 import StatisticsPage from './pages/statisticsPage'
@@ -32,6 +34,8 @@ export default function App() {
         <Route path="notes" element={<SubjectsPage/>}/>
         <Route path="communities" element={<CommunitiesPage/>}/>
         <Route path="communities/:communityId" element={<CommunityDetailPage/>}/>
+        <Route path="communities/:communityId/competitions/:competitionId/leaderboard" element={<CompetitionLeaderboardPage/>}/>
+        <Route path="competitions/:competitionId/leaderboard" element={<GlobalCompetitionLeaderboardPage/>}/>
         <Route path="communities/:communityId/rooms" element={<StudyRoomsPage/>}/>
         <Route path="communities/:communityId/rooms/:roomCode" element={<RoomInterfacePage/>}/>
         <Route path="event/:eventId/live" element={<LiveEventPage/>}/>

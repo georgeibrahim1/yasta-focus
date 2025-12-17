@@ -177,6 +177,12 @@ export const communityService = {
   deleteCommunityCompetition: async (communityId, competitionId) => {
     const response = await api.delete(`/api/communities/${communityId}/competitions/${competitionId}`)
     return response.data
+  },
+
+  // Delete global competition (admin only)
+  deleteGlobalCompetition: async (competitionId) => {
+    const response = await api.delete(`/api/competitions/${competitionId}`)
+    return response.data
   }
 }
 
@@ -207,5 +213,6 @@ export const {
   createCommunityCompetition,
   joinCommunityCompetition,
   getCommunityCompetitionEntries,
-  deleteCommunityCompetition
+  deleteCommunityCompetition,
+  deleteGlobalCompetition
 } = communityService

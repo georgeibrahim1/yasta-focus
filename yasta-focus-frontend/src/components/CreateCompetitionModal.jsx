@@ -47,11 +47,10 @@ export default function CreateCompetitionModal({ isOpen, onClose, onSubmit, comm
 
     setIsLoading(true);
     try {
-      // Auto-set competition_type and start_time
+      // Auto-set competition_type, start_time is set by backend
       const submissionData = {
         ...formData,
         competition_type: 'local',
-        start_time: currentTimestamp.toISOString(),
       };
       await onSubmit(submissionData);
       onClose();
