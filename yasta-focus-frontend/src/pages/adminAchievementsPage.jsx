@@ -20,13 +20,27 @@ export default function AdminAchievementsPage() {
     description: '',
     criteriatype: '',
     criteriavalue: '',
-    xp: ''
+    xp: '',
+    picture: '🏆'
   });
 
   const { data: achievements = [], isLoading } = useAdminAchievements();
   const createMutation = useCreateAchievement();
   const updateMutation = useUpdateAchievement();
   const deleteMutation = useDeleteAchievement();
+
+  // Popular achievement emojis
+  const emojiOptions = [
+    '🏆', '🥇', '🥈', '🥉', '⭐', '🌟', '✨', '💎', '👑', '🎯',
+  '🔥', '💪', '🚀', '📚', '📖', '✍️', '🎓', '🧠', '💡', '⚡',
+  '🎨', '🎭', '🎪', '🎬', '🎮', '🏅', '🎖️', '🥳', '🎉', '🎊',
+  '💯', '✅', '🔔', '📢', '🌈', '☀️', '🌙', '⏰', '⏱️', '📅',
+  '🌍', '🌎', '🌏', '🏘️', '🏛️', '🤝', '👥',
+  '🫂', '🌐', '📝', '📕', '📗', '📘', '📙', '📓', '📔', '🗂️',
+  '📑', '⏲️', '🕐', '🕑', '🕒', '🕓', '🕔', '🕕', '🕖', '⌛',
+  '⏳', '💫', '💕', '💖', '💗', '💙', '💚', '🤗', '🎚️', '📊',
+  '📈', '🔝', '⬆️', '🆙', '🔼', '⏫', '📶', '🎢', '🪜', '💥'
+  ];
 
   // Criteria type options
   const criteriaTypes = [
@@ -67,7 +81,8 @@ export default function AdminAchievementsPage() {
         description: achievement.description || '',
         criteriatype: achievement.criteriatype,
         criteriavalue: achievement.criteriavalue.toString(),
-        xp: achievement.xp.toString()
+        xp: achievement.xp.toString(),
+        picture: achievement.picture || '🏆'
       });
     } else {
       setEditingAchievement(null);
@@ -76,7 +91,8 @@ export default function AdminAchievementsPage() {
         description: '',
         criteriatype: '',
         criteriavalue: '',
-        xp: ''
+        xp: '',
+        picture: '🏆'
       });
     }
     setShowModal(true);
@@ -90,7 +106,8 @@ export default function AdminAchievementsPage() {
       description: '',
       criteriatype: '',
       criteriavalue: '',
-      xp: ''
+      xp: '',
+      picture: '🏆'
     });
   };
 
@@ -102,7 +119,8 @@ export default function AdminAchievementsPage() {
       description: formData.description,
       criteriatype: formData.criteriatype,
       criteriavalue: parseInt(formData.criteriavalue),
-      xp: parseInt(formData.xp)
+      xp: parseInt(formData.xp),
+      picture: formData.picture
     };
 
     if (editingAchievement) {
@@ -202,11 +220,14 @@ export default function AdminAchievementsPage() {
                       className="bg-slate-700/30 border border-slate-600/30 rounded-xl p-4 hover:border-indigo-500/50 transition group"
                     >
                       <div className="flex justify-between items-start mb-3">
-                        <div className="flex-1">
-                          <h3 className="text-white font-semibold mb-1">{achievement.title}</h3>
-                          <p className="text-slate-400 text-sm line-clamp-2">
-                            {achievement.description || 'No description'}
-                          </p>
+                        <div className="flex items-center gap-3 flex-1">
+                          <div className="text-3xl">{achievement.picture || '🏆'}</div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="text-white font-semibold mb-1">{achievement.title}</h3>
+                            <p className="text-slate-400 text-sm line-clamp-2">
+                              {achievement.description || 'No description'}
+                            </p>
+                          </div>
                         </div>
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
@@ -245,111 +266,159 @@ export default function AdminAchievementsPage() {
       {/* Create/Edit Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md border border-slate-700/50 shadow-xl">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Trophy size={20} className="text-yellow-400" />
+          <div className="bg-slate-800 rounded-2xl p-8 w-full max-w-3xl border border-slate-700/50 shadow-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                <Trophy size={24} className="text-yellow-400" />
                 {editingAchievement ? 'Edit Achievement' : 'Create Achievement'}
               </h2>
               <button
                 onClick={handleCloseModal}
                 className="text-slate-400 hover:text-white transition-colors"
               >
-                <X size={20} />
+                <X size={24} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-slate-300 text-sm font-medium mb-2">
-                  Title *
-                </label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  placeholder="e.g., First Study Session"
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-                  required
-                />
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Basic Information Section */}
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-slate-300 text-base font-medium mb-3">
+                    Title *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="e.g., First Study Session"
+                    className="w-full px-5 py-4 text-base bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 text-base font-medium mb-3">
+                    Description
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    placeholder="Describe the achievement and what it takes to unlock it..."
+                    className="w-full px-5 py-4 text-base bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 resize-none"
+                    rows={4}
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-slate-300 text-sm font-medium mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Describe the achievement..."
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 resize-none"
-                  rows={3}
-                />
+              {/* Criteria Section */}
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-slate-300 text-base font-medium mb-3">
+                    Criteria Type *
+                  </label>
+                  <select
+                    value={formData.criteriatype}
+                    onChange={(e) => setFormData({ ...formData, criteriatype: e.target.value })}
+                    className="w-full px-5 py-4 text-base bg-slate-700/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                    required
+                  >
+                    <option value="">Select type...</option>
+                    {criteriaTypes.map(type => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-5">
+                  <div>
+                    <label className="block text-slate-300 text-base font-medium mb-3">
+                      Required Value *
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.criteriavalue}
+                      onChange={(e) => setFormData({ ...formData, criteriavalue: e.target.value })}
+                      placeholder="e.g., 10"
+                      className="w-full px-5 py-4 text-base bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                      required
+                      min="0"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 text-base font-medium mb-3">
+                      XP Reward *
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.xp}
+                      onChange={(e) => setFormData({ ...formData, xp: e.target.value })}
+                      placeholder="e.g., 50"
+                      className="w-full px-5 py-4 text-base bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                      required
+                      min="1"
+                    />
+                  </div>
+                </div>
               </div>
 
+              {/* Divider */}
+              <div className="border-t border-slate-700/50 my-6"></div>
+
+              {/* Emoji Icon Section */}
               <div>
-                <label className="block text-slate-300 text-sm font-medium mb-2">
-                  Criteria Type *
+                <label className="block text-slate-300 text-base font-medium mb-4">
+                  Achievement Icon
                 </label>
-                <select
-                  value={formData.criteriatype}
-                  onChange={(e) => setFormData({ ...formData, criteriatype: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white focus:outline-none focus:border-indigo-500"
-                  required
-                >
-                  <option value="">Select type...</option>
-                  {criteriaTypes.map(type => (
-                    <option key={type.value} value={type.value}>
-                      {type.label}
-                    </option>
+
+                {/* Preview */}
+                <div className="flex items-center gap-4 mb-5 p-4 bg-slate-700/30 border border-slate-600/30 rounded-xl">
+                  <div className="w-20 h-20 rounded-xl bg-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                    <div className="text-5xl">{formData.picture || '🏆'}</div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-white font-medium mb-1">Selected Icon</p>
+                    <p className="text-slate-400 text-sm">
+                      Choose an emoji from the options below
+                    </p>
+                  </div>
+                </div>
+
+                {/* Emoji Picker */}
+                <div className="grid grid-cols-12 gap-3 p-5 bg-slate-700/30 border border-slate-600/30 rounded-xl max-h-64 overflow-y-auto">
+                  {emojiOptions.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, picture: emoji })}
+                      className={`text-3xl w-14 h-14 rounded-xl flex items-center justify-center transition-all hover:scale-110 ${
+                        formData.picture === emoji
+                          ? 'bg-indigo-600 ring-2 ring-indigo-400 shadow-lg'
+                          : 'hover:bg-slate-600/50'
+                      }`}
+                    >
+                      {emoji}
+                    </button>
                   ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-slate-300 text-sm font-medium mb-2">
-                    Required Value *
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.criteriavalue}
-                    onChange={(e) => setFormData({ ...formData, criteriavalue: e.target.value })}
-                    placeholder="e.g., 10"
-                    className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-                    required
-                    min="0"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-300 text-sm font-medium mb-2">
-                    XP Reward *
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.xp}
-                    onChange={(e) => setFormData({ ...formData, xp: e.target.value })}
-                    placeholder="e.g., 50"
-                    className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-                    required
-                    min="1"
-                  />
                 </div>
               </div>
 
-              <div className="flex gap-3 pt-4">
+              {/* Action Buttons */}
+              <div className="flex gap-4 pt-6">
                 <button
                   type="button"
                   onClick={handleCloseModal}
-                  className="flex-1 py-3 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors font-medium"
+                  className="flex-1 py-4 px-6 text-base bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={createMutation.isPending || updateMutation.isPending}
-                  className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-colors font-semibold"
+                  className="flex-1 py-4 px-6 text-base bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-colors font-semibold shadow-lg shadow-indigo-500/20"
                 >
                   {(createMutation.isPending || updateMutation.isPending)
                     ? 'Saving...'
