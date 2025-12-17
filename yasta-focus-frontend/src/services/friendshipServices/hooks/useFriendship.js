@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
 import {
   getFriends,
   getFriendRequests,
@@ -59,23 +60,28 @@ export const useRespondToFriendRequest = () => {
         queryClient.setQueryData(['friendRequests'], context.previousRequests)
       }
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['friendRequests'] })
       queryClient.invalidateQueries({ queryKey: ['friends'] })
+      queryClient.invalidateQueries({ queryKey: ['leaderboard'] })
+      queryClient.invalidateQueries({ queryKey: ['competitionLeaderboard'] })
+      queryClient.invalidateQueries({ queryKey: ['globalCompetitionLeaderboard'] })
       toast.success('Request Accepted!')
-      const unlocked = data?.data?.unlockedAchievements || []
-      console.log(unlocked);
-      if (unlocked.length > 0) {
+      const unlockedData = data?.data?.unlockedAchievements || {}
+      const allUnlocked = [...(unlockedData.requester || []), ...(unlockedData.requestee || [])]
+      console.log('Unlocked achievements:', allUnlocked);
+      if (allUnlocked.length > 0) {
         // Refresh achievement queries
         queryClient.invalidateQueries({ queryKey: ['achievements'] })
         queryClient.invalidateQueries({ queryKey: ['achievementStats'] })
   
         // Show achievement toasts
-          unlocked.forEach(achievement => {
+        allUnlocked.forEach(achievement => {
           toast.success(`🏆 ${achievement.title} (+${achievement.xp} XP)`, {
-          duration: 4000,
-      })
-    })}
+            duration: 4000,
+          })
+        })
+      }
     },
   })
 }

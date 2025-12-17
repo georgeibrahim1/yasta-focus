@@ -177,7 +177,13 @@ export const getCompetitionLeaderboard = catchAsync(async (req, res, next) => {
             u.xp,
             COALESCE(SUM(EXTRACT(EPOCH FROM (s.time_stamp - s.created_at))), 0) as total_time,
             COUNT(s.session_name) as session_count,
-            ARRAY_AGG(DISTINCT cp.subject_name ORDER BY cp.subject_name) as subjects
+            ARRAY_AGG(DISTINCT cp.subject_name ORDER BY cp.subject_name) as subjects,
+            CASE 
+                WHEN f.status = 'Accepted' THEN 'friends'
+                WHEN f.status = 'Pending' AND f.requesterid = $4 THEN 'pending_sent'
+                WHEN f.status = 'Pending' AND f.requesteeid = $4 THEN 'pending_received'
+                ELSE 'none'
+            END as friendship_status
         FROM CompetitionParticipants cp
         JOIN users u ON cp.user_id = u.user_id
         LEFT JOIN session s ON s.user_id = cp.user_id 
@@ -185,10 +191,14 @@ export const getCompetitionLeaderboard = catchAsync(async (req, res, next) => {
             AND s.created_at >= $1
             AND s.created_at <= $2
             AND s.type = 'focus'
+        LEFT JOIN friendship f ON (
+            (f.requesterid = $4 AND f.requesteeid = u.user_id) OR
+            (f.requesteeid = $4 AND f.requesterid = u.user_id)
+        )
         WHERE cp.comp_id = $3
-        GROUP BY u.user_id, u.username, u.profile_picture, u.xp
+        GROUP BY u.user_id, u.username, u.profile_picture, u.xp, f.status, f.requesterid, f.requesteeid
         ORDER BY total_time DESC`,
-        [competition.start_time, competition.end_time, competitionId]
+        [competition.start_time, competition.end_time, competitionId, req.user.user_id]
     );
 
     res.status(200).json({

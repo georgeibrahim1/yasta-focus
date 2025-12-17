@@ -7,8 +7,10 @@ export const useSendFriendRequest = () => {
 
   return useMutation({
     mutationFn: (userId) => leaderboardService.sendFriendRequest(userId),
-    onSuccess: (data) => {  // ← Add 'data' parameter here
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['leaderboard'] })
+      qc.invalidateQueries({ queryKey: ['competitionLeaderboard'] })
+      qc.invalidateQueries({ queryKey: ['globalCompetitionLeaderboard'] })
       qc.invalidateQueries({ queryKey: ['communityMembers'] })
       toast.success('Friend request sent!')
       const unlocked = data?.data?.unlockedAchievements || []
