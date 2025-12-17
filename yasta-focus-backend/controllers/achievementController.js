@@ -77,3 +77,120 @@ export const getUserAchievementStats = catchAsync(async (req, res, next) => {
     }
   });
 });
+
+// controllers/achievementController.js
+
+// ... your existing imports and functions ...
+
+// Create new achievement (ADMIN ONLY)
+export const createAchievement = catchAsync(async (req, res, next) => {
+  const { picture, title, description, criteriatype, criteriavalue, xp } = req.body;
+
+  if (!title || !criteriatype || !description || criteriavalue === undefined || !xp) {
+    return next(new AppError('Please provide title, criteriatype, criteriavalue, and xp', 400));
+  }
+
+  const query = `
+    INSERT INTO achievement (picture,title, description, criteriatype, criteriavalue, xp)
+    VALUES ($1, $2, $3, $4, $5, $6)
+    RETURNING *
+  `;
+
+  const result = await db.query(query, [
+    picture || "🌟",
+    title,
+    description,
+    criteriatype,
+    criteriavalue,
+    xp
+  ]);
+
+  res.status(201).json({
+    status: 'success',
+    data: {
+      achievement: result.rows[0]
+    }
+  });
+});
+
+// Update achievement (ADMIN ONLY)
+export const updateAchievement = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const { title, description, criteriatype, criteriavalue, xp } = req.body;
+
+  // Check if achievement exists
+  const checkQuery = 'SELECT * FROM achievement WHERE id = $1';
+  const checkResult = await db.query(checkQuery, [id]);
+
+  if (checkResult.rows.length === 0) {
+    return next(new AppError('Achievement not found', 404));
+  }
+
+  const query = `
+    UPDATE achievement
+    SET 
+      title = COALESCE($1, title),
+      description = COALESCE($2, description),
+      criteriatype = COALESCE($3, criteriatype),
+      criteriavalue = COALESCE($4, criteriavalue),
+      xp = COALESCE($5, xp)
+    WHERE id = $6
+    RETURNING *
+  `;
+
+  const result = await db.query(query, [
+    title,
+    description,
+    criteriatype,
+    criteriavalue,
+    xp,
+    id
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      achievement: result.rows[0]
+    }
+  });
+});
+
+// Delete achievement (ADMIN ONLY)
+export const deleteAchievement = catchAsync(async (req, res, next) => {
+  const { id } = req.params;
+
+  // Check if achievement exists
+  const checkQuery = 'SELECT * FROM achievement WHERE id = $1';
+  const checkResult = await db.query(checkQuery, [id]);
+
+  if (checkResult.rows.length === 0) {
+    return next(new AppError('Achievement not found', 404));
+  }
+
+  // Delete the achievement
+  await db.query('DELETE FROM achievement WHERE id = $1', [id]);
+
+  res.status(204).json({
+    status: 'success',
+    data: null
+  });
+});
+
+// Get all achievements for admin (without user-specific unlocked status)
+export const getAdminAchievements = catchAsync(async (req, res, next) => {
+  const query = `
+    SELECT *
+    FROM achievement
+    ORDER BY criteriatype, criteriavalue ASC
+  `;
+  
+  const result = await db.query(query);
+
+  res.status(200).json({
+    status: 'success',
+    results: result.rows.length,
+    data: {
+      achievements: result.rows
+    }
+  });
+});
