@@ -35,7 +35,7 @@ export default function EventsPanel({
       {eventsLoading ? (
         <div className="text-slate-400 text-xs">Loading...</div>
       ) : events.length > 0 ? (
-        events.slice(0, 4).map((ev) => (
+        events.map((ev) => (
           <div key={ev.id} className="mb-4 last:mb-0">
             <div className="flex items-center justify-between gap-2 mb-2">
               <div className="flex-1 min-w-0">

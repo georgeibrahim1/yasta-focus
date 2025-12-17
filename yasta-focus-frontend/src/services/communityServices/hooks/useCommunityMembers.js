@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { communityService } from '../service'
+import toast from 'react-hot-toast'
 
 export const useCommunityMembers = (communityId) => {
   return useQuery({
@@ -89,22 +90,9 @@ export const useApproveJoinRequest = () => {
     },
     onSuccess: (data, variables) => {
       console.log('[useApproveJoinRequest] onSuccess:', data)
-    },
-    onError: (err, variables, context) => {
-      console.error('[useApproveJoinRequest] Error:', err)
-      // Revert on error
-      if (context?.previousPending) {
-        console.log('[useApproveJoinRequest] Reverting to:', context.previousPending)
-        queryClient.setQueryData(['pendingRequests', variables.communityId], context.previousPending)
-      }
-    },
-    onSettled: (data, error, variables) => {
-      console.log('[useApproveJoinRequest] onSettled - invalidating community members')
-      // Only invalidate community members to update the accepted members list
-      queryClient.invalidateQueries({ queryKey: ['communityMembers', variables.communityId] })
-        toast.success('Approved!')
-        const unlocked = data?.data?.unlockedAchievements || []
-        if (unlocked.length > 0) {
+      toast.success('Request approved! Member added to community 🎉')
+      const unlocked = data?.data?.unlockedAchievements || []
+      if (unlocked.length > 0) {
         // Refresh achievement queries
         queryClient.invalidateQueries({ queryKey: ['achievements'] })
         queryClient.invalidateQueries({ queryKey: ['achievementStats'] })
@@ -112,13 +100,38 @@ export const useApproveJoinRequest = () => {
         queryClient.invalidateQueries({ queryKey: ['user'] })
   
         // Show achievement toasts
-          unlocked.forEach(achievement => {
+        unlocked.forEach(achievement => {
           toast.success(`🏆 ${achievement.title} (+${achievement.xp} XP)`, {
-          duration: 4000,
-      })
-    })}
+            duration: 4000,
+          })
+        })
+      }
+    },
+    onError: (err, variables, context) => {
+      console.error('[useApproveJoinRequest] Error:', err)
       
-      // return data                     
+      // Check if error is 404 (request already processed/deleted)
+      const errorMessage = err?.response?.data?.message || err?.message
+      const isNotFound = err?.response?.status === 404 || errorMessage?.includes('not found')
+      
+      if (isNotFound) {
+        // Request already processed - just show a message and don't revert
+        toast.error('This request has already been processed')
+        // Invalidate to refresh the list
+        queryClient.invalidateQueries({ queryKey: ['pendingRequests', variables.communityId] })
+      } else {
+        // Other error - revert the optimistic update
+        toast.error(errorMessage || 'Failed to approve request')
+        if (context?.previousPending) {
+          console.log('[useApproveJoinRequest] Reverting to:', context.previousPending)
+          queryClient.setQueryData(['pendingRequests', variables.communityId], context.previousPending)
+        }
+      }
+    },
+    onSettled: (data, error, variables) => {
+      console.log('[useApproveJoinRequest] onSettled - invalidating community members')
+      // Invalidate community members to update the accepted members list
+      queryClient.invalidateQueries({ queryKey: ['communityMembers', variables.communityId] })
     }
   })
 }
@@ -153,15 +166,32 @@ export const useRejectJoinRequest = () => {
     },
     onSuccess: (data, variables) => {
       console.log('[useRejectJoinRequest] onSuccess:', data)
+      toast.success('Request rejected')
     },
     onError: (err, variables, context) => {
       console.error('[useRejectJoinRequest] Error:', err)
-      // Revert on error
-      if (context?.previousPending) {
-        console.log('[useRejectJoinRequest] Reverting to:', context.previousPending)
-        queryClient.setQueryData(['pendingRequests', variables.communityId], context.previousPending)
+      
+      // Check if error is 404 (request already processed/deleted)
+      const errorMessage = err?.response?.data?.message || err?.message
+      const isNotFound = err?.response?.status === 404 || errorMessage?.includes('not found')
+      
+      if (isNotFound) {
+        // Request already processed - just show a message and don't revert
+        toast.error('This request has already been processed')
+        // Invalidate to refresh the list
+        queryClient.invalidateQueries({ queryKey: ['pendingRequests', variables.communityId] })
+      } else {
+        // Other error - revert the optimistic update
+        toast.error(errorMessage || 'Failed to reject request')
+        if (context?.previousPending) {
+          console.log('[useRejectJoinRequest] Reverting to:', context.previousPending)
+          queryClient.setQueryData(['pendingRequests', variables.communityId], context.previousPending)
+        }
       }
+    },
+    onSettled: (data, error, variables) => {
+      // Refresh pending requests list to ensure consistency
+      queryClient.invalidateQueries({ queryKey: ['pendingRequests', variables.communityId] })
     }
-    // No onSuccess invalidation - optimistic update is enough
   })
 }
