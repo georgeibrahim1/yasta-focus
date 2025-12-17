@@ -29,4 +29,7 @@ router.get('/reports', adminController.getReports);
 router.patch('/reports/:reporterId/:reportedId/status', adminController.updateReportStatus);
 router.delete('/reports/:reporterId/:reportedId', adminController.deleteReport);
 
+// System Logs
+router.get('/logs', adminController.getLogs);
+
 export default router;

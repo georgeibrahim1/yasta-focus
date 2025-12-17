@@ -2,6 +2,7 @@ import db from '../db.js';
 import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/appError.js';
 import {checkCommunitiesJoinedAchievements,checkCommunitiesCreatedAchievements, checkCommunityCountdAchievements } from '../utils/achievementHelper.js';
+import { insertLog } from '../utils/logHelper.js';
 
 // Get all communities with pagination, filters, and user join status
 export const getAllCommunities = catchAsync(async (req, res, next) => {
@@ -234,6 +235,18 @@ export const joinCommunity = catchAsync(async (req, res, next) => {
     );
   }
 
+  // Log the join request action
+  try {
+    await insertLog({
+      user_id: userId,
+      action_type: 'JOIN_COMMUNITY_REQUEST',
+      action_content: `Requested to join community: ${communityId}`,
+      actor_type: 'user',
+    });
+  } catch (logErr) {
+    console.error('Failed to log join community action:', logErr);
+  }
+
   res.status(200).json({
     status: 'success',
     message: 'Join request sent successfully',
@@ -270,6 +283,18 @@ export const leaveCommunity = catchAsync(async (req, res, next) => {
      WHERE community_ID = $1 AND user_id = $2`,
     [communityId, userId]
   );
+
+  // Log the leave action
+  try {
+    await insertLog({
+      user_id: userId,
+      action_type: 'LEAVE_COMMUNITY',
+      action_content: `Left community: ${communityId}`,
+      actor_type: 'user',
+    });
+  } catch (logErr) {
+    console.error('Failed to log leave community action:', logErr);
+  }
 
   res.status(200).json({
     status: 'success',
@@ -383,6 +408,18 @@ export const createCommunity = catchAsync(async (req, res, next) => {
 
   const createdCommunities = await checkCommunitiesCreatedAchievements(userId);
   const unlockedAchievements = Array.isArray(createdCommunities) ? createdCommunities : [];
+
+  // Log the create community action
+  try {
+    await insertLog({
+      user_id: userId,
+      action_type: 'CREATE_COMMUNITY',
+      action_content: `Created community: ${community_Name}`,
+      actor_type: 'user',
+    });
+  } catch (logErr) {
+    console.error('Failed to log create community action:', logErr);
+  }
 
   res.status(201).json({
     status: 'success',
@@ -572,6 +609,18 @@ export const updateCommunityInfo = catchAsync(async (req, res, next) => {
   `;
 
   const result = await db.query(updateQuery, params);
+
+  // Log the update action
+  try {
+    await insertLog({
+      user_id: userId,
+      action_type: 'UPDATE_COMMUNITY',
+      action_content: `Updated community info: ${result.rows[0].community_name}`,
+      actor_type: isAdmin ? 'admin' : 'user',
+    });
+  } catch (logErr) {
+    console.error('Failed to log update community action:', logErr);
+  }
 
   res.status(200).json({
     status: 'success',
@@ -777,6 +826,18 @@ export const deleteCommunity = catchAsync(async (req, res, next) => {
     'DELETE FROM community WHERE community_ID = $1',
     [communityId]
   );
+
+  // Log the delete action
+  try {
+    await insertLog({
+      user_id: userId,
+      action_type: 'DELETE_COMMUNITY',
+      action_content: `Deleted community: ${communityId}`,
+      actor_type: isAdmin ? 'admin' : 'user',
+    });
+  } catch (logErr) {
+    console.error('Failed to log delete community action:', logErr);
+  }
 
   res.status(204).json({
     status: 'success',
@@ -1179,6 +1240,18 @@ export const createCommunityCompetition = catchAsync(async (req, res, next) => {
     ]
   );
 
+  // Log the create competition action
+  try {
+    await insertLog({
+      user_id: userId,
+      action_type: 'CREATE_COMPETITION',
+      action_content: `Created competition "${competition_name}" in community: ${communityId}`,
+      actor_type: isAdmin ? 'admin' : 'user',
+    });
+  } catch (logErr) {
+    console.error('Failed to log create competition action:', logErr);
+  }
+
   res.status(201).json({
     status: 'success',
     data: {
@@ -1252,6 +1325,18 @@ export const joinCommunityCompetition = catchAsync(async (req, res, next) => {
       'INSERT INTO CompetitionParticipants (comp_id, user_id, subject_name) VALUES ($1, $2, $3)',
       [competitionId, userId, subject]
     );
+  }
+
+  // Log the join competition action
+  try {
+    await insertLog({
+      user_id: userId,
+      action_type: 'JOIN_COMPETITION',
+      action_content: `Joined competition ${competitionId} with ${subjects.length} subject(s)`,
+      actor_type: 'user',
+    });
+  } catch (logErr) {
+    console.error('Failed to log join competition action:', logErr);
   }
 
   res.status(200).json({
@@ -1330,6 +1415,18 @@ export const deleteCommunityCompetition = catchAsync(async (req, res, next) => {
 
   if (result.rows.length === 0) {
     return next(new AppError('Competition not found', 404));
+  }
+
+  // Log the delete competition action
+  try {
+    await insertLog({
+      user_id: userId,
+      action_type: 'DELETE_COMPETITION',
+      action_content: `Deleted competition ${competitionId} from community: ${communityId}`,
+      actor_type: isAdmin ? 'admin' : 'user',
+    });
+  } catch (logErr) {
+    console.error('Failed to log delete competition action:', logErr);
   }
 
   res.status(200).json({

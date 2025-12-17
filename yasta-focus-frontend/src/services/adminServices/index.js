@@ -155,3 +155,24 @@ export const useDeleteUser = () => {
     },
   })
 }
+
+// Get system logs
+export const useGetLogs = (params = {}) => {
+  return useQuery({
+    queryKey: ['admin', 'logs', params],
+    queryFn: async () => {
+      const queryParams = new URLSearchParams()
+      if (params.page) queryParams.append('page', params.page)
+      if (params.limit) queryParams.append('limit', params.limit)
+      if (params.action_type && params.action_type !== 'all') queryParams.append('action_type', params.action_type)
+      if (params.actor_type && params.actor_type !== 'all') queryParams.append('actor_type', params.actor_type)
+      if (params.user_id) queryParams.append('user_id', params.user_id)
+      if (params.start_date) queryParams.append('start_date', params.start_date)
+      if (params.end_date) queryParams.append('end_date', params.end_date)
+      if (params.order_by) queryParams.append('order_by', params.order_by)
+      
+      const { data } = await api.get(`/api/admin/logs?${queryParams.toString()}`)
+      return data
+    },
+  })
+}

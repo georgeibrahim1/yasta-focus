@@ -653,3 +653,113 @@ export const deleteUser = catchAsync(async (req, res, next) => {
     return next(new AppError(`Failed to delete user: ${error.message}`, 500));
   }
 });
+
+// Get system logs with filters
+export const getLogs = catchAsync(async (req, res, next) => {
+  // Ensure user is admin (role 0)
+  if (req.user.role !== 0) {
+    return next(new AppError('Access denied. Admin only.', 403));
+  }
+
+  const { 
+    page = 1, 
+    limit = 50, 
+    action_type = '', 
+    actor_type = '',
+    user_id = '',
+    start_date = '',
+    end_date = '',
+    order_by = 'desc'
+  } = req.query;
+
+  const offset = (parseInt(page) - 1) * parseInt(limit);
+  
+  // Build query conditions
+  let conditions = [];
+  let params = [];
+  let paramCount = 0;
+
+  if (action_type && action_type !== 'all') {
+    paramCount++;
+    conditions.push(`l.action_type = $${paramCount}`);
+    params.push(action_type);
+  }
+
+  if (actor_type && actor_type !== 'all') {
+    paramCount++;
+    conditions.push(`l.actor_type = $${paramCount}`);
+    params.push(actor_type);
+  }
+
+  if (user_id) {
+    paramCount++;
+    conditions.push(`l.user_id = $${paramCount}`);
+    params.push(user_id);
+  }
+
+  if (start_date) {
+    paramCount++;
+    conditions.push(`l.created_at >= $${paramCount}`);
+    params.push(start_date);
+  }
+
+  if (end_date) {
+    paramCount++;
+    conditions.push(`l.created_at <= $${paramCount}`);
+    params.push(end_date);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+  // Validate and set order direction
+  const orderDirection = (order_by?.toLowerCase() === 'asc') ? 'ASC' : 'DESC';
+  console.log('Order by param:', order_by, 'Order direction:', orderDirection);
+
+  // Get total count
+  const countQuery = `
+    SELECT COUNT(*) as total
+    FROM log l
+    ${whereClause}
+  `;
+  const countResult = await pool.query(countQuery, params);
+  const total = parseInt(countResult.rows[0].total);
+
+  // Get logs with user information
+  paramCount++;
+  params.push(parseInt(limit));
+  paramCount++;
+  params.push(offset);
+
+  const logsQuery = `
+    SELECT 
+      l.log_no,
+      l.user_id,
+      l.action_type,
+      l.action_content,
+      l.actor_type,
+      l.created_at,
+      u.username,
+      u.email,
+      u.profile_picture
+    FROM log l
+    LEFT JOIN users u ON l.user_id = u.user_id
+    ${whereClause}
+    ORDER BY l.created_at ${orderDirection}
+    LIMIT $${paramCount - 1} OFFSET $${paramCount}
+  `;
+
+  const logsResult = await pool.query(logsQuery, params);
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      logs: logsResult.rows,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / parseInt(limit))
+      }
+    }
+  });
+});
