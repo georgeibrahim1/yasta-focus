@@ -9,6 +9,7 @@ export const useSendFriendRequest = () => {
     mutationFn: (userId) => leaderboardService.sendFriendRequest(userId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['leaderboard'] })
+      qc.invalidateQueries({ queryKey: ['communityMembers'] })
       toast.success('Friend request sent!')
     },
     onError: (err) => {

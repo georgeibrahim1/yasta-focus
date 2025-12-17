@@ -5,6 +5,10 @@ export default function EventsPanel({
   onAddEvent = () => {}, 
   onInfoEvent = () => {},
   onJoinEvent = () => {},
+  onDeleteEvent = () => {},
+  onJoinCompetition = () => {}, 
+  onViewCompetition = () => {},
+  onInfoCompetition = () => {},
   isAdmin = false 
 }) {
   const { data: eventsData, isLoading: eventsLoading } = useGetEvents()
@@ -36,6 +40,15 @@ export default function EventsPanel({
                   {new Date(ev.date).toLocaleDateString()}
                   {ev.is_live && <span className="ml-2 text-green-400">● Live</span>}
                 </div>
+                {isAdmin && (
+                  <button
+                    onClick={() => onDeleteEvent(ev)}
+                    className="text-red-400 hover:text-red-300 text-xs px-2 py-1"
+                    title="Delete event"
+                  >
+                    ✕
+                  </button>
+                )}
               </div>
             </div>
             <div className="flex gap-2">

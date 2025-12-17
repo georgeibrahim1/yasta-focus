@@ -52,6 +52,12 @@ export const communityService = {
     return response.data
   },
 
+  // Create a new event
+  createEvent: async (eventData) => {
+    const response = await api.post('/api/events', eventData)
+    return response.data
+  },
+
   // Get all competitions
   getCompetitions: async () => {
     const response = await api.get('/api/competitions/all')
@@ -130,6 +136,18 @@ export const communityService = {
     return response.data
   },
 
+  // Add member by username (managers only)
+  addMemberByUsername: async (communityId, username) => {
+    const response = await api.post(`/api/communities/${communityId}/add-member`, { username })
+    return response.data
+  },
+
+  // Invite friend to community (any member)
+  inviteFriendToCommunity: async (communityId, friendId) => {
+    const response = await api.post(`/api/communities/${communityId}/invite-friend`, { friendId })
+    return response.data
+  },
+
   // Get community competitions
   getCommunityCompetitions: async (communityId) => {
     const response = await api.get(`/api/communities/${communityId}/competitions`)
@@ -161,3 +179,33 @@ export const communityService = {
     return response.data
   }
 }
+
+// Export individual functions for convenience
+export const { 
+  getCommunities,
+  getAllTags,
+  getCommunityMembers,
+  joinCommunity,
+  leaveCommunity,
+  createCommunity,
+  getEvents,
+  createEvent,
+  getCompetitions,
+  joinCompetition,
+  getCommunityStats,
+  updateCommunityInfo,
+  deleteCommunity,
+  updateMemberBio,
+  exitCommunity,
+  removeMember,
+  promoteMember,
+  demoteMember,
+  getPendingRequests,
+  approveJoinRequest,
+  rejectJoinRequest,
+  getCommunityCompetitions,
+  createCommunityCompetition,
+  joinCommunityCompetition,
+  getCommunityCompetitionEntries,
+  deleteCommunityCompetition
+} = communityService

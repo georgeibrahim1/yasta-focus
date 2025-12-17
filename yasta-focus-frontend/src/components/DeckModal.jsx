@@ -1,7 +1,7 @@
 import { X } from 'lucide-react'
 import Input from './Input'
 
-export default function DeckModal({ isOpen, onClose, onSubmit, formData, setFormData, isLoading }) {
+export default function DeckModal({ isOpen, onClose, onSubmit, formData, setFormData, isLoading, error }) {
   if (!isOpen) return null
 
   const handleSubmit = (e) => {
@@ -24,6 +24,11 @@ export default function DeckModal({ isOpen, onClose, onSubmit, formData, setForm
             <X size={24} />
           </button>
         </div>
+        {error && (
+          <div className="mb-4 p-3 rounded-lg border border-red-500 bg-red-500/10 text-red-400 text-sm">
+            {error}
+          </div>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
             label="Deck Title"

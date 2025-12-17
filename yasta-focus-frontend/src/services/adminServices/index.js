@@ -136,3 +136,22 @@ export const useUpdateUserRole = () => {
     },
   })
 }
+
+// Delete user
+export const useDeleteUser = () => {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: async (userId) => {
+      const { data } = await api.delete(`/api/admin/users/${userId}`)
+      return data
+    },
+    onSuccess: () => {
+      // Invalidate and refetch user-related queries
+      queryClient.invalidateQueries({ queryKey: ['admin', 'users'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'top-users'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'recent-users'] })
+      queryClient.invalidateQueries({ queryKey: ['admin', 'platform-stats'] })
+    },
+  })
+}

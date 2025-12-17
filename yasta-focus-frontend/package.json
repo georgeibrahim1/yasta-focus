@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.33.0",
+    "@stream-io/video-react-sdk": "^1.28.2",
     "@tailwindcss/vite": "^4.1.17",
     "@tanstack/react-query": "^5.90.10",
     "@tanstack/react-query-devtools": "^5.91.1",
@@ -23,8 +24,11 @@
     "react-hot-toast": "^2.6.0",
     "react-router": "^7.9.6",
     "react-router-dom": "^7.9.6",
+    "react-snowfall": "^2.4.0",
     "recharts": "^3.5.1",
     "socket.io-client": "^4.8.1",
+    "stream-chat": "^9.27.2",
+    "stream-chat-react": "^13.13.0",
     "tailwindcss": "^4.1.17"
   },
   "devDependencies": {

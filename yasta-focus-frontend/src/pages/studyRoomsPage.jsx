@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { Search, Users, ArrowLeft, Plus, Trash2, UserPlus, Flag, UserX, Megaphone, Shield, Edit3, Clock, Check, X, Settings, LogOut, BarChart3, TrendingUp, Trophy, Calendar } from 'lucide-react'
 import { useStudyRooms, useJoinRoom, useLeaveRoom, useDeleteRoom } from '../services/studyRoomServices'
 import { useAnnouncements, useCreateAnnouncement, useDeleteAnnouncement } from '../services/announcementServices'
-import { useCommunityMembers, useKickMember, usePendingRequests, useApproveJoinRequest, useRejectJoinRequest, useCommunityStats, usePromoteMember, useDemoteMember } from '../services/communityServices'
+import { useCommunityMembers, useKickMember, usePendingRequests, useApproveJoinRequest, useRejectJoinRequest, useCommunityStats, usePromoteMember, useDemoteMember, useAddMemberByUsername, useInviteFriendToCommunity } from '../services/communityServices'
 import { useUpdateCommunityInfo, useDeleteCommunity, useExitCommunity, useUpdateMemberBio } from '../services/communityServices'
 import { useSendFriendRequest, useReportUser } from '../services/leaderboardServices'
+import { useGetFriends } from '../services/friendshipServices'
 import { useUser } from '../services/authServices'
 import Select from '../components/Select'
 import CreateRoomModal from '../components/CreateRoomModal'
@@ -33,6 +34,12 @@ export default function StudyRoomsPage() {
   const [communityDescription, setCommunityDescription] = useState('')
   const [showStatsModal, setShowStatsModal] = useState(false)
   const [joiningRoomCode, setJoiningRoomCode] = useState(null)
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false)
+  const [showInviteFriendModal, setShowInviteFriendModal] = useState(false)
+  const [addMemberUsername, setAddMemberUsername] = useState('')
+  const [selectedFriendToInvite, setSelectedFriendToInvite] = useState(null)
+  const [addMemberError, setAddMemberError] = useState('')
+  const [inviteFriendError, setInviteFriendError] = useState('')
 
   const { data: currentUser } = useUser()
   const { data: rooms = [], isLoading } = useStudyRooms(communityId, search)
@@ -54,8 +61,14 @@ export default function StudyRoomsPage() {
   const deleteCommunity = useDeleteCommunity()
   const exitCommunity = useExitCommunity()
   const deleteAnnouncementMutation = useDeleteAnnouncement()
+  const createCompetitionMutation = useCreateCommunityCompetition()
+  const joinCompetitionMutation = useJoinCommunityCompetition()
+  const deleteCompetitionMutation = useDeleteCommunityCompetition()
+  const addMemberMutation = useAddMemberByUsername()
+  const inviteFriendMutation = useInviteFriendToCommunity()
   
   const { data: stats } = useCommunityStats(communityId)
+  const { data: friendsList = [] } = useGetFriends()
 
   const user = currentUser?.data?.user || currentUser?.user || currentUser
   const userId = user?.user_id
@@ -185,8 +198,8 @@ export default function StudyRoomsPage() {
     }
   }
 
-  const handleFriendRequest = (member) => {
-    sendFriendRequest(member.user_id)
+  const handleFriendRequest = async (member) => {
+    await sendFriendRequest(member.user_id)
   }
 
   const handleReport = (member) => {
@@ -252,6 +265,92 @@ export default function StudyRoomsPage() {
       } catch {
         // Error handled by mutation
       }
+    }
+  }
+
+  const handleCreateCompetition = async () => {
+    if (!competitionName.trim() || !competitionDeadline) return
+    try {
+      await createCompetitionMutation.mutateAsync({
+        communityId,
+        competitionData: {
+          title: competitionName,
+          description: competitionDescription,
+          end_time: competitionDeadline,
+          max_subjects: maxSubjects,
+          max_participants: maxParticipants
+        }
+      })
+      setCompetitionName('')
+      setCompetitionDescription('')
+      setCompetitionDeadline('')
+      setMaxSubjects(3)
+      setMaxParticipants(20)
+      setShowCreateCompetitionModal(false)
+    } catch {
+      // Error handled by mutation
+    }
+  }
+
+  const handleOpenJoinCompetition = (competition) => {
+    setSelectedCompetition(competition)
+    setSelectedSubjects([])
+    setShowJoinCompetitionModal(true)
+  }
+
+  const handleJoinCompetition = async () => {
+    if (selectedSubjects.length === 0) return
+    try {
+      await joinCompetitionMutation.mutateAsync({
+        communityId,
+        competitionId: selectedCompetition.competition_id,
+        subjects: selectedSubjects
+      })
+      setShowJoinCompetitionModal(false)
+      setSelectedCompetition(null)
+      setSelectedSubjects([])
+    } catch {
+      // Error handled by mutation
+    }
+  }
+
+  const handleDeleteCompetition = async (competitionId) => {
+    if (window.confirm('Are you sure you want to delete this competition?')) {
+      try {
+        await deleteCompetitionMutation.mutateAsync({ communityId, competitionId })
+      } catch {
+        // Error handled by mutation
+      }
+    }
+  }
+
+  const handleAddMember = async () => {
+    if (!addMemberUsername.trim()) {
+      setAddMemberError('Please enter a username')
+      return
+    }
+    setAddMemberError('')
+    try {
+      await addMemberMutation.mutateAsync({ communityId, username: addMemberUsername.trim() })
+      setAddMemberUsername('')
+      setShowAddMemberModal(false)
+    } catch (error) {
+      setAddMemberError(error.response?.data?.message || 'Failed to add member')
+    }
+  }
+
+  const handleInviteFriend = async () => {
+    if (!selectedFriendToInvite) {
+      setInviteFriendError('Please select a friend')
+      return
+    }
+    setInviteFriendError('')
+    try {
+      await inviteFriendMutation.mutateAsync({ communityId, friendId: selectedFriendToInvite })
+      setSelectedFriendToInvite(null)
+      setShowInviteFriendModal(false)
+    } catch (error) {
+      setInviteFriendError(error.response?.data?.message || 'Failed to invite friend')
     }
   }
 
@@ -537,10 +636,20 @@ export default function StudyRoomsPage() {
 
           {/* Members Section */}
           <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50">
-            <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-              <Users size={18} />
-              Members ({members.length})
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-white font-semibold flex items-center gap-2">
+                <Users size={18} />
+                Members ({members.length})
+              </h3>
+              {/* Add/Invite Member Icon */}
+              <button
+                onClick={() => currentUserIsManager ? setShowAddMemberModal(true) : setShowInviteFriendModal(true)}
+                className="p-1.5 hover:bg-slate-600 rounded-lg transition-colors"
+                title={currentUserIsManager ? "Add member by username" : "Invite a friend"}
+              >
+                <UserPlus className="w-4 h-4 text-indigo-400" />
+              </button>
+            </div>
             <div className="space-y-3 max-h-64 overflow-y-auto">
               {members.map((member) => (
                 <div key={member.user_id} className="flex items-center gap-3 group">
@@ -1133,6 +1242,156 @@ export default function StudyRoomsPage() {
                 className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-colors font-medium"
               >
                 {joinRoom.isPending ? 'Joining...' : 'Join Room'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Member by Username Modal (Managers only) */}
+      {showAddMemberModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md border border-slate-700/50 shadow-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <UserPlus size={20} className="text-indigo-400" />
+                Add Member
+              </h2>
+              <button
+                onClick={() => {
+                  setShowAddMemberModal(false)
+                  setAddMemberUsername('')
+                  setAddMemberError('')
+                }}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <p className="text-slate-400 text-sm mb-4">
+              Enter a username to add them as a member directly.
+            </p>
+            
+            <input
+              type="text"
+              value={addMemberUsername}
+              onChange={(e) => setAddMemberUsername(e.target.value)}
+              placeholder="Enter username"
+              className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500/50 mb-2"
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleAddMember()
+                }
+              }}
+            />
+            {addMemberError && (
+              <p className="text-red-400 text-sm mb-4">{addMemberError}</p>
+            )}
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowAddMemberModal(false)
+                  setAddMemberUsername('')
+                  setAddMemberError('')
+                }}
+                className="flex-1 py-2 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAddMember}
+                disabled={!addMemberUsername.trim() || addMemberMutation.isPending}
+                className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-colors font-medium"
+              >
+                {addMemberMutation.isPending ? 'Adding...' : 'Add Member'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invite Friend Modal (Any member) */}
+      {showInviteFriendModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl p-6 w-full max-w-md border border-slate-700/50 shadow-xl">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <UserPlus size={20} className="text-indigo-400" />
+                Invite Friend
+              </h2>
+              <button
+                onClick={() => {
+                  setShowInviteFriendModal(false)
+                  setSelectedFriendToInvite(null)
+                  setInviteFriendError('')
+                }}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <p className="text-slate-400 text-sm mb-4">
+              Invite a friend to join this community. They will be added to pending requests for manager approval.
+            </p>
+            
+            {friendsList.length === 0 ? (
+              <p className="text-slate-500 text-sm mb-4">You have no friends to invite.</p>
+            ) : (
+              <div className="space-y-2 mb-4 max-h-64 overflow-y-auto">
+                {friendsList.map((friend) => (
+                  <button
+                    key={friend.user_id}
+                    onClick={() => setSelectedFriendToInvite(friend.user_id)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                      selectedFriendToInvite === friend.user_id
+                        ? 'bg-indigo-600/20 border-indigo-500/50'
+                        : 'bg-slate-700/30 border-slate-600/50 hover:bg-slate-700/50'
+                    } border`}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                      {friend.profile_picture ? (
+                        <img src={friend.profile_picture} alt={friend.username} className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        friend.username?.charAt(0).toUpperCase()
+                      )}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-white text-sm font-medium">{friend.username}</p>
+                      {friend.xp !== undefined && (
+                        <p className="text-slate-400 text-xs">{friend.xp} XP</p>
+                      )}
+                    </div>
+                    {selectedFriendToInvite === friend.user_id && (
+                      <Check className="w-5 h-5 text-indigo-400" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+            {inviteFriendError && (
+              <p className="text-red-400 text-sm mb-4">{inviteFriendError}</p>
+            )}
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowInviteFriendModal(false)
+                  setSelectedFriendToInvite(null)
+                  setInviteFriendError('')
+                }}
+                className="flex-1 py-2 px-4 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleInviteFriend}
+                disabled={!selectedFriendToInvite || inviteFriendMutation.isPending || friendsList.length === 0}
+                className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl transition-colors font-medium"
+              >
+                {inviteFriendMutation.isPending ? 'Inviting...' : 'Invite Friend'}
               </button>
             </div>
           </div>

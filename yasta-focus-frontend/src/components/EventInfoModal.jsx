@@ -1,8 +1,28 @@
 import React from 'react'
-import { X } from 'lucide-react'
+import { X, Trash2 } from 'lucide-react'
+import { useDeleteEvent } from '../services/communityServices'
+import { useUser } from '../services/authServices'
 
 export default function EventInfoModal({ event, isOpen, onClose }) {
+  const { data: currentUser } = useUser()
+  const deleteEvent = useDeleteEvent()
+  
+  const isAdmin = currentUser?.user?.role === 0
+  
   if (!isOpen || !event) return null
+
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+      return
+    }
+    
+    try {
+      await deleteEvent.mutateAsync(event.id)
+      onClose()
+    } catch (error) {
+      console.error('Failed to delete event:', error)
+    }
+  }
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -32,10 +52,20 @@ export default function EventInfoModal({ event, isOpen, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-slate-700 flex justify-end">
+        <div className="p-6 border-t border-slate-700 flex justify-between items-center">
+          {isAdmin && (
+            <button
+              onClick={handleDelete}
+              disabled={deleteEvent.isPending}
+              className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 border border-red-600/30"
+            >
+              <Trash2 size={16} />
+              {deleteEvent.isPending ? 'Deleting...' : 'Delete Event'}
+            </button>
+          )}
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+            className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors ml-auto"
           >
             Close
           </button>

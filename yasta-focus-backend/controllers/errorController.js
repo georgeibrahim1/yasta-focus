@@ -2,8 +2,40 @@ import AppError from '../utils/appError.js';
 
 // unique constraint violation
 const handleDuplicateFieldsDB = err => {
-  const field = err.constraint?.replace('_key', '').replace('users_', '');
-  const message = `${field || 'Field'} already exists. Please use another value!`;
+  let message = 'This item already exists. Please use a different name.';
+  
+  // Extract more specific information from the constraint name
+  const constraint = err.constraint || '';
+  const detail = err.detail || '';
+  
+  // Handle specific constraints with better messages
+  if (constraint.includes('username')) {
+    message = 'This username is already taken. Please choose another one.';
+  } else if (constraint.includes('email')) {
+    message = 'This email is already registered. Please use another email.';
+  } else if (constraint.includes('subject')) {
+    message = 'A subject with this name already exists. Please use a different name.';
+  } else if (constraint.includes('note')) {
+    message = 'A note with this title already exists in this subject. Please use a different title.';
+  } else if (constraint.includes('task')) {
+    message = 'A task with this title already exists in this subject. Please use a different title.';
+  } else if (constraint.includes('deck')) {
+    message = 'A deck with this title already exists in this subject. Please use a different title.';
+  } else if (constraint.includes('flash_card') || constraint.includes('question')) {
+    message = 'A flashcard with this question already exists in this deck. Please use a different question.';
+  } else if (constraint.includes('community')) {
+    message = 'A community with this name already exists. Please choose a different name.';
+  } else if (constraint.includes('session')) {
+    message = 'A session with this name already exists. Please use a different name.';
+  } else if (detail) {
+    // Try to extract the field name from the detail message
+    const fieldMatch = detail.match(/Key \(([^)]+)\)/);
+    if (fieldMatch && fieldMatch[1]) {
+      const field = fieldMatch[1].split(',')[0].replace(/_/g, ' ');
+      message = `This ${field} already exists. Please use a different value.`;
+    }
+  }
+  
   return new AppError(message, 400);
 };
 
@@ -94,22 +126,23 @@ export default (err, req, res, next) => {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
+  // Handle PostgreSQL errors in both dev and prod
+  let error = { ...err };
+  error.message = err.message;
+
+  // PostgreSQL error codes
+  if (err.code === '23505') error = handleDuplicateFieldsDB(err);
+  if (err.code === '22P02') error = handleInvalidInputDB(err);
+  if (err.code === '23503') error = handleForeignKeyViolationDB(err);
+  if (err.code === '23502') error = handleNotNullViolationDB(err);
+  
+  // JWT errors
+  if (err.name === 'JsonWebTokenError') error = handleJWTError();
+  if (err.name === 'TokenExpiredError') error = handleJWTExpiredError();
+
   if (process.env.NODE_ENV === 'development') {
-    sendErrorDev(err, req, res);
+    sendErrorDev(error, req, res);
   } else if (process.env.NODE_ENV === 'production') {
-    let error = { ...err };
-    error.message = err.message;
-
-    // PostgreSQL error codes
-    if (error.code === '23505') error = handleDuplicateFieldsDB(error);
-    if (error.code === '22P02') error = handleInvalidInputDB(error);
-    if (error.code === '23503') error = handleForeignKeyViolationDB(error);
-    if (error.code === '23502') error = handleNotNullViolationDB(error);
-    
-    // JWT errors
-    if (error.name === 'JsonWebTokenError') error = handleJWTError();
-    if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
-
     sendErrorProd(error, req, res);
   }
 };

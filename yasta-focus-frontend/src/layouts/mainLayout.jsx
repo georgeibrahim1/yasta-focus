@@ -15,9 +15,9 @@ export default function MainLayout() {
             {/* Admin Navigation */}
             <ProtectedComponent requiredRole={0}>
               <SidebarButton icon="/icons/blackboard-icon.svg" label="Dashboard" link="/dashboard" />
-              <SidebarButton icon="/icons/user-icon.svg" label="Users" link="/admin/users" />
+              <SidebarButton icon="/icons/passports-icon.svg" label="Users" link="/admin/users" />
               <SidebarButton icon="/icons/globes-icon.svg" label="Communities" link="/communities" />
-              <SidebarButton icon="/icons/alarm-icon.svg" label="Reports & Logs" link="/admin/reports" />
+              <SidebarButton icon="/icons/credit-card-icon.svg" label="Reports & Logs" link="/admin/reports" />
             </ProtectedComponent>
 
             {/* Student Navigation */}

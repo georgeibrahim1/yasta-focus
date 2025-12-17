@@ -1,14 +1,21 @@
 import React, { useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import EventsPanel from './EventsPanel'
 import EventInfoModal from './EventInfoModal'
+import EventModal from './EventModal'
+import CompetitionInfoModal from './CompetitionInfoModal'
+import CompetitionJoinModal from './CompetitionJoinModal'
 import CreateCommunityModal from './CreateCommunityModal'
 import ProtectedComponent from './ProtectedComponent'
 import CompetitionWidget from './CompetitionWidget'
 import { useUser } from '../services/authServices'
 import { useCreateCommunity } from '../services/communityServices/hooks/useCreateCommunity'
+import { useCreateEvent } from '../services/communityServices/hooks/useCreateEvent'
+import { useDeleteEvent } from '../services/communityServices/hooks/useDeleteEvent'
 
 export default function CommunitySidebar() {
+  const navigate = useNavigate()
   const { data: userData } = useUser()
   const user = userData?.data?.user
   const isAdmin = user?.role === 0
@@ -16,18 +23,59 @@ export default function CommunitySidebar() {
 
   const [showEventInfo, setShowEventInfo] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState(null)
+  const [showCreateEvent, setShowCreateEvent] = useState(false)
+  const [showCompetitionInfo, setShowCompetitionInfo] = useState(false)
+  const [selectedCompetition, setSelectedCompetition] = useState(null)
+  const [showCompetitionJoin, setShowCompetitionJoin] = useState(false)
   const [showCreateCommunity, setShowCreateCommunity] = useState(false)
 
   const { mutateAsync: createCommunityAsync } = useCreateCommunity()
+  const { mutateAsync: createEventAsync } = useCreateEvent()
+  const { mutateAsync: deleteEventAsync } = useDeleteEvent()
+
+  const handleAddEvent = () => {
+    setShowCreateEvent(true)
+  }
 
   const handleJoinEvent = (event) => {
-    // TODO: Implement join event functionality
-    console.log('Join event:', event.id)
+    // Navigate to live event page
+    navigate(`/event/${event.id}/live`)
   }
 
   const handleInfoEvent = (event) => {
     setSelectedEvent(event)
     setShowEventInfo(true)
+  }
+
+  const handleCreateEvent = async (formData) => {
+    await createEventAsync(formData)
+    setShowCreateEvent(false)
+  }
+
+  const handleDeleteEvent = async (event) => {
+    if (window.confirm(`Are you sure you want to delete "${event.title}"? All participants will be kicked out.`)) {
+      await deleteEventAsync(event.id)
+    }
+  }
+
+  const handleJoinCompetition = (competition) => {
+    setSelectedCompetition(competition)
+    setShowCompetitionJoin(true)
+  }
+
+  const handleViewCompetition = (competition) => {
+    // TODO: Navigate to competition detail page
+    console.log('View competition:', competition.competition_id)
+  }
+
+  const handleInfoCompetition = (competition) => {
+    setSelectedCompetition(competition)
+    setShowCompetitionInfo(true)
+  }
+
+  const handleCompetitionSubmit = async ({ competitionId, payload }) => {
+    await joinCompetitionAsync({ competitionId, payload })
+    setShowCompetitionJoin(false)
   }
 
   const handleCreateCommunity = async (formData) => {
@@ -40,8 +88,13 @@ export default function CommunitySidebar() {
       <div className="w-80 h-screen sticky top-0 overflow-y-auto p-6 bg-slate-900/30 border-l border-slate-700/50">
         <div className="space-y-6">
           <EventsPanel
+            onAddEvent={handleAddEvent}
             onJoinEvent={handleJoinEvent}
             onInfoEvent={handleInfoEvent}
+            onDeleteEvent={handleDeleteEvent}
+            onJoinCompetition={handleJoinCompetition}
+            onViewCompetition={handleViewCompetition}
+            onInfoCompetition={handleInfoCompetition}
             isAdmin={isAdmin}
           />
 
@@ -82,6 +135,12 @@ export default function CommunitySidebar() {
       </div>
 
       {/* Modals */}
+      <EventModal
+        isOpen={showCreateEvent}
+        onClose={() => setShowCreateEvent(false)}
+        onSubmit={handleCreateEvent}
+      />
+
       <EventInfoModal
         event={selectedEvent}
         isOpen={showEventInfo}

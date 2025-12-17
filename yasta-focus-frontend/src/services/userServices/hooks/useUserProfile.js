@@ -15,7 +15,9 @@ export const useUpdateUserProfile = () => {
   return useMutation({
     mutationFn: updateUserProfile,
     onSuccess: (data) => {
+      // Invalidate all user-related queries for immediate UI updates
       queryClient.invalidateQueries({ queryKey: ['userProfile'] })
+      queryClient.invalidateQueries({ queryKey: ['user'] })
       queryClient.setQueryData(['user'], (oldData) => {
         if (oldData) {
           return {
