@@ -1,46 +1,44 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Globe, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 import CompetitionInfoModal from './CompetitionInfoModal';
 import CompetitionJoinModal from './CompetitionJoinModal';
-import CreateCompetitionModal from './CreateCompetitionModal';
+import CreateGlobalCompetitionModal from './CreateGlobalCompetitionModal';
 
-import { useGetCommunityCompetitions } from '../services/communityServices/hooks/useGetCommunityCompetitions';
-import { useCreateCommunityCompetition } from '../services/communityServices/hooks/useCreateCommunityCompetition';
-import { useJoinCommunityCompetition } from '../services/communityServices/hooks/useJoinCommunityCompetition';
-import { useDeleteCommunityCompetition } from '../services/communityServices/hooks/useDeleteCommunityCompetition';
+import { useGetCompetitions } from '../services/communityServices/hooks/useGetCompetitions';
+import { useJoinCompetition } from '../services/communityServices/hooks/useJoinCompetition';
+import { useDeleteGlobalCompetition } from '../services/communityServices/hooks/useDeleteGlobalCompetition';
 import { useGetSubjects } from '../services/subjectServices/hooks/useGetSubjects';
-import { useCommunityMembers } from '../services/communityServices/hooks/useCommunityMembers';
 import { useUser } from '../services/authServices';
 
-export default function CompetitionWidget({ communityId, isAdmin }) {
+export default function GlobalCompetitionWidget({ isAdmin }) {
   const navigate = useNavigate();
-  const [showCreateInfo, setShowCreateInfo] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showCompetitionInfo, setShowCompetitionInfo] = useState(false);
   const [showCompetitionJoin, setShowCompetitionJoin] = useState(false);
   const [selectedCompetition, setSelectedCompetition] = useState(null);
 
   const { data: userData } = useUser();
   const currentUser = userData?.data?.user || userData?.user || userData;
-  const { data: membersData } = useCommunityMembers(communityId);
-  const isManager = membersData?.data?.currentUserIsManager || isAdmin;
   
-  const { data: competitionsData, isLoading, isError } = useGetCommunityCompetitions(communityId);
+  const { data: competitionsData, isLoading, isError } = useGetCompetitions();
   
-  const uniqueCompetitions = useMemo(() => {
+  // Filter global competitions
+  const globalCompetitions = useMemo(() => {
     if (!competitionsData) return [];
+    const filtered = competitionsData.filter(comp => comp.competition_type === 'global');
+    // Remove duplicates by competition_id
     const seen = new Set();
-    return competitionsData.filter(comp => {
+    return filtered.filter(comp => {
       const duplicate = seen.has(comp.competition_id);
       seen.add(comp.competition_id);
       return !duplicate;
     });
   }, [competitionsData]);
   
-  const { mutateAsync: createCompetitionAsync } = useCreateCommunityCompetition(communityId);
-  const { mutateAsync: joinCompetitionAsync } = useJoinCommunityCompetition(communityId);
-  const { mutateAsync: deleteCompetitionAsync } = useDeleteCommunityCompetition();
+  const { mutateAsync: joinCompetitionAsync } = useJoinCompetition();
+  const { mutateAsync: deleteCompetitionAsync } = useDeleteGlobalCompetition();
   const { data: subjectsData } = useGetSubjects();
   const subjects = subjectsData?.data?.subjects || [];
 
@@ -55,23 +53,18 @@ export default function CompetitionWidget({ communityId, isAdmin }) {
   };
 
   const handleViewLeaderboard = (competition) => {
-    navigate(`/communities/${communityId}/competitions/${competition.competition_id}/leaderboard`);
+    navigate(`/competitions/${competition.competition_id}/leaderboard`);
   };
 
   const handleDeleteCompetition = async (competitionId) => {
-    if (window.confirm('Are you sure you want to delete this competition? This action cannot be undone.')) {
+    if (window.confirm('Are you sure you want to delete this global competition? This action cannot be undone.')) {
       try {
-        await deleteCompetitionAsync({ communityId, competitionId });
+        await deleteCompetitionAsync(competitionId);
       } catch (error) {
         console.error('Error deleting competition:', error);
         alert('Failed to delete competition. Please try again.');
       }
     }
-  };
-
-  const handleCreateSubmit = async (formData) => {
-    await createCompetitionAsync(formData);
-    setShowCreateInfo(false);
   };
 
   const handleJoinSubmit = async ({ competitionId, subjects }) => {
@@ -80,7 +73,6 @@ export default function CompetitionWidget({ communityId, isAdmin }) {
       setShowCompetitionJoin(false);
     } catch (error) {
       console.error("Error joining competition:", error.response?.data || error.message);
-      // You might want to show a toast or alert to the user here as well
     }
   };
 
@@ -88,11 +80,14 @@ export default function CompetitionWidget({ communityId, isAdmin }) {
     <>
       <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="font-bold text-lg text-white">Competitions</h3>
+          <div className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-purple-400" />
+            <h3 className="font-bold text-lg text-white">Global Competitions</h3>
+          </div>
           {isAdmin && (
             <button
-              onClick={() => setShowCreateInfo(true)}
-              className="flex items-center gap-2 px-3 py-2 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold transition-colors"
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-3 py-2 text-sm bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-semibold transition-colors"
             >
               <Plus size={16} />
               New
@@ -103,20 +98,20 @@ export default function CompetitionWidget({ communityId, isAdmin }) {
         <div className="space-y-4">
           {isLoading && <p className="text-slate-400">Loading competitions...</p>}
           {isError && <p className="text-red-400">Error loading competitions.</p>}
-          {!isLoading && !isError && uniqueCompetitions.length === 0 && (
-            <p className="text-slate-400 text-sm text-center py-4">No competitions yet.</p>
+          {!isLoading && !isError && globalCompetitions.length === 0 && (
+            <p className="text-slate-400 text-sm text-center py-4">No global competitions yet.</p>
           )}
-          {uniqueCompetitions.map((comp) => {
+          {globalCompetitions.map((comp) => {
             const hasJoined = comp.entry_status === 'joined';
-            const showViewButton = isManager || hasJoined;
+            const showViewButton = isAdmin || hasJoined;
             const isFull = comp.max_participants && comp.participant_count >= comp.max_participants;
-            const showJoinButton = !isManager && !hasJoined && !isFull;
+            const showJoinButton = !isAdmin && !hasJoined && !isFull;
             const endDate = new Date(comp.end_time);
             const now = new Date();
             const isActive = endDate > now;
             
             return (
-            <div key={comp.competition_id} className="bg-gradient-to-br from-slate-700/50 to-slate-800/50 p-5 rounded-xl border border-slate-600/50 hover:border-slate-500/50 transition-all">
+            <div key={comp.competition_id} className="bg-gradient-to-br from-purple-700/30 to-slate-800/50 p-5 rounded-xl border border-purple-600/30 hover:border-purple-500/50 transition-all">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <h4 className="font-bold text-white text-base mb-1">{comp.competition_name}</h4>
@@ -138,7 +133,7 @@ export default function CompetitionWidget({ communityId, isAdmin }) {
                     )}
                   </div>
                 </div>
-                {isManager && (
+                {isAdmin && (
                   <button
                     onClick={() => handleDeleteCompetition(comp.competition_id)}
                     className="p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
@@ -168,7 +163,7 @@ export default function CompetitionWidget({ communityId, isAdmin }) {
                 {showViewButton && (
                   <button
                     onClick={() => handleViewLeaderboard(comp)}
-                    className="px-4 py-2 text-xs font-semibold bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-500 hover:to-indigo-400 text-white rounded-lg transition-all hover:scale-105 shadow-lg shadow-indigo-500/20"
+                    className="px-4 py-2 text-xs font-semibold bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white rounded-lg transition-all hover:scale-105 shadow-lg shadow-purple-500/20"
                   >
                     View Leaderboard
                   </button>
@@ -176,12 +171,12 @@ export default function CompetitionWidget({ communityId, isAdmin }) {
                 {showJoinButton && (
                   <button
                     onClick={() => handleJoinCompetition(comp)}
-                    className="px-4 py-2 text-xs font-semibold bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 text-white rounded-lg transition-all hover:scale-105 shadow-lg shadow-teal-500/20"
+                    className="px-4 py-2 text-xs font-semibold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-lg transition-all hover:scale-105 shadow-lg shadow-purple-500/20"
                   >
                     Join Now
                   </button>
                 )}
-                {isFull && !hasJoined && !isManager && (
+                {isFull && !hasJoined && !isAdmin && (
                   <button
                     disabled
                     className="px-4 py-2 text-xs font-semibold bg-slate-600/50 text-slate-400 rounded-lg cursor-not-allowed"
@@ -197,12 +192,12 @@ export default function CompetitionWidget({ communityId, isAdmin }) {
       </div>
 
       {/* Modals */}
-      <CreateCompetitionModal
-        isOpen={showCreateInfo}
-        onClose={() => setShowCreateInfo(false)}
-        onSubmit={handleCreateSubmit}
-        communityId={communityId}
-      />
+      {isAdmin && (
+        <CreateGlobalCompetitionModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+        />
+      )}
       <CompetitionInfoModal
         competition={selectedCompetition}
         isOpen={showCompetitionInfo}
@@ -210,8 +205,8 @@ export default function CompetitionWidget({ communityId, isAdmin }) {
           setShowCompetitionInfo(false);
           setSelectedCompetition(null);
         }}
-        communityId={communityId}
-        isManager={isManager}
+        isManager={isAdmin}
+        isGlobal={true}
       />
       <CompetitionJoinModal
         competition={selectedCompetition}

@@ -1133,7 +1133,8 @@ export const getCommunityCompetitions = catchAsync(async (req, res, next) => {
       CASE 
         WHEN cp.user_id IS NOT NULL THEN 'joined'
         ELSE 'not_joined'
-      END as entry_status
+      END as entry_status,
+      (SELECT COUNT(DISTINCT user_id) FROM CompetitionParticipants WHERE comp_id = c.competition_id) as participant_count
     FROM competition c
     LEFT JOIN CompetitionParticipants cp 
       ON c.competition_id = cp.comp_id AND cp.user_id = $1
@@ -1155,15 +1156,14 @@ export const createCommunityCompetition = catchAsync(async (req, res, next) => {
   const {
     competition_name,
     comp_description,
-    start_time,
     end_time,
     max_subjects,
     max_participants,
     competition_type
   } = req.body;
 
-  if (!competition_name || !start_time || !end_time) {
-    return next(new AppError('Competition name, start time, and end time are required.', 400));
+  if (!competition_name || !end_time) {
+    return next(new AppError('Competition name and end time are required.', 400));
   }
 
   // Check if user is admin or a manager
@@ -1178,16 +1178,15 @@ export const createCommunityCompetition = catchAsync(async (req, res, next) => {
     }
   }
 
-  // Create the competition
+  // Create the competition with start_time as NOW()
   const result = await db.query(
     `INSERT INTO competition 
       (competition_name, comp_description, start_time, end_time, max_subjects, max_participants, creator_id, competition_type, community_id)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    VALUES ($1, $2, NOW(), $3, $4, $5, $6, $7, $8)
     RETURNING *`,
     [
       competition_name,
       comp_description,
-      start_time,
       end_time,
       max_subjects,
       max_participants,
@@ -1356,5 +1355,105 @@ export const deleteCommunityCompetition = catchAsync(async (req, res, next) => {
   });
 });
 
+// Get competition leaderboard
+export const getCompetitionLeaderboard = catchAsync(async (req, res, next) => {
+  const { communityId, competitionId } = req.params;
 
- 
+  // Verify competition belongs to community
+  const competitionResult = await db.query(
+    `SELECT * FROM competition 
+     WHERE competition_id = $1 AND community_id = $2 AND competition_type = 'local'`,
+    [competitionId, communityId]
+  );
+
+  if (competitionResult.rows.length === 0) {
+    return next(new AppError('Competition not found in this community', 404));
+  }
+
+  const competition = competitionResult.rows[0];
+
+  // Get leaderboard data - total study time across all subjects per user during competition period
+  const result = await db.query(
+    `SELECT 
+      u.user_id,
+      u.username,
+      u.profile_picture,
+      u.xp,
+      COALESCE(SUM(EXTRACT(EPOCH FROM (s.time_stamp - s.created_at))), 0) as total_time,
+      COUNT(s.session_name) as session_count,
+      ARRAY_AGG(DISTINCT cp.subject_name ORDER BY cp.subject_name) as subjects
+    FROM CompetitionParticipants cp
+    JOIN users u ON cp.user_id = u.user_id
+    LEFT JOIN session s ON s.user_id = cp.user_id 
+      AND s.subject_name = cp.subject_name
+      AND s.created_at >= $1
+      AND s.created_at <= $2
+      AND s.type = 'focus'
+    WHERE cp.comp_id = $3
+    GROUP BY u.user_id, u.username, u.profile_picture, u.xp
+    ORDER BY total_time DESC`,
+    [competition.start_time, competition.end_time, competitionId]
+  );
+
+  res.status(200).json({
+    status: 'success',
+    data: result.rows
+  });
+});
+
+// Get competition participants (managers only)
+export const getCompetitionParticipants = catchAsync(async (req, res, next) => {
+  const { communityId, competitionId } = req.params;
+  const userId = req.user?.user_id;
+
+  // Check if user is admin or manager
+  const isAdmin = req.user.role === 0;
+  if (!isAdmin) {
+    const managerResult = await db.query(
+      'SELECT * FROM communityManagers WHERE community_ID = $1 AND moderator_ID = $2',
+      [communityId, userId]
+    );
+    if (managerResult.rows.length === 0) {
+      return next(new AppError('Only community managers can view participants', 403));
+    }
+  }
+
+  // Get participants with their subject count
+  const result = await db.query(
+    `SELECT 
+      u.user_id,
+      u.username,
+      u.profile_picture,
+      COUNT(cp.subject_name) as subject_count
+    FROM CompetitionParticipants cp
+    JOIN users u ON cp.user_id = u.user_id
+    WHERE cp.comp_id = $1
+    GROUP BY u.user_id, u.username, u.profile_picture
+    ORDER BY u.username ASC`,
+    [competitionId]
+  );
+
+  res.status(200).json({
+    status: 'success',
+    data: result.rows
+  });
+});
+
+// Get user's selected subjects for a competition
+export const getMyCompetitionSubjects = catchAsync(async (req, res, next) => {
+  const { communityId, competitionId } = req.params;
+  const userId = req.user?.user_id;
+
+  const result = await db.query(
+    `SELECT subject_name
+    FROM CompetitionParticipants
+    WHERE comp_id = $1 AND user_id = $2
+    ORDER BY subject_name ASC`,
+    [competitionId, userId]
+  );
+
+  res.status(200).json({
+    status: 'success',
+    data: result.rows.map(row => row.subject_name)
+  });
+});

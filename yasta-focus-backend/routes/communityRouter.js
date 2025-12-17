@@ -68,6 +68,15 @@ router.post('/:communityId/competitions/:competitionId/join', protect, community
 // Get competition entries
 router.get('/:communityId/competitions/:competitionId/entries', protect, communityController.getCommunityCompetitionEntries);
 
+// Get competition leaderboard
+router.get('/:communityId/competitions/:competitionId/leaderboard', protect, communityController.getCompetitionLeaderboard);
+
+// Get competition participants (managers only)
+router.get('/:communityId/competitions/:competitionId/participants', protect, communityController.getCompetitionParticipants);
+
+// Get user's selected subjects for competition
+router.get('/:communityId/competitions/:competitionId/my-subjects', protect, communityController.getMyCompetitionSubjects);
+
 // Delete community competition (managers only)
 router.delete('/:communityId/competitions/:competitionId', protect, communityController.deleteCommunityCompetition);
 

@@ -35,15 +35,9 @@ export const useJoinCompetition = () => {
     },
     onSuccess: (data, variables) => {
       console.log('[useJoinCompetition] onSuccess', variables.competitionId)
-      toast.success('Join request sent')
-      // ensure we keep the competition in pending state after success
-      const compId = variables.competitionId
-      const prev = qc.getQueryData(['competitions', 'all'])
-      if (prev) {
-        const next = prev.map(c => (String(c.id) === String(compId) ? { ...c, joined: 'pending' } : c))
-        qc.setQueryData(['competitions', 'all'], next)
-      }
-      // do not immediately invalidate/refetch — waiting for owner acceptance to change state
+      toast.success('Successfully joined competition')
+      // Invalidate to refetch and show updated status
+      qc.invalidateQueries({ queryKey: ['competitions', 'all'] })
     }
   })
 }
