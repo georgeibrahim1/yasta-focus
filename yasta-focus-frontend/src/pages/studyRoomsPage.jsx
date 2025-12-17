@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Search, Users, ArrowLeft, Plus, Trash2, UserPlus, Flag, UserX, Megaphone, Shield, Edit3, Clock, Check, X, Settings, LogOut, BarChart3, TrendingUp, Trophy, Calendar } from 'lucide-react'
+import { Search, Users, ArrowLeft, Plus, Trash2, UserPlus, Flag, UserX, Megaphone, Shield, Edit3, Clock, Check, X, Settings, LogOut, BarChart3, TrendingUp } from 'lucide-react'
 import { useStudyRooms, useJoinRoom, useLeaveRoom, useDeleteRoom } from '../services/studyRoomServices'
 import { useAnnouncements, useCreateAnnouncement, useDeleteAnnouncement } from '../services/announcementServices'
-import { useCommunityMembers, useKickMember, usePendingRequests, useApproveJoinRequest, useRejectJoinRequest, useCommunityStats, usePromoteMember, useDemoteMember, useAddMemberByUsername, useInviteFriendToCommunity } from '../services/communityServices'
+import { useCommunityMembers, useKickMember, usePendingRequests, useApproveJoinRequest, useRejectJoinRequest, useCommunityStats, usePromoteMember, useDemoteMember, useAddMemberByUsername, useInviteFriendToCommunity, useCreateCommunityCompetition, useJoinCommunityCompetition, useDeleteCommunityCompetition } from '../services/communityServices'
 import { useUpdateCommunityInfo, useDeleteCommunity, useExitCommunity, useUpdateMemberBio } from '../services/communityServices'
 import { useSendFriendRequest, useReportUser } from '../services/leaderboardServices'
 import { useGetFriends } from '../services/friendshipServices'
@@ -40,6 +40,15 @@ export default function StudyRoomsPage() {
   const [selectedFriendToInvite, setSelectedFriendToInvite] = useState(null)
   const [addMemberError, setAddMemberError] = useState('')
   const [inviteFriendError, setInviteFriendError] = useState('')
+  const [showCreateCompetitionModal, setShowCreateCompetitionModal] = useState(false)
+  const [showJoinCompetitionModal, setShowJoinCompetitionModal] = useState(false)
+  const [competitionName, setCompetitionName] = useState('')
+  const [competitionDescription, setCompetitionDescription] = useState('')
+  const [competitionDeadline, setCompetitionDeadline] = useState('')
+  const [maxSubjects, setMaxSubjects] = useState(3)
+  const [maxParticipants, setMaxParticipants] = useState(20)
+  const [selectedCompetition, setSelectedCompetition] = useState(null)
+  const [selectedSubjects, setSelectedSubjects] = useState([])
 
   const { data: currentUser } = useUser()
   const { data: rooms = [], isLoading } = useStudyRooms(communityId, search)
@@ -323,6 +332,8 @@ export default function StudyRoomsPage() {
       }
     }
   }
+
+
 
   const handleAddMember = async () => {
     if (!addMemberUsername.trim()) {
