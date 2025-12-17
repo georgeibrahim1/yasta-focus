@@ -22,6 +22,8 @@ export const useCreateCommunity = () => {
         // Refresh achievement queries
         qc.invalidateQueries({ queryKey: ['achievements'] })
         qc.invalidateQueries({ queryKey: ['achievementStats'] })
+        qc.invalidateQueries({ predicate: (query) => query.queryKey[0] === 'userProfile' })
+        qc.invalidateQueries({ queryKey: ['user'] })
         // Show success with achievement info
           // Show achievement toasts
         unlocked.forEach(achievement => {
