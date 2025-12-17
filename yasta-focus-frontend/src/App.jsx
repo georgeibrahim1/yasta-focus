@@ -16,6 +16,7 @@ import SettingsPage from './pages/settingsPage'
 import DashboardPage from './pages/dashboardPage'
 import AdminUsersPage from './pages/adminUsersPage'
 import AdminReportsPage from './pages/adminReportsPage'
+import AdminAchievementsPage from './pages/adminAchievementsPage'
 import RoomInterfacePage from './pages/roomInterfacePage'
 import LiveEventPage from './pages/liveEventPage'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -90,6 +91,14 @@ export default function App() {
             <AdminReportsPage/>
           </ProtectedRoute>
         }/>
+        <Route 
+          path="achievements/admin" 
+          element={
+            <ProtectedRoute requiredRole={0}>
+              <AdminAchievementsPage />
+            </ProtectedRoute>
+          } 
+        />
       </Route>
     </Routes>
   )

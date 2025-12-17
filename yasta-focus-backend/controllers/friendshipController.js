@@ -127,7 +127,7 @@ export const respondToFriendRequest = catchAsync(async (req, res, next) => {
 
    // Check friend achievements for BOTH users
     const [requesterAchievements, requesteeAchievements] = await Promise.all([
-      FriendCountAchievement(requesterId),  // Check for requester
+      FriendCountAchievement(requesterId),  // Check for requester (unlocks achievement for requester without notification)
       FriendCountAchievement(userId)        // Check for requestee (current user)
     ]); 
 
@@ -136,8 +136,8 @@ export const respondToFriendRequest = catchAsync(async (req, res, next) => {
       message: 'Friend request accepted',
       data: {
         unlockedAchievements: {
-          requester: Array.isArray(requesterAchievements) ? requesterAchievements : [],
-          requestee: Array.isArray(requesteeAchievements) ? requesteeAchievements : []
+          // requester: Array.isArray(requesterAchievements) ? requesterAchievements : []
+          requestee: Array.isArray(requesteeAchievements) ? requesteeAchievements : [] //The current user is the requestee so show msg to him only
         }
       }
     });

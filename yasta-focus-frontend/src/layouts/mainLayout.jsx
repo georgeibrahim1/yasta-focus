@@ -18,6 +18,7 @@ export default function MainLayout() {
               <SidebarButton icon="/icons/passports-icon.svg" label="Users" link="/admin/users" />
               <SidebarButton icon="/icons/globes-icon.svg" label="Communities" link="/communities" />
               <SidebarButton icon="/icons/credit-card-icon.svg" label="Reports & Logs" link="/admin/reports" />
+              <SidebarButton icon="/icons/win-cup-icon.svg" label="Achievements" link="/achievements/admin" />
             </ProtectedComponent>
 
             {/* Student Navigation */}

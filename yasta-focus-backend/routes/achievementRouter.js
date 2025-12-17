@@ -1,16 +1,29 @@
+// routes/achievementRoutes.js
 import express from 'express';
-import { protect } from '../controllers/authController.js';
-import { getAllAchievements, getUserAchievementStats } from '../controllers/achievementController.js';
+import { protect, restrictTo } from '../controllers/authController.js';
+import { 
+  getAllAchievements, 
+  getUserAchievementStats,
+  createAchievement,
+  updateAchievement,
+  deleteAchievement,
+  getAdminAchievements
+} from '../controllers/achievementController.js';
 
 const router = express.Router();
 
 router.use(protect);
 
-// Get all achievements with user progress
+// Regular user routes
 router.get('/', getAllAchievements);
-
-// Get user achievement stats
 router.get('/stats', getUserAchievementStats);
 
-export default router;
+// Admin-only routes
+router.use(restrictTo(0)); // Only admins can access routes below
 
+router.get('/admin/all', getAdminAchievements); // Get all achievements for admin panel
+router.post('/admin', createAchievement);
+router.put('/admin/:id', updateAchievement);
+router.delete('/admin/:id', deleteAchievement);
+
+export default router;
