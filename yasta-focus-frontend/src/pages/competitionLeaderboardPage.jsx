@@ -1,19 +1,27 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router'
 import { ArrowLeft, Trophy } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import LeaderboardRow from '../components/LeaderboardRow'
+import ReportModal from '../components/ReportModal'
 import { useUser } from '../services/authServices'
+import { useSendFriendRequest, useReportUser, useGiveXP } from '../services/leaderboardServices'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 export default function CompetitionLeaderboardPage() {
   const { communityId, competitionId } = useParams()
   const navigate = useNavigate()
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [selectedUser, setSelectedUser] = useState(null)
 
   const { data: userData } = useUser()
   const currentUserId = userData?.data?.user?.user_id || userData?.user?.user_id || userData?.user_id
+
+  const { mutate: sendFriendRequest } = useSendFriendRequest()
+  const { mutate: reportUser } = useReportUser()
+  const { mutate: giveXP } = useGiveXP()
 
   // Fetch leaderboard data
   const { data: leaderboardData = [], isLoading, isError } = useQuery({
@@ -84,7 +92,7 @@ export default function CompetitionLeaderboardPage() {
                   xp: entry.xp || 0,
                   interests: entry.subjects || [], // Show subjects as interests
                   most_studied_subject: null,
-                  friendship_status: 'none'
+                  friendship_status: entry.friendship_status || 'none'
                 }
                 
                 return (
@@ -93,9 +101,12 @@ export default function CompetitionLeaderboardPage() {
                     user={userForRow}
                     rank={index + 1}
                     currentUserId={currentUserId}
-                    onFriendRequest={() => {}}
-                    onReport={() => {}}
-                    onGiveXP={() => {}}
+                    onFriendRequest={(user) => sendFriendRequest(user.user_id)}
+                    onReport={(user) => {
+                      setSelectedUser(user)
+                      setShowReportModal(true)
+                    }}
+                    onGiveXP={(user, rank) => giveXP({ userId: user.user_id, rank })}
                   />
                 )
               })}
@@ -103,6 +114,21 @@ export default function CompetitionLeaderboardPage() {
           </div>
         </div>
       )}
+
+      {/* Report Modal */}
+      <ReportModal
+        user={selectedUser}
+        isOpen={showReportModal}
+        onClose={() => {
+          setShowReportModal(false)
+          setSelectedUser(null)
+        }}
+        onSubmit={({ userId, title, description }) => {
+          reportUser({ userId, title, description })
+          setShowReportModal(false)
+          setSelectedUser(null)
+        }}
+      />
     </div>
   )
 }

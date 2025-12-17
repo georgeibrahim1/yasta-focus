@@ -1,5 +1,6 @@
 import React from 'react'
-import { useGetEvents } from '../services/communityServices/hooks/useGetEvents'
+import { Calendar, Plus, Trash2 } from 'lucide-react'
+import { useGetEvents } from '../services/communityServices'
 
 export default function EventsPanel({ 
   onAddEvent = () => {}, 
@@ -12,18 +13,21 @@ export default function EventsPanel({
   isAdmin = false 
 }) {
   const { data: eventsData, isLoading: eventsLoading } = useGetEvents()
-  const events = eventsData?.events || []
+  const events = eventsData || []
 
   return (
     <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-white font-semibold text-sm">Upcoming / Current Events</h3>
+        <div className="flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-indigo-400" />
+          <h3 className="text-white font-semibold text-sm">Events</h3>
+        </div>
         {isAdmin && (
           <button
             onClick={onAddEvent}
-            className="text-indigo-400 hover:text-indigo-300 text-xs"
+            className="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-400/10 rounded-lg transition"
           >
-            + Add
+            <Plus size={16} />
           </button>
         )}
       </div>
@@ -40,16 +44,16 @@ export default function EventsPanel({
                   {new Date(ev.date).toLocaleDateString()}
                   {ev.is_live && <span className="ml-2 text-green-400">● Live</span>}
                 </div>
-                {isAdmin && (
-                  <button
-                    onClick={() => onDeleteEvent(ev)}
-                    className="text-red-400 hover:text-red-300 text-xs px-2 py-1"
-                    title="Delete event"
-                  >
-                    ✕
-                  </button>
-                )}
               </div>
+              {isAdmin && (
+                <button
+                  onClick={() => onDeleteEvent(ev)}
+                  className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition"
+                  title="Delete event"
+                >
+                  <Trash2 size={14} />
+                </button>
+              )}
             </div>
             <div className="flex gap-2">
               <button

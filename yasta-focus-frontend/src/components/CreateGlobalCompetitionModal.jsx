@@ -1,5 +1,4 @@
 import React, { useState } from 'react'
-import { X } from 'lucide-react'
 import axios from 'axios'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -25,6 +24,7 @@ export default function CreateGlobalCompetitionModal({ isOpen, onClose }) {
       ...prev,
       [name]: value
     }))
+    setError('')
   }
 
   const handleSubmit = async (e) => {
@@ -48,10 +48,8 @@ export default function CreateGlobalCompetitionModal({ isOpen, onClose }) {
         }
       )
 
-      // Invalidate competitions query to refetch
       queryClient.invalidateQueries({ queryKey: ['competitions', 'all'] })
       
-      // Reset form and close
       setFormData({
         competition_name: '',
         comp_description: '',
@@ -68,33 +66,28 @@ export default function CreateGlobalCompetitionModal({ isOpen, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-8 max-w-2xl w-full border border-slate-700 max-h-[90vh] overflow-y-auto shadow-2xl">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-md p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-3xl font-bold text-white mb-1">
-              Create Global Competition
-            </h2>
-            <p className="text-slate-400 text-sm">Open to all students on the platform</p>
-          </div>
+          <h2 className="text-xl font-bold text-white">Create Global Competition</h2>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-2 hover:bg-slate-700 rounded-lg transition-all"
+            className="text-slate-400 hover:text-white transition"
           >
-            <X size={24} />
+            ✕
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {error && (
-            <div className="p-3 rounded-xl bg-red-500/20 border border-red-500/50 text-red-300 text-sm">
-              {error}
-            </div>
-          )}
+        {error && (
+          <div className="mb-4 p-3 rounded-lg bg-red-600/20 border border-red-600/30 text-red-300 text-sm">
+            {error}
+          </div>
+        )}
 
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-semibold text-slate-300 mb-2">
-              Competition Name *
+            <label className="block text-slate-300 text-sm font-medium mb-2">
+              Competition Name
             </label>
             <input
               type="text"
@@ -102,14 +95,14 @@ export default function CreateGlobalCompetitionModal({ isOpen, onClose }) {
               value={formData.competition_name}
               onChange={handleChange}
               required
-              className="w-full px-4 py-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+              className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
               placeholder="e.g., Winter Study Marathon 2025"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-300 mb-2">
-              Description *
+            <label className="block text-slate-300 text-sm font-medium mb-2">
+              Description
             </label>
             <textarea
               name="comp_description"
@@ -117,32 +110,29 @@ export default function CreateGlobalCompetitionModal({ isOpen, onClose }) {
               onChange={handleChange}
               required
               rows={3}
-              className="w-full px-4 py-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all resize-none"
+              className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 resize-none"
               placeholder="Describe the competition goals and rules..."
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-300 mb-2">
-                End Date *
-              </label>
-              <input
-                type="datetime-local"
-                name="end_time"
-                value={formData.end_time}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
-              />
-              <p className="text-xs text-slate-400 mt-1">Competition starts immediately when created</p>
-            </div>
+          <div>
+            <label className="block text-slate-300 text-sm font-medium mb-2">
+              End Date & Time
+            </label>
+            <input
+              type="datetime-local"
+              name="end_time"
+              value={formData.end_time}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-300 mb-2">
-                Max Subjects per Student
+          <div className="flex gap-4">
+            <div className="flex-1">
+              <label className="block text-slate-300 text-sm font-medium mb-2">
+                Max Subjects
               </label>
               <input
                 type="number"
@@ -150,14 +140,12 @@ export default function CreateGlobalCompetitionModal({ isOpen, onClose }) {
                 value={formData.max_subjects}
                 onChange={handleChange}
                 min="1"
-                className="w-full px-4 py-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                 placeholder="e.g., 3"
+                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
               />
-              <p className="text-xs text-slate-400 mt-1">Leave empty for unlimited</p>
             </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-slate-300 mb-2">
+            <div className="flex-1">
+              <label className="block text-slate-300 text-sm font-medium mb-2">
                 Max Participants
               </label>
               <input
@@ -166,10 +154,9 @@ export default function CreateGlobalCompetitionModal({ isOpen, onClose }) {
                 value={formData.max_participants}
                 onChange={handleChange}
                 min="1"
-                className="w-full px-4 py-3 rounded-lg bg-slate-700 border border-slate-600 text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
                 placeholder="e.g., 100"
+                className="w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
               />
-              <p className="text-xs text-slate-400 mt-1">Leave empty for unlimited</p>
             </div>
           </div>
 
@@ -177,14 +164,14 @@ export default function CreateGlobalCompetitionModal({ isOpen, onClose }) {
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 bg-slate-700 rounded-xl text-white font-semibold hover:bg-slate-600 transition-all hover:scale-[1.02]"
+              className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-semibold transition"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl text-white font-semibold hover:from-purple-500 hover:to-pink-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-[1.02] shadow-lg shadow-purple-500/20"
+              className="flex-1 px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Creating...' : 'Create Competition'}
             </button>

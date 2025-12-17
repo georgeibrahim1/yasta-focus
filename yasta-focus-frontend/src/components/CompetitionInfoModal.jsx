@@ -51,56 +51,47 @@ export default function CompetitionInfoModal({ competition, isOpen, onClose, com
   if (!isOpen || !competition) return null
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl border border-slate-700 max-w-2xl w-full max-h-[85vh] overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+      <div className="bg-slate-800 rounded-2xl border border-slate-700 max-w-2xl w-full max-h-[80vh] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700/50 bg-slate-800/50">
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-1">{competition.competition_name || 'Competition Details'}</h2>
-            <p className="text-sm text-slate-400">Competition Information</p>
-          </div>
+        <div className="flex items-center justify-between p-6 border-b border-slate-700">
+          <h2 className="text-2xl font-bold text-white">{competition.competition_name || 'Competition Details'}</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-slate-700 rounded-lg transition-all"
+            className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
           >
             <X className="w-5 h-5 text-slate-400" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(85vh-180px)] space-y-5">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-slate-700/30 rounded-xl p-4 border border-slate-600/30">
-              <label className="text-xs font-medium text-slate-400 mb-1 block uppercase tracking-wide">Type</label>
-              <p className="text-white font-semibold capitalize">{competition.competition_type}</p>
-            </div>
-            
-            {competition.max_subjects && (
-              <div className="bg-slate-700/30 rounded-xl p-4 border border-slate-600/30">
-                <label className="text-xs font-medium text-slate-400 mb-1 block uppercase tracking-wide">Max Subjects</label>
-                <p className="text-white font-semibold">{competition.max_subjects}</p>
-              </div>
-            )}
+        <div className="p-6 overflow-y-auto max-h-[calc(80vh-140px)]">
+          <div className="mb-4">
+            <label className="text-sm font-medium text-slate-400 mb-2 block">Type</label>
+            <p className="text-white capitalize">{competition.competition_type}</p>
           </div>
 
-          <div className="bg-slate-700/30 rounded-xl p-4 border border-slate-600/30">
-            <label className="text-xs font-medium text-slate-400 mb-2 block uppercase tracking-wide">Duration</label>
-            <div className="flex items-center gap-3 text-white">
-              <span className="font-semibold">📅 {new Date(competition.start_time).toLocaleDateString()}</span>
-              <span className="text-slate-400">→</span>
-              <span className="font-semibold">📅 {new Date(competition.end_time).toLocaleDateString()}</span>
+          {competition.max_subjects && (
+            <div className="mb-4">
+              <label className="text-sm font-medium text-slate-400 mb-2 block">Max Subjects</label>
+              <p className="text-white">{competition.max_subjects}</p>
             </div>
+          )}
+
+          <div className="mb-4">
+            <label className="text-sm font-medium text-slate-400 mb-2 block">Duration</label>
+            <p className="text-white">{new Date(competition.start_time).toLocaleDateString()} → {new Date(competition.end_time).toLocaleDateString()}</p>
           </div>
 
           {/* Show selected subjects for joined members */}
           {!isManager && competition.entry_status === 'joined' && userSubjects.length > 0 && (
-            <div className="bg-slate-700/30 rounded-xl p-4 border border-slate-600/30">
-              <label className="text-xs font-medium text-slate-400 mb-3 block uppercase tracking-wide">Your Selected Subjects</label>
+            <div className="mb-4">
+              <label className="text-sm font-medium text-slate-400 mb-2 block">Your Selected Subjects</label>
               <div className="flex flex-wrap gap-2">
                 {userSubjects.map((subject, index) => (
                   <span
                     key={index}
-                    className="px-3 py-1.5 bg-gradient-to-r from-indigo-600/30 to-purple-600/30 border border-indigo-500/40 rounded-lg text-indigo-300 text-sm font-medium"
+                    className="px-3 py-1.5 bg-indigo-600/20 border border-indigo-500/30 rounded-lg text-indigo-300 text-sm"
                   >
                     {subject}
                   </span>
@@ -111,31 +102,26 @@ export default function CompetitionInfoModal({ competition, isOpen, onClose, com
 
           {/* Show participants for managers */}
           {isManager && (
-            <div className="bg-slate-700/30 rounded-xl p-4 border border-slate-600/30">
-              <label className="text-xs font-medium text-slate-400 mb-3 block uppercase tracking-wide flex items-center justify-between">
-                <span>Current Participants</span>
-                <span className="bg-indigo-600 text-white px-2 py-0.5 rounded-full text-xs font-bold">
-                  {participants.length}
-                </span>
-              </label>
+            <div className="mb-4">
+              <label className="text-sm font-medium text-slate-400 mb-2 block">Current Participants ({participants.length})</label>
               {loading ? (
-                <p className="text-slate-400 text-sm text-center py-4">Loading participants...</p>
+                <p className="text-slate-400 text-sm">Loading participants...</p>
               ) : participants.length === 0 ? (
-                <p className="text-slate-400 text-sm text-center py-4">No participants yet</p>
+                <p className="text-slate-400 text-sm">No participants yet</p>
               ) : (
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {participants.map((participant) => (
                     <div
                       key={participant.user_id}
-                      className="flex items-center gap-3 p-3 bg-slate-600/30 hover:bg-slate-600/50 rounded-lg transition-all border border-slate-500/20"
+                      className="flex items-center gap-3 p-3 bg-slate-700/50 rounded-lg"
                     >
-                      <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                      <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
                         {participant.username?.[0]?.toUpperCase() || 'U'}
                       </div>
                       <div className="flex-1">
-                        <p className="text-white font-semibold">{participant.username}</p>
-                        <p className="text-xs text-indigo-400 font-medium">
-                          📚 {participant.subject_count} subject{participant.subject_count !== 1 ? 's' : ''}
+                        <p className="text-white font-medium">{participant.username}</p>
+                        <p className="text-xs text-slate-400">
+                          {participant.subject_count} subject{participant.subject_count !== 1 ? 's' : ''}
                         </p>
                       </div>
                     </div>
@@ -146,18 +132,18 @@ export default function CompetitionInfoModal({ competition, isOpen, onClose, com
           )}
 
           {competition.comp_description && (
-            <div className="bg-slate-700/30 rounded-xl p-4 border border-slate-600/30">
-              <label className="text-xs font-medium text-slate-400 mb-2 block uppercase tracking-wide">Description</label>
-              <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">{competition.comp_description}</p>
+            <div>
+              <label className="text-sm font-medium text-slate-400 mb-2 block">Description</label>
+              <p className="text-slate-300 whitespace-pre-wrap">{competition.comp_description}</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-slate-700/50 flex justify-end bg-slate-800/50">
+        <div className="p-6 border-t border-slate-700 flex justify-end">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 bg-slate-700 hover:bg-slate-600 text-white rounded-xl transition-all font-semibold hover:scale-105 shadow-lg"
+            className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
           >
             Close
           </button>
