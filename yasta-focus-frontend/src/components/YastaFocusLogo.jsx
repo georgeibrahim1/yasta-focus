@@ -15,16 +15,14 @@ export default function YastaFocusLogo() {
                 <span>F</span>
 
                 {/* O with rotating logo */}
-                <div className="relative inline-flex items-center justify-center">
-                    <span>O</span>
-                    <div className="absolute top-0 bottom-0 left-0 right-0 flex items-center justify-center">
-                        <img
-                            src="/Logo.svg"
-                            alt="Yasta Focus Logo"
-                            className="w-7 h-7 animate-spin-slow"
-                            style={{ animationDuration: '8s' }}
-                        />
-                    </div>
+                <div className="relative inline-flex items-center justify-center w-[1.1em] h-[1.1em]">
+                    <span className="z-10">O</span>
+                    <img
+                        src="/Logo.svg"
+                        alt="Yasta Focus Logo"
+                        className="w-7 h-7 animate-spin-slow absolute left-[16.4px] top-1/2 -translate-x-1/2 -translate-y-1/2"
+                        style={{ animationDuration: '8s' }}
+                    />
                 </div>
 
                 <span>C</span>
