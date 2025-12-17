@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Mail, Lock, Eye, EyeOff, User, X, Send } from 'lucide-react'
+import Snowfall from 'react-snowfall'
 import Input from '../components/Input'
 import BlurredBubbles from '../components/BlurredBubbles'
 import { useLogin } from '../services/authServices/hooks/useLogin'
@@ -125,8 +126,35 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex bg-[#10121A] overflow-hidden">
-      {/* Background Blurred Bubbles */}
-      <BlurredBubbles />
+      {/* Snowfall Effect */}
+      <Snowfall
+        color="#ffffff"
+        snowflakeCount={80}
+        style={{
+          position: 'fixed',
+          width: '100vw',
+          height: '100vh',
+          zIndex: 9999
+        }}
+      />
+      
+      {/* Background Blurred Bubbles - Multiple layers for depth */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        {/* Layer 1 - Large bubbles on left side */}
+        <div className="absolute top-0 left-0 w-[450px] h-[450px] bg-cyan-500/25 rounded-full blur-3xl animate-glow"></div>
+        <div className="absolute top-1/4 left-10 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-glow" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute bottom-1/4 left-20 w-[380px] h-[380px] bg-teal-500/20 rounded-full blur-3xl animate-glow" style={{ animationDelay: '2s' }}></div>
+        
+        {/* Layer 2 - Medium bubbles around form area */}
+        <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-sky-400/25 rounded-full blur-2xl animate-glow" style={{ animationDelay: '0.5s' }}></div>
+        <div className="absolute top-10 left-1/3 w-64 h-64 bg-indigo-400/20 rounded-full blur-2xl animate-glow" style={{ animationDelay: '1.5s' }}></div>
+        <div className="absolute bottom-10 left-1/4 w-80 h-80 bg-violet-500/20 rounded-full blur-3xl animate-glow" style={{ animationDelay: '2.5s' }}></div>
+        
+        {/* Layer 3 - Small accent bubbles */}
+        <div className="absolute top-1/2 left-1/5 w-48 h-48 bg-blue-300/30 rounded-full blur-xl animate-glow" style={{ animationDelay: '3s' }}></div>
+        <div className="absolute top-20 left-1/6 w-56 h-56 bg-cyan-400/20 rounded-full blur-2xl animate-glow" style={{ animationDelay: '3.5s' }}></div>
+        <div className="absolute bottom-1/3 left-1/3 w-52 h-52 bg-purple-400/25 rounded-full blur-2xl animate-glow" style={{ animationDelay: '4s' }}></div>
+      </div>
 
       {/* Left Side - Auth Form */}
       <div className="w-1/2 flex items-center justify-center p-8 relative z-10">
@@ -137,23 +165,23 @@ export default function AuthPage() {
           <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500/50 via-purple-500/50 to-indigo-500/50 rounded-2xl blur-md opacity-60"></div>
           
           {/* Form Card */}
-          <div className="relative bg-[#1a1c24]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-8">
+          <div className="relative bg-[#1a1c24]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-white">
-              Join the Future
+          <div className="text-center mb-5">
+            <h1 className="text-2xl font-bold text-white">
+              Focus & Achieve
             </h1>
-            <p className="text-sm text-slate-400 mt-2">
+            <p className="text-xs text-slate-400 mt-1">
               {mode === 'login' ? 'Log in to continue your journey.' : 'Create an account to get started.'}
             </p>
           </div>
 
           {/* Tab Toggle */}
-          <div className="flex gap-2 mb-8 p-1 rounded-lg bg-slate-700/50">
+          <div className="flex gap-2 mb-5 p-1 rounded-lg bg-slate-700/50">
             <button
               type="button"
               onClick={() => handleModeChange('login')}
-              className={`flex-1 py-3 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
                 mode === 'login' 
                   ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white' 
                   : 'text-slate-400 hover:text-white'
@@ -164,7 +192,7 @@ export default function AuthPage() {
             <button
               type="button"
               onClick={() => handleModeChange('signup')}
-              className={`flex-1 py-3 rounded-lg text-sm font-medium transition-all ${
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
                 mode === 'signup' 
                   ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white' 
                   : 'text-slate-400 hover:text-white'
@@ -176,13 +204,13 @@ export default function AuthPage() {
 
           {/* Error Message */}
           {mutation.error && (
-            <div className="mb-4 p-3 rounded-lg border border-red-500 text-red-500 text-sm">
+            <div className="mb-3 p-2 rounded-lg border border-red-500 text-red-500 text-xs">
               {mutation.error?.response?.data?.message || mutation.error?.message || 'Something went wrong'}
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
             {/* Username (Signup only) */}
             {mode === 'signup' && (
               <Input
@@ -273,19 +301,11 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="w-full py-3 rounded-lg font-medium text-base text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+              className="w-full py-2.5 rounded-lg font-medium text-sm text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
             >
               {mutation.isPending ? 'Loading...' : (mode === 'login' ? 'Log In' : 'Create Account')}
             </button>
           </form>
-
-          {/* Terms */}
-          <p className="mt-6 text-center text-xs text-slate-500">
-            By creating an account, you agree to our{' '}
-            <a href="#" className="underline text-slate-400 hover:text-white">Terms of Service</a>
-            {' '}and{' '}
-            <a href="#" className="underline text-slate-400 hover:text-white">Privacy Policy</a>.
-          </p>
           </div>
         </div>
       </div>
@@ -418,8 +438,8 @@ export default function AuthPage() {
       )}
 
       {/* Right Side - Infinite Scrolling Pattern */}
-      <div className='w-1/2 bg-[#402A5B] px-8'>
-        <div className="h-full overflow-hidden relative bg-[#402A5B]">
+      <div className='w-1/2 bg-[#3D2B58] px-8'>
+        <div className="h-full overflow-hidden relative">
             <div 
             className="absolute animate-scroll"
             style={{ top: 0, right: 0, width: '100%' }}
