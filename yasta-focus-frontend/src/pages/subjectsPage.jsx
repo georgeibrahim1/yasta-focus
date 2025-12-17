@@ -312,7 +312,7 @@ export default function SubjectsPage() {
             </div>
             <button
               onClick={() => setShowSubjectModal(true)}
-              className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-indigo-500/50 flex items-center justify-center gap-2 mx-auto"
+              className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2 mx-auto"
             >
               <Plus size={20} />
               Create Your First Subject
@@ -666,15 +666,15 @@ export default function SubjectsPage() {
       </div>
 
       {/* Aside - Subject List */}
-      <aside className="w-96 border-l border-slate-800 p-6">
-        <div className="space-y-3">
+      <aside className="w-96 border-l border-slate-700 p-6">
+        <div className="space-y-2">
           {subjects.map(subject => (
             <div
               key={subject.subject_name}
-              className={`relative group rounded-xl transition-all ${
+              className={`relative group rounded-lg transition-colors ${
                 subject.subject_name === selectedSubject && activeTab !== 'chat'
-                  ? 'bg-gradient-to-r from-indigo-600 to-purple-600 shadow-lg shadow-indigo-500/50'
-                  : 'bg-slate-800/50 border border-slate-700 hover:bg-slate-800'
+                  ? 'bg-indigo-600'
+                  : 'bg-slate-800 hover:bg-slate-700'
               }`}
             >
               <button
@@ -687,9 +687,9 @@ export default function SubjectsPage() {
                 className="w-full p-4 text-left text-white"
               >
                 <div className="flex-1 pr-8">
-                  <div className="font-semibold text-lg">{subject.subject_name}</div>
+                  <div className="font-semibold">{subject.subject_name}</div>
                   {subject.description && (
-                    <div className="text-sm opacity-80 mt-1">{subject.description}</div>
+                    <div className="text-sm opacity-70 mt-1">{subject.description}</div>
                   )}
                 </div>
               </button>
@@ -698,7 +698,7 @@ export default function SubjectsPage() {
                   e.stopPropagation()
                   handleDeleteSubject(subject.subject_name)
                 }}
-                className="absolute right-3 top-3 p-2 opacity-0 group-hover:opacity-100 transition-opacity bg-red-600/20 hover:bg-red-600/40 text-red-400 rounded-lg"
+                className="absolute right-3 top-3 p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 text-red-400 hover:text-white rounded-lg"
                 title="Delete subject"
               >
                 <Trash2 size={16} />
@@ -710,10 +710,10 @@ export default function SubjectsPage() {
         {/* Add New Subject Button */}
         <button 
           onClick={() => setShowSubjectModal(true)}
-          className="w-full mt-6 p-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium rounded-xl transition-all shadow-lg hover:shadow-blue-500/50 flex items-center justify-center gap-2"
+          className="w-full mt-4 p-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
         >
           <Plus size={20} />
-          Add New Subject
+          Add Subject
         </button>
 
         {/* AI Chat Button */}
@@ -722,10 +722,10 @@ export default function SubjectsPage() {
             setActiveTab('chat')
             // Don't deselect subject, just show chat mode
           }}
-          className={`w-full mt-4 p-4 font-medium rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 ${
+          className={`w-full mt-3 p-4 font-medium rounded-lg transition-colors flex items-center justify-center gap-2 ${
             activeTab === 'chat'
-              ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-indigo-500/50'
-              : 'bg-slate-800/50 border border-slate-700 text-slate-300 hover:text-white hover:border-indigo-500'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
           }`}
         >
           <Bot size={20} />
