@@ -11,7 +11,7 @@ import {
 import { StreamChat } from 'stream-chat'
 import { Chat, Channel, ChannelHeader, MessageList, MessageInput, Thread, Window } from 'stream-chat-react'
 import { ArrowLeft, MessageSquare, Mic, MicOff, Video, VideoOff, PhoneOff } from 'lucide-react'
-import { useGetStreamToken } from '../services/communityServices'
+import { useGetStreamToken, useGetEvents } from '../services/communityServices'
 import { useUser } from '../services/authServices'
 import '@stream-io/video-react-sdk/dist/css/styles.css'
 import 'stream-chat-react/dist/css/v2/index.css'
@@ -116,6 +116,11 @@ export default function LiveEventPage() {
   const navigate = useNavigate()
   const { data: currentUser } = useUser()
   const { data: streamData, isLoading } = useGetStreamToken()
+  const { data: events = [] } = useGetEvents()
+  
+  // Find the current event by ID
+  const currentEvent = events.find(e => e.id === parseInt(eventId))
+  const eventName = currentEvent?.title || `Event ${eventId}`
   
   const [videoClient, setVideoClient] = useState(null)
   const [chatClient, setChatClient] = useState(null)
@@ -222,7 +227,7 @@ export default function LiveEventPage() {
         // Join or create channel with proper permissions
         // Using 'livestream' type which is more permissive by default
         const eventChannel = chatClient.channel('livestream', `event-${eventId}`, {
-          name: `Event ${eventId} Chat`,
+          name: eventName,
           created_by_id: userId,
         })
         
@@ -289,7 +294,7 @@ export default function LiveEventPage() {
         console.log('Cleanup complete')
       })
     }
-  }, [streamData, currentUser, eventId])
+  }, [streamData, currentUser, eventId, eventName])
 
   const leaveCall = async () => {
     if (cleanupInProgressRef.current) {
@@ -380,8 +385,8 @@ export default function LiveEventPage() {
               <ArrowLeft size={24} />
             </button>
             <div>
-              <h1 className="text-xl font-bold text-white">Live Event</h1>
-              <p className="text-sm text-slate-400">Stream & Chat</p>
+              <h1 className="text-xl font-bold text-white">{eventName}</h1>
+              <p className="text-sm text-slate-400">Live Event</p>
             </div>
           </div>
           

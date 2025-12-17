@@ -1,5 +1,5 @@
 import React from 'react'
-import { X, Trash2 } from 'lucide-react'
+import { X, Trash2, User } from 'lucide-react'
 import { useDeleteEvent } from '../services/communityServices'
 import { useUser } from '../services/authServices'
 
@@ -44,6 +44,16 @@ export default function EventInfoModal({ event, isOpen, onClose }) {
             <label className="text-sm font-medium text-slate-400 mb-2 block">Event Date</label>
             <p className="text-white">{new Date(event.date).toLocaleString()}</p>
           </div>
+
+          {event.creator_name && (
+            <div className="mb-4">
+              <label className="text-sm font-medium text-slate-400 mb-2 block">Created By</label>
+              <div className="flex items-center gap-2 text-white">
+                <User className="w-4 h-4 text-blue-400" />
+                <span>{event.creator_name}</span>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="text-sm font-medium text-slate-400 mb-2 block">Description</label>

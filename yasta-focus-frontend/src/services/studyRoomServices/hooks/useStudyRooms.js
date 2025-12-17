@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
 import * as studyRoomService from '../service'
 
 export const useStudyRooms = (communityId, search = '') => {
@@ -17,6 +18,11 @@ export const useCreateRoom = () => {
       studyRoomService.createRoom(communityId, roomData),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['studyRooms', variables.communityId] })
+      toast.success('Study room created successfully! 🎥')
+    },
+    onError: (error) => {
+      const message = error.response?.data?.message || 'Failed to create study room'
+      toast.error(message)
     }
   })
 }

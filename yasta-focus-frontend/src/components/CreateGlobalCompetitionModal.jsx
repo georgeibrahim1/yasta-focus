@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import axios from 'axios'
+import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -49,6 +50,7 @@ export default function CreateGlobalCompetitionModal({ isOpen, onClose }) {
       )
 
       queryClient.invalidateQueries({ queryKey: ['competitions', 'all'] })
+      toast.success('Global competition created successfully! 🏆')
       
       setFormData({
         competition_name: '',
@@ -59,7 +61,9 @@ export default function CreateGlobalCompetitionModal({ isOpen, onClose }) {
       })
       onClose()
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to create competition')
+      const message = err.response?.data?.message || 'Failed to create competition'
+      setError(message)
+      toast.error(message)
     } finally {
       setIsLoading(false)
     }
