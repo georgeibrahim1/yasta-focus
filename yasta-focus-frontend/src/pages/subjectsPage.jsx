@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Plus, Trash2, Edit2, Bot } from 'lucide-react'
+import { Search, Plus, Trash2, Edit2, Bot, ArrowLeft } from 'lucide-react'
 import SubjectChat from '../components/SubjectChat'
 import { useGetSubjects, useDeleteSubject, useGetNotes, useGetNote, useUpdateNote, useDeleteNote, useGetTasks, useUpdateTask, useToggleTask, useDeleteTask, useCreateSubject, useCreateNote } from '../services/subjectServices'
 import { useGetDecks, useDeleteDeck, useCreateDeck } from '../services/deckServices'
@@ -342,326 +342,333 @@ export default function SubjectsPage() {
       {/* Main Content Area */}
       <div className="flex-1 p-8">
         {/* Header */}
-        <div className="mb-8">
-          {activeTab === 'chat' ? (
-            <>
-              <h1 className="text-5xl font-bold text-white mb-3">AI Assistant</h1>
-              <p className="text-slate-400 text-lg">
-                Ask me anything! I'm here to help with your studies.
-              </p>
-              <SubjectChat subject="General" messages={chatMessages} setMessages={setChatMessages} />
-            </>
-          ) : (
-            <>
-              <h1 className="text-5xl font-bold text-white mb-3">{selectedSubject || 'Select a Subject'}</h1>
-              <p className="text-slate-400 text-lg">
-                All your notes, tasks, and decks for this subject.
-              </p>
-            </>
-          )}
-        </div>
-
-        {/* Search and Tabs - Only show when not in chat mode */}
-        {activeTab !== 'chat' && (
-        <div className="flex items-center gap-4 mb-8">
-          {/* Search Bar */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
-            <input
-              type="text"
-              placeholder={`Search ${activeTab}...`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
-            />
-          </div>
-
-          {/* Tabs */}
-          <div className="flex bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
+        <div className="mb-8 flex items-center gap-4">
+          <h1 className="text-5xl font-bold text-white mb-3 flex-1">{selectedSubject || 'Select a Subject'}</h1>
+          {activeTab === 'chat' && (
             <button
               onClick={() => setActiveTab('notes')}
-              className={`px-6 py-3 font-medium transition-colors ${
-                activeTab === 'notes'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-400 hover:text-white'
-              }`}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-lg font-medium transition-colors"
             >
-              Notes
+              <ArrowLeft size={20} />
             </button>
-            <button
-              onClick={() => setActiveTab('tasks')}
-              className={`px-6 py-3 font-medium transition-colors ${
-                activeTab === 'tasks'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Tasks
-            </button>
-            <button
-              onClick={() => setActiveTab('decks')}
-              className={`px-6 py-3 font-medium transition-colors ${
-                activeTab === 'decks'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Decks
-            </button>
-          </div>
-
-          {/* Add Button */}
-          <button 
-            onClick={() => {
-              if (activeTab === 'notes') setShowNoteModal(true)
-              else if (activeTab === 'tasks') setShowTaskModal(true)
-              else if (activeTab === 'decks') setShowDeckModal(true)
-            }}
-            className="p-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl transition-all shadow-lg hover:shadow-indigo-500/50"
+          )}
+          <button
+            onClick={() => setActiveTab('chat')}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
           >
-            <Plus size={24} />
+            <Bot size={20} />
+            AI Chat
           </button>
         </div>
-        )}
 
-        {/* Task Filters and Sorting */}
-        {activeTab === 'tasks' && (
-          <div className="flex gap-3 mb-6">
-            <select
-              value={taskFilterStatus}
-              onChange={(e) => setTaskFilterStatus(e.target.value)}
-              className="px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-indigo-500 transition-colors"
-            >
-              <option value="all">All Tasks</option>
-              <option value="not-started">Not Started</option>
-              <option value="in-progress">In Progress</option>
-              <option value="done">Done</option>
-            </select>
-            <select
-              value={taskSortBy}
-              onChange={(e) => setTaskSortBy(e.target.value)}
-              className="px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-indigo-500 transition-colors"
-            >
-              <option value="none">Sort By</option>
-              <option value="deadline-asc">Deadline (Earliest First)</option>
-              <option value="deadline-desc">Deadline (Latest First)</option>
-              <option value="status">Status</option>
-            </select>
-            <button
-              onClick={() => setHideCompleted(!hideCompleted)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                hideCompleted
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-slate-800/50 border border-slate-700 text-slate-400 hover:text-white'
-              }`}
-            >
-              {hideCompleted ? 'Show Completed' : 'Hide Completed'}
-            </button>
-          </div>
-        )}
-
-        {/* Content Grid */}
-        {activeTab === 'notes' && (
-          <div className="space-y-4">
-            {filteredNotes.length === 0 ? (
-              <div className="text-center py-12 text-slate-400">
-                No notes found. Click + to add a new note.
+        {activeTab === 'chat' ? (
+          <>
+            <p className="text-slate-400 text-lg mb-6">Ask me anything about {selectedSubject}!</p>
+            <SubjectChat subject={selectedSubject} messages={chatMessages} setMessages={setChatMessages} />
+          </>
+        ) : (
+          <>
+            {/* Search and Tabs */}
+            <div className="flex items-center gap-4 mb-8">
+              {/* Search Bar */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+                <input
+                  type="text"
+                  placeholder={`Search ${activeTab}...`}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-slate-800/50 border border-slate-700 rounded-xl text-white placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                />
               </div>
-            ) : (
-              filteredNotes.map(note => (
-                <div
-                  key={note.note_title}
-                  className="p-5 bg-slate-800/50 border border-slate-700 rounded-xl hover:border-indigo-500 transition-colors cursor-pointer group"
-                  onClick={() => handleEditNote(note)}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      {editingNoteTitle === note.note_title ? (
-                        <input
-                          type="text"
-                          value={newNoteTitle}
-                          onChange={(e) => setNewNoteTitle(e.target.value)}
-                          onBlur={() => handleSaveNoteTitle(note.note_title)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSaveNoteTitle(note.note_title)
-                            if (e.key === 'Escape') {
-                              setEditingNoteTitle(null)
-                              setNewNoteTitle('')
-                            }
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          autoFocus
-                          className="w-full px-3 py-1 text-lg font-semibold bg-slate-700 border border-indigo-500 rounded-lg text-white focus:outline-none focus:border-indigo-400"
-                        />
-                      ) : (
-                        <h3 className="text-lg font-semibold text-white group-hover:text-indigo-400 transition-colors">
-                          {note.note_title}
-                        </h3>
-                      )}
-                      {note.note_text && (
-                        <p className="text-sm text-slate-400 mt-2 line-clamp-2">
-                          {note.note_text.substring(0, 100)}{note.note_text.length > 100 ? '...' : ''}
-                        </p>
-                      )}
-                      <p className="text-xs text-slate-500 mt-1">
-                        Click to edit note content
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleEditNoteTitle(note)
-                        }}
-                        className="p-2 text-slate-400 hover:text-indigo-400 transition-colors"
-                        title="Edit note title"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          deleteNoteMutation.mutate({ subjectName: selectedSubject, noteTitle: note.note_title })
-                        }}
-                        className="p-2 text-slate-400 hover:text-red-400 transition-colors"
-                        title="Delete note"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
 
-        {activeTab === 'tasks' && (
-          <div className="space-y-4">
-            {filteredTasks.length === 0 ? (
-              <div className="text-center py-12 text-slate-400">
-                No tasks found. Click + to add a new task.
-              </div>
-            ) : (
-              filteredTasks.map(task => {
-                const isCompleted = task.status === 'Done'
-                return (
-                <div
-                  key={task.task_title}
-                  className={`p-5 bg-slate-800/50 border border-slate-700 rounded-xl hover:border-slate-600 transition-all ${
-                    isCompleted ? 'opacity-60' : ''
+              {/* Tabs */}
+              <div className="flex bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setActiveTab('notes')}
+                  className={`px-6 py-3 font-medium transition-colors ${
+                    activeTab === 'notes'
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  <div className="flex items-start gap-4">
-                    <input
-                      type="checkbox"
-                      checked={isCompleted}
-                      onChange={() => toggleTaskMutation.mutate({ subjectName: selectedSubject, taskTitle: task.task_title })}
-                      className="w-5 h-5 mt-1 rounded border-slate-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-800 cursor-pointer"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className={`text-lg font-semibold ${
-                          isCompleted ? 'line-through text-slate-500' : 'text-white'
-                        }`}>
-                          {task.task_title}
-                        </h3>
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          task.status === 'Done'
-                            ? 'bg-green-500/20 text-green-400' 
-                            : task.status === 'In Progress'
-                            ? 'bg-blue-500/20 text-blue-400'
-                            : 'bg-slate-500/20 text-slate-400'
-                        }`}>
-                          {task.status}
-                        </span>
-                      </div>
-                      {task.description && (
-                        <p className="text-sm text-slate-400 mt-1">{task.description}</p>
-                      )}
-                      {task.deadline && (
-                        <p className={`text-sm mt-2 ${
-                          new Date(task.deadline) < new Date() && !isCompleted
-                            ? 'text-red-400 font-semibold'
-                            : 'text-slate-500'
-                        }`}>
-                          {new Date(task.deadline) < new Date() && !isCompleted && '⚠️ '}
-                          Deadline: {new Date(task.deadline).toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleEditTask(task)}
-                        className="p-2 text-slate-400 hover:text-indigo-400 transition-colors"
-                        title="Edit task"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button
-                        onClick={() => deleteTaskMutation.mutate({ subjectName: selectedSubject, taskTitle: task.task_title })}
-                        className="p-2 text-slate-400 hover:text-red-400 transition-colors"
-                        title="Delete task"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )})
-            )}
-          </div>
-        )}
-
-        {activeTab === 'decks' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredDecks.length === 0 ? (
-              <div className="col-span-full text-center py-12 text-slate-400">
-                No decks found. Click + to add a new deck.
-              </div>
-            ) : (
-              filteredDecks.map(deck => (
-                <div
-                  key={deck.deck_title}
-                  onClick={() => navigate(`/decks/${encodeURIComponent(selectedSubject)}/${encodeURIComponent(deck.deck_title)}`)}
-                  className="p-6 bg-slate-800/50 border border-slate-700 rounded-xl hover:border-indigo-500 transition-colors cursor-pointer group"
+                  Notes
+                </button>
+                <button
+                  onClick={() => setActiveTab('tasks')}
+                  className={`px-6 py-3 font-medium transition-colors ${
+                    activeTab === 'tasks'
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-xl font-semibold text-white group-hover:text-indigo-400 transition-colors">
-                      {deck.deck_title}
-                    </h3>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        deleteDeckMutation.mutate({ subjectName: selectedSubject, deckTitle: deck.deck_title })
-                      }}
-                      className="p-2 text-slate-400 hover:text-red-400 transition-colors"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  </div>
-                  {deck.deck__desc && (
-                    <p className="text-slate-400 text-sm mb-4">{deck.deck__desc}</p>
-                  )}
-                  <div className="space-y-2 text-sm">
-                    <div className="text-slate-500">
-                      Last reviewed: {deck.last_review_date ? new Date(deck.last_review_date).toLocaleDateString() : 'Never'}
-                    </div>
-                    {deck.last_round_time && (
-                      <div className="text-slate-500">
-                        Last review time: {Math.floor(deck.last_round_time / 60)}m {deck.last_round_time % 60}s
-                      </div>
-                    )}
-                    {deck.reminder_by && (
-                      <div className="text-yellow-400">
-                        📅 Review in {deck.reminder_by} day{deck.reminder_by !== 1 ? 's' : ''}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
+                  Tasks
+                </button>
+                <button
+                  onClick={() => setActiveTab('decks')}
+                  className={`px-6 py-3 font-medium transition-colors ${
+                    activeTab === 'decks'
+                      ? 'bg-indigo-600 text-white'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Decks
+                </button>
+              </div>
+
+              {/* Add Button - Only show for notes, tasks, decks */}
+              <button 
+                onClick={() => {
+                  if (activeTab === 'notes') setShowNoteModal(true)
+                  else if (activeTab === 'tasks') setShowTaskModal(true)
+                  else if (activeTab === 'decks') setShowDeckModal(true)
+                }}
+                className="p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-colors"
+              >
+                <Plus size={24} />
+              </button>
+            </div>
+
+            {/* Task Filters and Sorting */}
+            {activeTab === 'tasks' && (
+              <div className="flex gap-3 mb-6">
+                <select
+                  value={taskFilterStatus}
+                  onChange={(e) => setTaskFilterStatus(e.target.value)}
+                  className="px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                >
+                  <option value="all">All Tasks</option>
+                  <option value="not-started">Not Started</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="done">Done</option>
+                </select>
+                <select
+                  value={taskSortBy}
+                  onChange={(e) => setTaskSortBy(e.target.value)}
+                  className="px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                >
+                  <option value="none">Sort By</option>
+                  <option value="deadline-asc">Deadline (Earliest First)</option>
+                  <option value="deadline-desc">Deadline (Latest First)</option>
+                  <option value="status">Status</option>
+                </select>
+                <button
+                  onClick={() => setHideCompleted(!hideCompleted)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    hideCompleted
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-800/50 border border-slate-700 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {hideCompleted ? 'Show All' : 'Hide Completed'}
+                </button>
+              </div>
             )}
-          </div>
+
+            {/* Notes, Tasks, Decks Content */}
+            {activeTab === 'notes' && (
+              <div className="space-y-4">
+                {filteredNotes.length === 0 ? (
+                  <div className="text-center py-12 text-slate-400">
+                    No notes found. Click + to add a new note.
+                  </div>
+                ) : (
+                  filteredNotes.map(note => (
+                    <div
+                      key={note.note_title}
+                      className="p-5 bg-slate-800/50 border border-slate-700 rounded-xl hover:border-indigo-500 transition-colors cursor-pointer group"
+                      onClick={() => handleEditNote(note)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          {editingNoteTitle === note.note_title ? (
+                            <input
+                              type="text"
+                              value={newNoteTitle}
+                              onChange={(e) => setNewNoteTitle(e.target.value)}
+                              onBlur={() => handleSaveNoteTitle(note.note_title)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveNoteTitle(note.note_title)
+                                if (e.key === 'Escape') {
+                                  setEditingNoteTitle(null)
+                                  setNewNoteTitle('')
+                                }
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              autoFocus
+                              className="w-full px-3 py-1 text-lg font-semibold bg-slate-700 border border-indigo-500 rounded-lg text-white focus:outline-none focus:border-indigo-400"
+                            />
+                          ) : (
+                            <h3 className="text-lg font-semibold text-white group-hover:text-indigo-400 transition-colors">
+                              {note.note_title}
+                            </h3>
+                          )}
+                          {note.note_text && (
+                            <p className="text-sm text-slate-400 mt-2 line-clamp-2">
+                              {note.note_text.substring(0, 100)}{note.note_text.length > 100 ? '...' : ''}
+                            </p>
+                          )}
+                          <p className="text-xs text-slate-500 mt-1">
+                            Click to edit note content
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleEditNoteTitle(note)
+                            }}
+                            className="p-2 text-slate-400 hover:text-indigo-400 transition-colors"
+                            title="Edit note title"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              deleteNoteMutation.mutate({ subjectName: selectedSubject, noteTitle: note.note_title })
+                            }}
+                            className="p-2 text-slate-400 hover:text-red-400 transition-colors"
+                            title="Delete note"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {activeTab === 'tasks' && (
+              <div className="space-y-4">
+                {filteredTasks.length === 0 ? (
+                  <div className="text-center py-12 text-slate-400">
+                    No tasks found. Click + to add a new task.
+                  </div>
+                ) : (
+                  filteredTasks.map(task => {
+                    const isCompleted = task.status === 'Done'
+                    return (
+                    <div
+                      key={task.task_title}
+                      className={`p-5 bg-slate-800/50 border border-slate-700 rounded-xl hover:border-slate-600 transition-all ${
+                        isCompleted ? 'opacity-60' : ''
+                      }`}
+                    >
+                      <div className="flex items-start gap-4">
+                        <input
+                          type="checkbox"
+                          checked={isCompleted}
+                          onChange={() => toggleTaskMutation.mutate({ subjectName: selectedSubject, taskTitle: task.task_title })}
+                          className="w-5 h-5 mt-1 rounded border-slate-600 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-slate-800 cursor-pointer"
+                        />
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className={`text-lg font-semibold ${
+                              isCompleted ? 'line-through text-slate-500' : 'text-white'
+                            }`}>
+                              {task.task_title}
+                            </h3>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                              task.status === 'Done'
+                                ? 'bg-green-500/20 text-green-400' 
+                                : task.status === 'In Progress'
+                                ? 'bg-blue-500/20 text-blue-400'
+                                : 'bg-slate-500/20 text-slate-400'
+                            }`}>
+                              {task.status}
+                            </span>
+                          </div>
+                          {task.description && (
+                            <p className="text-sm text-slate-400 mt-1">{task.description}</p>
+                          )}
+                          {task.deadline && (
+                            <p className={`text-sm mt-2 ${
+                              new Date(task.deadline) < new Date() && !isCompleted
+                                ? 'text-red-400 font-semibold'
+                                : 'text-slate-500'
+                            }`}>
+                              {new Date(task.deadline) < new Date() && !isCompleted && '⚠️ '}
+                              Deadline: {new Date(task.deadline).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleEditTask(task)}
+                            className="p-2 text-slate-400 hover:text-indigo-400 transition-colors"
+                            title="Edit task"
+                          >
+                            <Edit2 size={18} />
+                          </button>
+                          <button
+                            onClick={() => deleteTaskMutation.mutate({ subjectName: selectedSubject, taskTitle: task.task_title })}
+                            className="p-2 text-slate-400 hover:text-red-400 transition-colors"
+                            title="Delete task"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )})
+                )}
+              </div>
+            )}
+
+            {activeTab === 'decks' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredDecks.length === 0 ? (
+                  <div className="col-span-full text-center py-12 text-slate-400">
+                    No decks found. Click + to add a new deck.
+                  </div>
+                ) : (
+                  filteredDecks.map(deck => (
+                    <div
+                      key={deck.deck_title}
+                      onClick={() => navigate(`/decks/${encodeURIComponent(selectedSubject)}/${encodeURIComponent(deck.deck_title)}`)}
+                      className="p-6 bg-slate-800/50 border border-slate-700 rounded-xl hover:border-indigo-500 transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <h3 className="text-xl font-semibold text-white group-hover:text-indigo-400 transition-colors">
+                          {deck.deck_title}
+                        </h3>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            deleteDeckMutation.mutate({ subjectName: selectedSubject, deckTitle: deck.deck_title })
+                          }}
+                          className="p-2 text-slate-400 hover:text-red-400 transition-colors"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                      {deck.deck__desc && (
+                        <p className="text-slate-400 text-sm mb-4">{deck.deck__desc}</p>
+                      )}
+                      <div className="space-y-2 text-sm">
+                        <div className="text-slate-500">
+                          Last reviewed: {deck.last_review_date ? new Date(deck.last_review_date).toLocaleDateString() : 'Never'}
+                        </div>
+                        {deck.last_round_time && (
+                          <div className="text-slate-500">
+                            Last review time: {Math.floor(deck.last_round_time / 60)}m {deck.last_round_time % 60}s
+                          </div>
+                        )}
+                        {deck.reminder_by && (
+                          <div className="text-yellow-400">
+                            📅 Review in {deck.reminder_by} day{deck.reminder_by !== 1 ? 's' : ''}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -672,7 +679,7 @@ export default function SubjectsPage() {
             <div
               key={subject.subject_name}
               className={`relative group rounded-lg transition-colors ${
-                subject.subject_name === selectedSubject && activeTab !== 'chat'
+                subject.subject_name === selectedSubject
                   ? 'bg-indigo-600'
                   : 'bg-slate-800 hover:bg-slate-700'
               }`}
@@ -680,9 +687,6 @@ export default function SubjectsPage() {
               <button
                 onClick={() => {
                   setSelectedSubject(subject.subject_name)
-                  if (activeTab === 'chat') {
-                    setActiveTab('notes')
-                  }
                 }}
                 className="w-full p-4 text-left text-white"
               >
@@ -714,22 +718,6 @@ export default function SubjectsPage() {
         >
           <Plus size={20} />
           Add Subject
-        </button>
-
-        {/* AI Chat Button */}
-        <button 
-          onClick={() => {
-            setActiveTab('chat')
-            // Don't deselect subject, just show chat mode
-          }}
-          className={`w-full mt-3 p-4 font-medium rounded-lg transition-colors flex items-center justify-center gap-2 ${
-            activeTab === 'chat'
-              ? 'bg-indigo-600 text-white'
-              : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
-          }`}
-        >
-          <Bot size={20} />
-          AI Chat
         </button>
       </aside>
 
