@@ -32,4 +32,9 @@ router.delete('/reports/:reporterId/:reportedId', adminController.deleteReport);
 // System Logs
 router.get('/logs', adminController.getLogs);
 
+// New managerial reports
+router.get('/stats/sessions', adminController.getSessionStats);
+router.get('/stats/content', adminController.getContentStats);
+router.get('/stats/engagement', adminController.getEngagementStats);
+
 export default router;

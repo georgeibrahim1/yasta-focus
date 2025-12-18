@@ -239,7 +239,7 @@ export const getAllUsers = catchAsync(async (req, res, next) => {
   values.push(limit, offset);
 
   const usersResult = await pool.query(query, values);
-  
+
   const countValues = search ? [`%${search}%`] : [];
   const totalResult = await pool.query(countQuery, countValues);
   const total = parseInt(totalResult.rows[0].count);
@@ -489,7 +489,7 @@ export const deleteUser = catchAsync(async (req, res, next) => {
     }
 
     // Delete in proper order of dependencies with error handling
-    
+
     // 1. Delete flashcard reviews
     try {
       if (deckTitles.length > 0) {
@@ -501,7 +501,7 @@ export const deleteUser = catchAsync(async (req, res, next) => {
     } catch (err) {
       console.log('Error deleting flashcard_review, continuing...', err.message);
     }
-    
+
     // 2. Delete flashcards
     try {
       if (deckTitles.length > 0) {
@@ -510,7 +510,7 @@ export const deleteUser = catchAsync(async (req, res, next) => {
     } catch (err) {
       console.log('Error deleting flash_card, continuing...', err.message);
     }
-    
+
     // 3. Delete decks
     try {
       if (subjectNames.length > 0) {
@@ -519,7 +519,7 @@ export const deleteUser = catchAsync(async (req, res, next) => {
     } catch (err) {
       console.log('Error deleting deck, continuing...', err.message);
     }
-    
+
     // 4. Delete tasks
     try {
       if (subjectNames.length > 0) {
@@ -528,7 +528,7 @@ export const deleteUser = catchAsync(async (req, res, next) => {
     } catch (err) {
       console.log('Error deleting task, continuing...', err.message);
     }
-    
+
     // 5. Delete notes
     try {
       if (subjectNames.length > 0) {
@@ -537,28 +537,28 @@ export const deleteUser = catchAsync(async (req, res, next) => {
     } catch (err) {
       console.log('Error deleting note, continuing...', err.message);
     }
-    
+
     // 6. Delete sessions
     try {
       await pool.query('DELETE FROM session WHERE user_id = $1', [userId]);
     } catch (err) {
       console.log('Error deleting session, continuing...', err.message);
     }
-    
+
     // 7. Delete subjects
     try {
       await pool.query('DELETE FROM subject WHERE user_id = $1', [userId]);
     } catch (err) {
       console.log('Error deleting subject, continuing...', err.message);
     }
-    
+
     // 8. Delete community-related data
     try {
       await pool.query('DELETE FROM studyRoom_Members WHERE student_ID = $1', [userId]);
     } catch (err) {
       console.log('Error deleting studyRoom_Members, continuing...', err.message);
     }
-    
+
     try {
       if (communityIds.length > 0) {
         await pool.query('DELETE FROM studyRoom WHERE community_ID = ANY($1::integer[])', [communityIds]);
@@ -566,67 +566,67 @@ export const deleteUser = catchAsync(async (req, res, next) => {
     } catch (err) {
       console.log('Error deleting studyRoom, continuing...', err.message);
     }
-    
+
     try {
       await pool.query('DELETE FROM community_Participants WHERE user_id = $1', [userId]);
     } catch (err) {
       console.log('Error deleting community_Participants, continuing...', err.message);
     }
-    
+
     try {
       await pool.query('DELETE FROM community WHERE community_Creator = $1', [userId]);
     } catch (err) {
       console.log('Error deleting community, continuing...', err.message);
     }
-    
+
     // 9. Delete events and competitions
     try {
       await pool.query('DELETE FROM event WHERE eventCreator = $1', [userId]);
     } catch (err) {
       console.log('Error deleting event, continuing...', err.message);
     }
-    
+
     try {
       await pool.query('DELETE FROM CompetitionParticipants WHERE user_id = $1', [userId]);
     } catch (err) {
       console.log('Error deleting CompetitionParticipants, continuing...', err.message);
     }
-    
+
     // 10. Delete friendships
     try {
       await pool.query('DELETE FROM friendship WHERE requesterid = $1 OR requesteeid = $1', [userId]);
     } catch (err) {
       console.log('Error deleting friendship, continuing...', err.message);
     }
-    
+
     // 11. Delete reports
     try {
       await pool.query('DELETE FROM reports WHERE reporterid = $1 OR reporteeid = $1', [userId]);
     } catch (err) {
       console.log('Error deleting reports, continuing...', err.message);
     }
-    
+
     // 12. Delete announcements
     try {
       await pool.query('DELETE FROM announcement WHERE moderator_id = $1', [userId]);
     } catch (err) {
       console.log('Error deleting announcement, continuing...', err.message);
     }
-    
+
     // 13. Delete daily check-ins
     try {
       await pool.query('DELETE FROM daily_checkin WHERE user_id = $1 OR to_user_id = $1', [userId]);
     } catch (err) {
       console.log('Error deleting daily_checkin, continuing...', err.message);
     }
-    
+
     // 14. Delete user achievements
     try {
       await pool.query('DELETE FROM user_achievements WHERE user_id = $1', [userId]);
     } catch (err) {
       console.log('Error deleting user_achievements, continuing...', err.message);
     }
-    
+
     // 15. Finally, delete the user
     await pool.query('DELETE FROM users WHERE user_id = $1', [userId]);
 
@@ -661,10 +661,10 @@ export const getLogs = catchAsync(async (req, res, next) => {
     return next(new AppError('Access denied. Admin only.', 403));
   }
 
-  const { 
-    page = 1, 
-    limit = 50, 
-    action_type = '', 
+  const {
+    page = 1,
+    limit = 50,
+    action_type = '',
     actor_type = '',
     user_id = '',
     start_date = '',
@@ -673,7 +673,7 @@ export const getLogs = catchAsync(async (req, res, next) => {
   } = req.query;
 
   const offset = (parseInt(page) - 1) * parseInt(limit);
-  
+
   // Build query conditions
   let conditions = [];
   let params = [];
@@ -763,3 +763,171 @@ export const getLogs = catchAsync(async (req, res, next) => {
     }
   });
 });
+
+// Get session statistics (managerial report)
+export const getSessionStats = catchAsync(async (req, res, next) => {
+  // Ensure user is admin (role 0)
+  if (req.user.role !== 0) {
+    return next(new AppError('Access denied. Admin only.', 403));
+  }
+
+  // Calculate session duration statistics
+  const sessionStatsResult = await pool.query(`
+    SELECT 
+      COALESCE(AVG(elapsed_time), 0) as avg_duration,
+      COALESCE(MAX(elapsed_time), 0) as max_duration,
+      COALESCE(MIN(elapsed_time), 0) as min_duration,
+      COUNT(DISTINCT user_id) as active_users_count,
+      COUNT(*) as total_sessions
+    FROM session
+    WHERE elapsed_time > 0
+  `);
+
+  const stats = sessionStatsResult.rows[0];
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      avgDuration: Math.round(parseFloat(stats.avg_duration)),
+      maxDuration: parseInt(stats.max_duration),
+      minDuration: parseInt(stats.min_duration),
+      activeUsersCount: parseInt(stats.active_users_count),
+      totalSessions: parseInt(stats.total_sessions)
+    }
+  });
+});
+
+// Get content creation statistics (managerial report)
+export const getContentStats = catchAsync(async (req, res, next) => {
+  // Ensure user is admin (role 0)
+  if (req.user.role !== 0) {
+    return next(new AppError('Access denied. Admin only.', 403));
+  }
+
+  // Get user count
+  const userCountResult = await pool.query('SELECT COUNT(*) as count FROM users WHERE role != 0');
+  const userCount = parseInt(userCountResult.rows[0].count);
+
+  // Get total content counts
+  const taskCountResult = await pool.query('SELECT COUNT(*) as count FROM task');
+  const flashcardCountResult = await pool.query('SELECT COUNT(*) as count FROM flash_card');
+  const noteCountResult = await pool.query('SELECT COUNT(*) as count FROM note');
+
+  const totalTasks = parseInt(taskCountResult.rows[0].count);
+  const totalFlashcards = parseInt(flashcardCountResult.rows[0].count);
+  const totalNotes = parseInt(noteCountResult.rows[0].count);
+
+  // Calculate averages
+  const avgTasksPerUser = userCount > 0 ? (totalTasks / userCount) : 0;
+  const avgFlashcardsPerUser = userCount > 0 ? (totalFlashcards / userCount) : 0;
+  const avgNotesPerUser = userCount > 0 ? (totalNotes / userCount) : 0;
+
+  // Find most productive user
+  const mostProductiveResult = await pool.query(`
+    SELECT 
+      u.user_id,
+      u.username,
+      (
+        COALESCE((SELECT COUNT(*) FROM task WHERE user_id = u.user_id), 0) +
+        COALESCE((SELECT COUNT(*) FROM flash_card fc JOIN deck d ON fc.deck_title = d.deck_title JOIN subject s ON d.subject_name = s.subject_name WHERE s.user_id = u.user_id), 0) +
+        COALESCE((SELECT COUNT(*) FROM note WHERE user_id = u.user_id), 0)
+      ) as total_content
+    FROM users u
+    WHERE u.role != 0
+    ORDER BY total_content DESC
+    LIMIT 1
+  `);
+
+  const mostProductiveUser = mostProductiveResult.rows[0] || null;
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      avgTasksPerUser: parseFloat(avgTasksPerUser.toFixed(2)),
+      avgFlashcardsPerUser: parseFloat(avgFlashcardsPerUser.toFixed(2)),
+      avgNotesPerUser: parseFloat(avgNotesPerUser.toFixed(2)),
+      totalTasks,
+      totalFlashcards,
+      totalNotes,
+      mostProductiveUser: mostProductiveUser ? {
+        username: mostProductiveUser.username,
+        totalContent: parseInt(mostProductiveUser.total_content)
+      } : null
+    }
+  });
+});
+
+// Get user engagement statistics (managerial report)
+export const getEngagementStats = catchAsync(async (req, res, next) => {
+  // Ensure user is admin (role 0)
+  if (req.user.role !== 0) {
+    return next(new AppError('Access denied. Admin only.', 403));
+  }
+
+  // Get XP statistics
+  const xpStatsResult = await pool.query(`
+    SELECT 
+      COALESCE(AVG(xp), 0) as avg_xp,
+      COALESCE(MAX(xp), 0) as max_xp,
+      COALESCE(MIN(xp), 0) as min_xp
+    FROM users
+    WHERE role != 0
+  `);
+
+  const xpStats = xpStatsResult.rows[0];
+
+  // Get top XP user
+  const topXpUserResult = await pool.query(`
+    SELECT user_id, username, xp
+    FROM users
+    WHERE role != 0
+    ORDER BY xp DESC
+    LIMIT 1
+  `);
+
+  const topXpUser = topXpUserResult.rows[0] || null;
+
+  // Calculate retention rate (users active in last 7 days / total users)
+  const totalUsersResult = await pool.query('SELECT COUNT(*) as count FROM users WHERE role != 0');
+  const totalUsers = parseInt(totalUsersResult.rows[0].count);
+
+  const activeUsersResult = await pool.query(`
+    SELECT COUNT(DISTINCT user_id) as count
+    FROM session
+    WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+  `);
+  const activeUsers = parseInt(activeUsersResult.rows[0].count);
+
+  const retentionRate = totalUsers > 0 ? ((activeUsers / totalUsers) * 100) : 0;
+
+  // Calculate average sessions per active user
+  const avgSessionsResult = await pool.query(`
+    SELECT COALESCE(AVG(session_count), 0) as avg_sessions
+    FROM (
+      SELECT user_id, COUNT(*) as session_count
+      FROM session
+      WHERE created_at >= CURRENT_DATE - INTERVAL '7 days'
+      GROUP BY user_id
+    ) as user_sessions
+  `);
+
+  const avgSessionsPerUser = parseFloat(avgSessionsResult.rows[0].avg_sessions);
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      avgXp: Math.round(parseFloat(xpStats.avg_xp)),
+      maxXp: parseInt(xpStats.max_xp),
+      minXp: parseInt(xpStats.min_xp),
+      topXpUser: topXpUser ? {
+        username: topXpUser.username,
+        xp: parseInt(topXpUser.xp)
+      } : null,
+      retentionRate: parseFloat(retentionRate.toFixed(2)),
+      avgSessionsPerActiveUser: parseFloat(avgSessionsPerUser.toFixed(2)),
+      activeUsers,
+      totalUsers
+    }
+  });
+});
+

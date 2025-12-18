@@ -1,11 +1,14 @@
 import { useUser } from '../services/authServices'
-import { 
-  useGetPlatformStats, 
-  useGetTopUsers, 
-  useGetRecentUsers, 
-  useGetActiveCommunities 
+import {
+  useGetPlatformStats,
+  useGetTopUsers,
+  useGetRecentUsers,
+  useGetActiveCommunities,
+  useGetSessionStats,
+  useGetContentStats,
+  useGetEngagementStats
 } from '../services/adminServices'
-import { Users, BookOpen, Clock, Target, TrendingUp, Award, LayoutDashboard } from 'lucide-react'
+import { Users, BookOpen, Clock, Target, TrendingUp, Award, LayoutDashboard, BarChart3, FileText, Activity } from 'lucide-react'
 
 export default function AdminDashboardPage() {
   const { data: currentUser } = useUser()
@@ -15,11 +18,17 @@ export default function AdminDashboardPage() {
   const { data: topUsersData, isLoading: topUsersLoading } = useGetTopUsers(5)
   const { data: recentUsersData, isLoading: recentUsersLoading } = useGetRecentUsers(5)
   const { data: activeCommunitiesData, isLoading: communitiesLoading } = useGetActiveCommunities(5)
+  const { data: sessionStatsData, isLoading: sessionStatsLoading } = useGetSessionStats()
+  const { data: contentStatsData, isLoading: contentStatsLoading } = useGetContentStats()
+  const { data: engagementStatsData, isLoading: engagementStatsLoading } = useGetEngagementStats()
 
   const stats = platformStats?.data || {}
   const topUsers = topUsersData?.data?.users || []
   const recentUsers = recentUsersData?.data?.users || []
   const activeCommunities = activeCommunitiesData?.data?.communities || []
+  const sessionStats = sessionStatsData?.data || {}
+  const contentStats = contentStatsData?.data || {}
+  const engagementStats = engagementStatsData?.data || {}
 
   return (
     <div className="min-h-screen p-6">
@@ -221,6 +230,120 @@ export default function AdminDashboardPage() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Advanced Statistics Section */}
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+            <BarChart3 className="text-indigo-400" size={28} />
+            Advanced Statistics
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Session Statistics */}
+            <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
+              <div className="flex items-center gap-2 mb-4">
+                <Clock className="w-5 h-5 text-blue-400" />
+                <h3 className="text-xl font-bold text-white">Session Statistics</h3>
+              </div>
+              {sessionStatsLoading ? (
+                <div className="space-y-3">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-6 bg-slate-700 rounded animate-pulse"></div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Avg Duration</span>
+                    <span className="text-white font-semibold">{Math.floor((sessionStats.avgDuration || 0) / 60)} min</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Max Duration</span>
+                    <span className="text-green-400 font-semibold">{Math.floor((sessionStats.maxDuration || 0) / 60)} min</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Min Duration</span>
+                    <span className="text-orange-400 font-semibold">{Math.floor((sessionStats.minDuration || 0) / 60)} min</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-3 border-t border-slate-700">
+                    <span className="text-slate-400 text-sm">Active Users</span>
+                    <span className="text-indigo-400 font-bold text-lg">{sessionStats.activeUsersCount || 0}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Content Statistics */}
+            <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
+              <div className="flex items-center gap-2 mb-4">
+                <FileText className="w-5 h-5 text-purple-400" />
+                <h3 className="text-xl font-bold text-white">Content Statistics</h3>
+              </div>
+              {contentStatsLoading ? (
+                <div className="space-y-3">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-6 bg-slate-700 rounded animate-pulse"></div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Avg Tasks/User</span>
+                    <span className="text-white font-semibold">{contentStats.avgTasksPerUser || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Avg Cards/User</span>
+                    <span className="text-white font-semibold">{contentStats.avgFlashcardsPerUser || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Avg Notes/User</span>
+                    <span className="text-white font-semibold">{contentStats.avgNotesPerUser || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-3 border-t border-slate-700">
+                    <span className="text-slate-400 text-sm">Top Producer</span>
+                    <span className="text-purple-400 font-bold text-sm truncate max-w-[120px]">
+                      {contentStats.mostProductiveUser?.username || 'N/A'}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Engagement Statistics */}
+            <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
+              <div className="flex items-center gap-2 mb-4">
+                <Activity className="w-5 h-5 text-green-400" />
+                <h3 className="text-xl font-bold text-white">Engagement Stats</h3>
+              </div>
+              {engagementStatsLoading ? (
+                <div className="space-y-3">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="h-6 bg-slate-700 rounded animate-pulse"></div>
+                  ))}
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Avg XP</span>
+                    <span className="text-white font-semibold">{engagementStats.avgXp || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Top XP</span>
+                    <span className="text-yellow-400 font-semibold">{engagementStats.topXpUser?.username || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400 text-sm">Retention Rate</span>
+                    <span className="text-green-400 font-semibold">{engagementStats.retentionRate || 0}%</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-3 border-t border-slate-700">
+                    <span className="text-slate-400 text-sm">Avg Sessions</span>
+                    <span className="text-indigo-400 font-bold text-lg">{engagementStats.avgSessionsPerActiveUser || 0}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
