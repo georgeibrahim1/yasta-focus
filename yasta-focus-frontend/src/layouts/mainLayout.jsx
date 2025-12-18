@@ -2,7 +2,7 @@ import { Outlet } from 'react-router'
 import ProfileStatus from '../components/ProfileStatus'
 import SidebarButton from '../components/SidebarButton'
 import ProtectedComponent from '../components/ProtectedComponent'
-import YastaFocusLogo from '../components/YastaFocusLogo'
+import YastaFocusRowLogo from '../components/YastaFocusRowLogo'
 import { useUser } from '../services/authServices'
 
 export default function MainLayout() {
@@ -12,7 +12,7 @@ export default function MainLayout() {
         <header>
           <ProfileStatus />
         </header>
-        <nav className="flex-1 min-h-0 flex flex-col bg-slate-800/30 rounded-2xl border border-slate-700/50 overflow-hidden">
+        <nav className="flex flex-col bg-slate-800/30 rounded-2xl border border-slate-700/50 overflow-hidden">
           {/* Admin Navigation */}
           <ProtectedComponent requiredRole={0}>
             <SidebarButton icon="/icons/blackboard-icon.svg" label="Dashboard" link="/dashboard" />
@@ -32,12 +32,10 @@ export default function MainLayout() {
             <SidebarButton icon="/icons/circle-crown-icon.svg" label="Leaderboard" link="/leaderboard" />
             <SidebarButton icon="/icons/chart-icon.svg" label="Statistics" link="/statistics" />
           </ProtectedComponent>
-
-          {/* Logo at bottom of sidebar */}
-          <div className="mt-auto flex items-center justify-center">
-            <YastaFocusLogo />
-          </div>
         </nav>
+        <div className="mt-auto pl-2">
+          <YastaFocusRowLogo />
+        </div>
       </div>
       <div className="flex-1">
         <main className="p-6">
