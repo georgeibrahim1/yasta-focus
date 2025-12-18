@@ -557,7 +557,9 @@ export default function StudyRoomsPage() {
                           }
                           navigate(`/communities/${communityId}/rooms/${room.room_code}`)
                         }}
-                        className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors font-medium"
+                        disabled={user?.role === 0}
+                        className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600"
+                        title={user?.role === 0 ? "Admins cannot enter rooms" : ""}
                       >
                         Open Room
                       </button>
@@ -582,7 +584,9 @@ export default function StudyRoomsPage() {
                           }
                           navigate(`/communities/${communityId}/rooms/${room.room_code}`)
                         }}
-                        className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors font-medium"
+                        disabled={user?.role === 0}
+                        className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600"
+                        title={user?.role === 0 ? "Admins cannot enter rooms" : ""}
                       >
                         Open Room
                       </button>
@@ -605,8 +609,9 @@ export default function StudyRoomsPage() {
                           navigate(`/communities/${communityId}/rooms/${room.room_code}`)
                         }
                       }}
-                      disabled={joiningRoomCode === room.room_code}
-                      className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors font-medium"
+                      disabled={joiningRoomCode === room.room_code || user?.role === 0}
+                      className="flex-1 py-2 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-indigo-600"
+                      title={user?.role === 0 ? "Admins cannot enter rooms" : ""}
                     >
                       {joiningRoomCode === room.room_code ? 'Joining...' : 'Join Room'}
                     </button>
