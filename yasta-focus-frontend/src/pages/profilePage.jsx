@@ -14,7 +14,11 @@ import { useUser, useLogout } from '../services/authServices'
 import { useGetAllAchievements } from '../services/achievementServices'
 import ProtectedComponent from '../components/ProtectedComponent'
 import AchievementCard from '../components/AchievementCard'
+import ImageUpload from '../components/ImageUpload'
 import { api } from '../services/api'
+
+// Get Uploadcare public key from environment variables
+const UPLOADCARE_PUBLIC_KEY = import.meta.env.VITE_UPLOADCARE_PUBLIC_KEY || ''
 import { 
   User, 
   Mail, 
@@ -80,9 +84,11 @@ export default function ProfilePage() {
   const [isEditingUsername, setIsEditingUsername] = useState(false)
   const [isEditingBio, setIsEditingBio] = useState(false)
   const [isEditingInterests, setIsEditingInterests] = useState(false)
+  const [isEditingProfilePicture, setIsEditingProfilePicture] = useState(false)
   const [editedUsername, setEditedUsername] = useState('')
   const [editedBio, setEditedBio] = useState('')
   const [editedInterests, setEditedInterests] = useState([])
+  const [editedProfilePicture, setEditedProfilePicture] = useState('')
   const [newInterest, setNewInterest] = useState('')
   
   // Password change states
@@ -162,6 +168,19 @@ export default function ProfilePage() {
       }
     } else {
       setIsEditingUsername(false)
+    }
+  }
+
+  const handleSaveProfilePicture = async () => {
+    if (editedProfilePicture !== profile.profile_picture) {
+      try {
+        await updateProfileMutation.mutateAsync({ profile_picture: editedProfilePicture })
+        setIsEditingProfilePicture(false)
+      } catch {
+        alert('Error updating profile picture')
+      }
+    } else {
+      setIsEditingProfilePicture(false)
     }
   }
 
@@ -322,6 +341,18 @@ export default function ProfilePage() {
                   <Star className="w-4 h-4 text-white" />
                   <span className="text-white font-bold text-sm">{profile.xp}</span>
                 </div>
+                {isOwnProfile && (
+                  <button
+                    onClick={() => {
+                      setEditedProfilePicture(profile.profile_picture || '')
+                      setIsEditingProfilePicture(true)
+                    }}
+                    className="absolute top-0 right-0 p-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-full transition-colors"
+                    title="Edit profile picture"
+                  >
+                    <Edit size={14} />
+                  </button>
+                )}
               </div>
               
               <div>
@@ -925,6 +956,49 @@ export default function ProfilePage() {
           )}
         </div>
       </div>
+
+      {/* Profile Picture Edit Modal */}
+      {isEditingProfilePicture && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl p-8 max-w-md w-full border border-slate-700/50">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Update Profile Picture</h2>
+              <button
+                onClick={() => setIsEditingProfilePicture(false)}
+                className="text-gray-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <ImageUpload
+              currentImage={editedProfilePicture}
+              onImageChange={(url) => {
+                setEditedProfilePicture(url)
+                // Auto-save when image is uploaded
+                updateProfileMutation.mutateAsync({ profile_picture: url })
+                  .then(() => {
+                    setIsEditingProfilePicture(false)
+                  })
+                  .catch(() => {
+                    alert('Error updating profile picture')
+                  })
+              }}
+              publicKey={UPLOADCARE_PUBLIC_KEY}
+              label="Profile Picture"
+            />
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setIsEditingProfilePicture(false)}
+                className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
