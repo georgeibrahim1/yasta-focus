@@ -27,7 +27,9 @@ export const subjectService = {
 
   // Delete a subject
   deleteSubject: async (subjectName) => {
+    console.log('Deleting subject:', subjectName)
     const response = await api.delete(`/api/subjects/${encodeURIComponent(subjectName)}`)
+    console.log('Delete response:', response)
     return response.data
   }
 }

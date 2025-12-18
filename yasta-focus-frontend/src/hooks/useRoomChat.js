@@ -12,9 +12,15 @@ export const useRoomChat = (roomCode, communityId, isInRoom) => {
     socketService.getMessages(parseInt(roomCode), communityId);
     setIsLoading(true);
 
+    // Set timeout to stop loading if no response after 3 seconds
+    const loadingTimeout = setTimeout(() => {
+      setIsLoading(false);
+    }, 3000);
+
     // Listen for message history
     const handleMessageHistory = (history) => {
-      setMessages(history);
+      clearTimeout(loadingTimeout);
+      setMessages(Array.isArray(history) ? history : []);
       setIsLoading(false);
     };
 
@@ -27,6 +33,7 @@ export const useRoomChat = (roomCode, communityId, isInRoom) => {
     socketService.on('new_message', handleNewMessage);
 
     return () => {
+      clearTimeout(loadingTimeout);
       socketService.off('message_history', handleMessageHistory);
       socketService.off('new_message', handleNewMessage);
     };

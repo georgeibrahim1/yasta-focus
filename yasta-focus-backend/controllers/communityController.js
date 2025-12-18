@@ -370,6 +370,16 @@ export const createCommunity = catchAsync(async (req, res, next) => {
     return next(new AppError('Community description is required', 400));
   }
 
+  // Check if community name already exists
+  const existingCommunity = await db.query(
+    'SELECT community_id FROM community WHERE LOWER(community_Name) = LOWER($1)',
+    [community_Name.trim()]
+  );
+
+  if (existingCommunity.rows.length > 0) {
+    return next(new AppError('A community with this name already exists. Please choose a different name.', 400));
+  }
+
   // Use procedure for first tag (or null)
   const firstTag = tags && Array.isArray(tags) && tags.length > 0 ? tags[0].trim().toLowerCase() : null;
   
@@ -803,25 +813,57 @@ export const deleteCommunity = catchAsync(async (req, res, next) => {
     }
   }
 
-  // Delete announcements first (if foreign key doesn't have CASCADE)
+  // Delete in correct order to avoid foreign key constraint violations
+  
+  // 1. Delete community competitions participants
+  await db.query(
+    'DELETE FROM CompetitionParticipants WHERE comp_id IN (SELECT competition_id FROM competition WHERE community_id = $1)',
+    [communityId]
+  );
+
+  // 2. Delete community competitions
+  await db.query(
+    'DELETE FROM competition WHERE community_id = $1',
+    [communityId]
+  );
+
+  // 3. Delete study room members
+  await db.query(
+    'DELETE FROM studyRoom_Members WHERE community_ID = $1',
+    [communityId]
+  );
+
+  // 4. Delete study rooms
+  await db.query(
+    'DELETE FROM studyRoom WHERE community_ID = $1',
+    [communityId]
+  );
+
+  // 5. Delete announcements
   await db.query(
     'DELETE FROM announcement WHERE community_ID = $1',
     [communityId]
   );
 
-  // Delete community managers
+  // 6. Delete community participants
+  await db.query(
+    'DELETE FROM community_Participants WHERE community_ID = $1',
+    [communityId]
+  );
+
+  // 7. Delete community managers
   await db.query(
     'DELETE FROM communityManagers WHERE community_ID = $1',
     [communityId]
   );
 
-  // Delete community tags
+  // 8. Delete community tags
   await db.query(
     'DELETE FROM communityTag WHERE community_ID = $1',
     [communityId]
   );
 
-  // Delete community (other cascade deletes will handle remaining tables like community_Participants, studyRoom, etc.)
+  // 9. Finally, delete the community itself
   await db.query(
     'DELETE FROM community WHERE community_ID = $1',
     [communityId]

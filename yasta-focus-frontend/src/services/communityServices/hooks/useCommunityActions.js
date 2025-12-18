@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { communityService } from '../service'
+import toast from 'react-hot-toast'
 
 export const useUpdateCommunityInfo = () => {
   const queryClient = useQueryClient()
@@ -22,6 +23,11 @@ export const useDeleteCommunity = () => {
       communityService.deleteCommunity(communityId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communities'] })
+      toast.success('Community deleted successfully')
+    },
+    onError: (error) => {
+      const errorMessage = error?.response?.data?.message || 'Failed to delete community'
+      toast.error(errorMessage)
     }
   })
 }
