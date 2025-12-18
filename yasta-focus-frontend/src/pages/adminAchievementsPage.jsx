@@ -301,7 +301,7 @@ export default function AdminAchievementsPage() {
 
                 <div>
                   <label className="block text-slate-300 text-base font-medium mb-3">
-                    Description
+                    Description*
                   </label>
                   <textarea
                     value={formData.description}
@@ -309,6 +309,7 @@ export default function AdminAchievementsPage() {
                     placeholder="Describe the achievement and what it takes to unlock it..."
                     className="w-full px-5 py-4 text-base bg-slate-700/50 border border-slate-600/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 resize-none"
                     rows={4}
+                    required
                   />
                 </div>
               </div>

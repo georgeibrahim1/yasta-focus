@@ -119,7 +119,7 @@ export default function LiveEventPage() {
   const { data: events = [] } = useGetEvents()
   
   // Find the current event by ID
-  const currentEvent = events.find(e => e.id === parseInt(eventId))
+  const currentEvent = events.find(e => e.id === (eventId))
   const eventName = currentEvent?.title || `Event ${eventId}`
   
   const [videoClient, setVideoClient] = useState(null)

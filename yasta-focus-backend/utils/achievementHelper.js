@@ -8,7 +8,22 @@ import catchAsync from './catchAsync.js';
  * @param {number} currentvalue - Current count/value for the criteria
  * @returns {Promise<Array>} Array of newly unlocked achievements
  */
+
 export const checkAndUnlockAchievements = async (user_id, criteriatype, currentvalue, skip = false) => {
+
+   const userCheck = await db.query('SELECT role FROM users WHERE user_id = $1', [user_id]);
+        
+    if (userCheck.rows.length === 0) {
+      console.log('User not found');
+      return []; // Return empty array if user not found
+    }
+    const userRole = userCheck.rows[0].role;
+    // Check if admin 
+    if (parseInt(userRole) === 0) {
+      console.log('Admin detected - skipping achievement unlock');
+      return []; // Return empty array for admins
+    }
+
     // Find achievements that should be unlocked but aren't yet
     const query = `
       SELECT a.id, a.title, a.xp
