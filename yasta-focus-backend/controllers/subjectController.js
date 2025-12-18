@@ -149,6 +149,72 @@ export const deleteSubject = catchAsync(async (req, res, next) => {
   const userId = req.user.user_id;
   const { subjectName } = req.params;
 
+  // First, verify the subject exists
+  const subjectCheck = await db.query(
+    'SELECT subject_name FROM subject WHERE user_id = $1 AND subject_name = $2',
+    [userId, subjectName]
+  );
+
+  if (subjectCheck.rows.length === 0) {
+    return next(new AppError('Subject not found', 404));
+  }
+
+  // Delete in correct order to avoid foreign key constraint violations
+  
+  // 1. Try to delete flashcard reviews first (if table exists)
+  try {
+    await db.query(
+      'DELETE FROM flashcard_review WHERE card_id IN (SELECT card_id FROM flash_card WHERE user_id = $1 AND subject_name = $2)',
+      [userId, subjectName]
+    );
+  } catch (err) {
+    // Table might not exist, continue
+    console.log('flashcard_review table not found, continuing...');
+  }
+
+  // 2. Delete flashcards associated with this subject
+  await db.query(
+    'DELETE FROM flash_card WHERE user_id = $1 AND subject_name = $2',
+    [userId, subjectName]
+  );
+
+  // 2. Delete decks for this subject
+  await db.query(
+    'DELETE FROM deck WHERE user_id = $1 AND subject_name = $2',
+    [userId, subjectName]
+  );
+
+  // 3. Delete tasks for this subject
+  await db.query(
+    'DELETE FROM task WHERE user_id = $1 AND subject_name = $2',
+    [userId, subjectName]
+  );
+
+  // 4. Delete notes for this subject
+  await db.query(
+    'DELETE FROM note WHERE user_id = $1 AND subject_name = $2',
+    [userId, subjectName]
+  );
+
+  // 5. Delete srsessions_members first (references session)
+  await db.query(
+    'DELETE FROM srsessions_members WHERE student_id = $1 AND session_name IN (SELECT session_name FROM session WHERE user_id = $1 AND subject_name = $2)',
+    [userId, subjectName]
+  );
+
+  // 6. Delete sessions for this subject
+  await db.query(
+    'DELETE FROM session WHERE user_id = $1 AND subject_name = $2',
+    [userId, subjectName]
+  );
+
+  // 7. Delete competition participants entries for this subject
+  await db.query(
+    'DELETE FROM CompetitionParticipants WHERE user_id = $1 AND subject_name = $2',
+    [userId, subjectName]
+  );
+
+  // 8. Finally, delete the subject itself
   const query = `
     DELETE FROM subject
     WHERE user_id = $1 AND subject_name = $2

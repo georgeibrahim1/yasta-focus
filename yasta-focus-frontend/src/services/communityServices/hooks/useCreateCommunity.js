@@ -38,7 +38,10 @@ export const useCreateCommunity = () => {
       console.error('[useCreateCommunity] Error:', err)
       const message = err.response?.data?.message || err.message || 'Failed to create community'
       console.error('[useCreateCommunity] Error message:', message)
-      toast.error(message)
+      // Don't show toast for duplicate name errors - let modal handle it
+      if (!message.includes('already exists')) {
+        toast.error(message)
+      }
     }
   })
 }
