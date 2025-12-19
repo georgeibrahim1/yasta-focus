@@ -17,12 +17,12 @@
 - **Focus Timer**: Customizable Pomodoro-style timer to manage study sessions.
 - **Subjects & Tasks**: Organize study materials and track assignments.
 - **Notes**: Rich text editor for taking and organizing study notes.
-- **AI-Powered Flashcards**: Create decks and flashcards manually or generate them instantly using AI.
+- **AI-Powered Chat**: AI chat for student subjects.
 
 ### 👥 Community & Social
 - **Study Rooms**: Join virtual rooms with video and chat capabilities to study with peers.
 - **Communities**: Create or join interest-based groups.
-- **Friends System**: Connect with other students.
+- **Friends System**: Connect with other students and give xp gifts for them.
 - **Leaderboards**: Compete globally or within communities (Daily, Weekly, All-time).
 
 ### 🏆 Gamification
@@ -61,14 +61,9 @@
   <p><em>Admin Dashboard with Analytics</em></p>
 </div>
 
-<div align="center">
-  <img src="yasta-focus-frontend/public/screenshots/UserPageHasAchievmentsFriends.png" alt="User Profile" width="800"/>
-  <p><em>User Profile with Achievements</em></p>
-</div>
-
 | | |
 |:-------------------------:|:-------------------------:|
-| <img src="yasta-focus-frontend/public/screenshots/CommunityHaveCompetitionAndAnnouncments,StudyRoomsWithChat.png" width="400"/> <br> **Community & Study Rooms** | <img src="yasta-focus-frontend/public/screenshots/VideoCallEvents.png" width="400"/> <br> **Video Call & Events** |
+| <img src="yasta-focus-frontend/public/screenshots/CommunityHaveCompetitionAndAnnouncments,StudyRoomsWithChat.png" width="400"/> <br> **Community & Study Rooms** | <img src="yasta-focus-frontend/public/screenshots/UserPageHasAchievmentsFriends.png" width="400"/> <br> **Profile Page** |
 | <img src="yasta-focus-frontend/public/screenshots/LeaderBoardByWeekMonthAllthetIMEToday.png" width="400"/> <br> **Leaderboards** | <img src="yasta-focus-frontend/public/screenshots/timerAndStudySessionsPomodoroForSubjects.png" width="400"/> <br> **Focus Timer** |
 | <img src="yasta-focus-frontend/public/screenshots/AiChatBot.png" width="400"/> <br> **AI Chat Assistant** | <img src="yasta-focus-frontend/public/screenshots/adminControlAllCommunitites.png" width="400"/> <br> **Communities** |
 
@@ -99,7 +94,7 @@ JWT_SECRET=your_super_secret_jwt_key
 NODE_ENV=development
 
 # External Services
-GEMINI_API_KEY=your_google_gemini_key
+GORK_API_KEY=your_GORK_key
 STREAM_API_KEY=your_getstream_key
 STREAM_API_SECRET=your_getstream_secret
 ```
@@ -121,7 +116,6 @@ Create a `.env` file in the root of `yasta-focus-frontend`:
 ```env
 VITE_API_URL=http://localhost:3000/api
 VITE_STREAM_KEY=your_getstream_key
-VITE_GOOGLE_CLIENT_ID=your_google_client_id
 ```
 
 Start the application:
