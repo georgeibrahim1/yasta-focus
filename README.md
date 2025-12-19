@@ -1,7 +1,9 @@
 
 <div align="center">
-  <img src="yasta-focus-frontend/public/Logo.svg" alt="Yasta Focus Logo" height="60" />
-  <h1>YASTA <span style="color: #a855f7">FOCUS</span></h1>
+  <h1>
+    <img src="yasta-focus-frontend/public/Logo.svg" alt="Yasta Focus Logo" height="50" style="vertical-align: middle; margin-right: 10px;" />
+    YASTA <span style="color: #a855f7">FOCUS</span>
+  </h1>
   <p><strong>A Gamified Educational & Productivity Hub</strong></p>
 </div>
 
