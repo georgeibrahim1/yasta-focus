@@ -5,6 +5,21 @@
   <p><strong>A Gamified Educational & Productivity Hub</strong></p>
 </div>
 
+<p align="center">
+    <a href="https://yasta-focus.netlify.app/">
+        <img src="https://img.shields.io/badge/Live-Demo-FF5722?style=for-the-badge&logo=firefox&logoColor=white" alt="Live Demo" />
+    </a>
+</p>
+
+<div align="center">
+  <img src="https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB" alt="React" />
+  <img src="https://img.shields.io/badge/express.js-%23404d59.svg?style=for-the-badge&logo=express&logoColor=%2361DAFB" alt="Express.js" />
+  <img src="https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" />
+  <img src="https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="TailwindCSS" />
+  <img src="https://img.shields.io/badge/postgres-%23316192.svg?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Socket.io-black?style=for-the-badge&logo=socket.io&badgeColor=010101" alt="Socket.io" />
+</div>
+
 ---
 
 ## 🚀 Overview
@@ -54,6 +69,10 @@
 - **AI Integration**: Google Gemini AI
 - **Real-time**: Socket.io
 
+## 🗄️ Enhanced Entity Relationship Diagram (EER)
+
+<img src="yasta-focus-frontend/public/screenshots/ER.png" alt="EER Diagram" width="800"/>
+
 ## 📸 Screenshots
 
 <div align="center">
@@ -88,20 +107,28 @@ npm install
 
 Create a `config.env` file in the root of `yasta-focus-backend`:
 ```env
-PORT=3000
-DATABASE_URL=postgresql://user:password@localhost:5432/yasta_focus
-JWT_SECRET=your_super_secret_jwt_key
-NODE_ENV=development
+PG_USER=XXX
+PG_PASSWORD=XXX
+PG_HOST=XXX
+PG_PORT=XXX
+PG_DATABASE=postgres
 
-# External Services
-GORK_API_KEY=your_GORK_key
-STREAM_API_KEY=your_getstream_key
-STREAM_API_SECRET=your_getstream_secret
+NODE_ENV=development
+PORT=3000
+
+JWT_SECRET=XXX
+JWT_EXPIRES_IN=XXX
+JWT_COOKIE_EXPIRES_IN=XXX
+
+GROQ_API_KEY=XXX
+
+STREAM_API_KEY=XXX
+STREAM_SECRET=XXX
 ```
 
 Start the server:
 ```bash
-npm run dev
+npm run start
 ```
 
 ### 3. Frontend Setup
@@ -114,8 +141,9 @@ npm install
 
 Create a `.env` file in the root of `yasta-focus-frontend`:
 ```env
+VITE_STREAM_API_KEY=XXX
 VITE_API_URL=http://localhost:3000/api
-VITE_STREAM_KEY=your_getstream_key
+VITE_UPLOADCARE_PUBLIC_KEY=XXX
 ```
 
 Start the application:
