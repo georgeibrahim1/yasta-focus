@@ -56,18 +56,26 @@
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework**: React 19 (Vite)
-- **Styling**: TailwindCSS 4
-- **State Management**: React Query
-- **Real-time**: Socket.io Client, Stream Chat/Video SDK
-- **Visualization**: Recharts
+- **Core**: [React 19](https://react.dev/), [Vite 7](https://vitejs.dev/)
+- **Styling**: [TailwindCSS 4](https://tailwindcss.com/)
+- **Navigation**: [React Router 7](https://reactrouter.com/)
+- **State Management**: [TanStack React Query 5](https://tanstack.com/query/latest)
+- **Forms & Validation**: [React Hook Form](https://react-hook-form.com/)
+- **UI Components & Icons**: [Lucide React](https://lucide.dev/), [Radix UI](https://www.radix-ui.com/)
+- **Real-time**: [Socket.io Client](https://socket.io/), [Stream Video SDK](https://getstream.io/video/), [Stream Chat SDK](https://getstream.io/chat/)
+- **Visualization**: [Recharts](https://recharts.org/)
+- **Utilities**: [Axios](https://axios-http.com/), [React Hot Toast](https://react-hot-toast.com/), [React MD Editor](https://uiwjs.github.io/react-md-editor/), [Uploadcare](https://uploadcare.com/), [React Snowfall](https://github.com/cahilfoley/react-snowfall)
+- **Development**: ESLint, Vite Plugins
 
 ### Backend
-- **Runtime**: Node.js
-- **Framework**: Express 5
-- **Database**: PostgreSQL
-- **AI Integration**: Google Gemini AI
-- **Real-time**: Socket.io
+- **Runtime**: [Node.js](https://nodejs.org/)
+- **Framework**: [Express 5](https://expressjs.com/)
+- **Database**: [PostgreSQL](https://www.postgresql.org/) (via `pg`)
+- **Authentication**: [JSON Web Token (JWT)](https://jwt.io/), [Bcryptjs](https://github.com/dcodeIO/bcrypt.js)
+- **AI Integration**: [Google Gemini AI](https://ai.google.dev/aistudio)
+- **Real-time**: [Socket.io](https://socket.io/), [Stream Node SDK](https://getstream.io/video/)
+- **Utilities**: [Axios](https://axios-http.com/), [Dotenv](https://github.com/motdotla/dotenv), [Cookie Parser](https://github.com/expressjs/cookie-parser), [CORS](https://github.com/expressjs/cors)
+- **Development**: [Nodemon](https://nodemon.io/)
 
 ## 🗄️ Enhanced Entity Relationship Diagram (EER)
 
