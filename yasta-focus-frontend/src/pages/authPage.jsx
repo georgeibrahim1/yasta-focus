@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Mail, Lock, Eye, EyeOff, User, X, Send } from 'lucide-react'
-import Snowfall from 'react-snowfall'
 import Input from '../components/Input'
-import BlurredBubbles from '../components/BlurredBubbles'
 import { useLogin } from '../services/authServices/hooks/useLogin'
 import { useSignup } from '../services/authServices/hooks/useSignup'
 import { api } from '../services/api'
+import YastaFocusRowLogo from '../components/YastaFocusRowLogo'
 
 export default function AuthPage() {
   const [mode, setMode] = useState('login')
@@ -125,193 +124,326 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-[#10121A] overflow-hidden">
-      {/* Snowfall Effect */}
-      <Snowfall
-        color="#ffffff"
-        snowflakeCount={80}
-        style={{
-          position: 'fixed',
-          width: '100vw',
-          height: '100vh',
-          zIndex: 9999
-        }}
-      />
+    <div className="min-h-screen bg-[#0b1326] text-[#dae2fd] overflow-x-hidden relative">
+      {/* Import Funky Fonts */}
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        body {
+          font-family: 'Orbitron', sans-serif;
+        }
 
-      {/* Background Blurred Bubbles - Multiple layers for depth */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        {/* Layer 1 - Large bubbles on left side */}
-        <div className="absolute top-0 left-0 w-[450px] h-[450px] bg-cyan-500/25 rounded-full blur-3xl animate-glow"></div>
-        <div className="absolute top-1/4 left-10 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-glow" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute bottom-1/4 left-20 w-[380px] h-[380px] bg-teal-500/20 rounded-full blur-3xl animate-glow" style={{ animationDelay: '2s' }}></div>
+        .star-field {
+          background: radial-gradient(circle at center, #171f33 0%, #060e20 100%);
+          position: relative;
+          overflow-x: hidden;
+        }
+        .star-field::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          background-image: 
+            radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1px 1px at 40px 70px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(2px 2px at 90px 40px, #a855f7, rgba(0,0,0,0)),
+            radial-gradient(1px 1px at 150px 150px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1px 1px at 250px 200px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(2px 2px at 300px 100px, #adc6ff, rgba(0,0,0,0));
+          background-repeat: repeat;
+          background-size: 400px 400px;
+          opacity: 0.3;
+          pointer-events: none;
+        }
+        .glass-panel {
+          background: rgba(23, 31, 51, 0.6);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(183, 109, 255, 0.2);
+          box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+        }
+        .inner-glow {
+          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        }
+        .bloom-border:focus-within {
+          border-color: #b76dff;
+          box-shadow: 0 0 15px rgba(183, 109, 255, 0.3);
+        }
+        .bloom-border input:focus {
+          outline: none;
+          border-color: #b76dff;
+        }
+        .btn-gradient {
+          background: linear-gradient(135deg, #b76dff 0%, #842bd2 100%);
+        }
+      `}</style>
 
-        {/* Layer 2 - Medium bubbles around form area */}
-        <div className="absolute top-1/3 left-1/4 w-72 h-72 bg-sky-400/25 rounded-full blur-2xl animate-glow" style={{ animationDelay: '0.5s' }}></div>
-        <div className="absolute top-10 left-1/3 w-64 h-64 bg-indigo-400/20 rounded-full blur-2xl animate-glow" style={{ animationDelay: '1.5s' }}></div>
-        <div className="absolute bottom-10 left-1/4 w-80 h-80 bg-violet-500/20 rounded-full blur-3xl animate-glow" style={{ animationDelay: '2.5s' }}></div>
+      {/* Atmospheric Background Elements */}
+      <div className="fixed bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-[#ddb7ff]/20 blur-[120px] rounded-full pointer-events-none z-0"></div>
+      <div className="fixed top-[-5%] left-[-5%] w-[300px] h-[300px] bg-[#0566d9]/20 blur-[100px] rounded-full pointer-events-none z-0"></div>
 
-        {/* Layer 3 - Small accent bubbles */}
-        <div className="absolute top-1/2 left-1/5 w-48 h-48 bg-blue-300/30 rounded-full blur-xl animate-glow" style={{ animationDelay: '3s' }}></div>
-        <div className="absolute top-20 left-1/6 w-56 h-56 bg-cyan-400/20 rounded-full blur-2xl animate-glow" style={{ animationDelay: '3.5s' }}></div>
-        <div className="absolute bottom-1/3 left-1/3 w-52 h-52 bg-purple-400/25 rounded-full blur-2xl animate-glow" style={{ animationDelay: '4s' }}></div>
-      </div>
+      {/* Decorative HUD Corner Elements */}
+      <div className="fixed top-6 left-6 border-t-2 border-l-2 border-[#ddb7ff]/40 w-8 h-8 pointer-events-none z-50"></div>
+      <div className="fixed top-6 right-6 border-t-2 border-r-2 border-[#ddb7ff]/40 w-8 h-8 pointer-events-none z-50"></div>
+      <div className="fixed bottom-6 left-6 border-b-2 border-l-2 border-[#ddb7ff]/40 w-8 h-8 pointer-events-none z-50"></div>
+      <div className="fixed bottom-6 right-6 border-b-2 border-r-2 border-[#ddb7ff]/40 w-8 h-8 pointer-events-none z-50"></div>
 
-      {/* Left Side - Auth Form */}
-      <div className="w-1/2 flex items-center justify-center p-8 relative z-10">
-        {/* Form Container with Glow Effect */}
-        <div className="relative w-full max-w-md">
-          {/* Animated Glow Background */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 rounded-2xl blur-xl opacity-50 animate-glow"></div>
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500/50 via-purple-500/50 to-indigo-500/50 rounded-2xl blur-md opacity-60"></div>
+      {/* Main Content */}
+      <div className="relative z-10 star-field">
+        {/* Hero Header */}
+        <header className="relative pt-20 pb-12 px-6 flex flex-col items-center justify-center min-h-[70vh] text-center">
+          <div className="inline-block mb-6 animate-pulse">
+            <YastaFocusRowLogo className="w-48 h-auto drop-shadow-[0_0_20px_rgba(183,109,255,0.8)]" />
+          </div>
+          <h1 className="text-5xl font-bold text-[#ddb7ff] mb-1 tracking-[0.2em] uppercase">
+            YASTA FOCUS
+          </h1>
+          <p className="text-lg text-[#adc6ff] uppercase opacity-80 max-w-lg mb-8 tracking-widest">
+            A Gamified Educational & Productivity Hub
+          </p>
+          <div className="flex gap-6">
+            <a href="#join" className="btn-gradient px-12 py-4 rounded-lg font-bold text-white shadow-[0_0_20px_rgba(183,109,255,0.4)] hover:shadow-[0_0_30px_rgba(183,109,255,0.6)] transition-all uppercase tracking-widest">
+              Get Started
+            </a>
+            <a href="#features" className="px-12 py-4 rounded-lg font-bold text-[#ddb7ff] border border-[#ddb7ff]/30 hover:bg-[#ddb7ff]/10 transition-all uppercase tracking-widest">
+              Learn More
+            </a>
+          </div>
+        </header>
 
-          {/* Form Card */}
-          <div className="relative bg-[#1a1c24]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-6">
-            {/* Header */}
-            <div className="text-center mb-5">
-              <h1 className="text-3xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-300 to-purple-600 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]">
-                YASTA FOCUS
-              </h1>
-              <p className="text-xs text-slate-400 mt-1">
-                {mode === 'login' ? 'Log in to continue your journey.' : 'Create an account to get started.'}
+        {/* Feature Sections */}
+        <main className="relative z-10">
+          <div className="px-6 space-y-20 py-20" id="features">
+            {/* Productivity Tools */}
+            <section className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 text-[#ddb7ff]">
+                  <span className="text-2xl">⏱️</span>
+                  <span className="text-xs uppercase tracking-widest">System Modules</span>
+                </div>
+                <h2 className="text-4xl text-[#f0dbff]">Productivity Tools</h2>
+                <p className="text-[#cfc2d6] leading-relaxed">
+                  Master your workflow with our integrated suite. Use the <span className="text-[#ddb7ff]">Focus Timer</span> (Pomodoro) to maintain deep work states, organize your academic life with <span className="text-[#ddb7ff]">Subjects & Tasks</span>, and get instant assistance via our <span className="text-[#ddb7ff]">AI-Powered Chat</span> assistant.
+                </p>
+              </div>
+              <div className="glass-panel rounded-xl p-8 flex items-center justify-center aspect-video relative overflow-hidden">
+                <div className="absolute inset-0 bg-[#ddb7ff]/10"></div>
+                <span className="text-8xl text-[#ddb7ff]/40">📊</span>
+              </div>
+            </section>
+
+            {/* Community & Social */}
+            <section className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+              <div className="order-2 md:order-1 glass-panel rounded-xl p-8 flex items-center justify-center aspect-video relative overflow-hidden">
+                <div className="absolute inset-0 bg-[#adc6ff]/10"></div>
+                <span className="text-8xl text-[#adc6ff]/40">👥</span>
+              </div>
+              <div className="order-1 md:order-2 space-y-6">
+                <div className="inline-flex items-center gap-2 text-[#adc6ff]">
+                  <span className="text-2xl">🌐</span>
+                  <span className="text-xs uppercase tracking-widest">Social Network</span>
+                </div>
+                <h2 className="text-4xl text-[#d8e2ff]">Community & Social</h2>
+                <p className="text-[#cfc2d6] leading-relaxed">
+                  Never study alone. Enter collaborative <span className="text-[#adc6ff]">Study Rooms</span> featuring real-time video and text chat. Join niche <span className="text-[#adc6ff]">Communities</span> to share resources, ask questions, and grow with peers who share your mission.
+                </p>
+              </div>
+            </section>
+
+            {/* Gamification */}
+            <section className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+              <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 text-[#b76dff]">
+                  <span className="text-2xl">🎖️</span>
+                  <span className="text-xs uppercase tracking-widest">Leveling System</span>
+                </div>
+                <h2 className="text-4xl text-[#f0dbff]">Gamification</h2>
+                <p className="text-[#cfc2d6] leading-relaxed">
+                  Turn discipline into a game. Earn <span className="text-[#b76dff]">Achievements</span> for your milestones, climb through <span className="text-[#b76dff]">XP Levels</span> as you complete tasks, and dominate the global <span className="text-[#b76dff]">Leaderboards</span> to prove your dedication.
+                </p>
+              </div>
+              <div className="glass-panel rounded-xl p-8 flex items-center justify-center aspect-video relative overflow-hidden">
+                <div className="absolute inset-0 bg-[#b76dff]/10"></div>
+                <span className="text-8xl text-[#b76dff]/40">⭐</span>
+              </div>
+            </section>
+          </div>
+
+          {/* Auth Section */}
+          <section className="py-20 px-6 bg-[#131b2e]/40" id="join">
+            <div className="max-w-md mx-auto">
+              <div className="text-center mb-6">
+                <h2 className="text-4xl text-[#f0dbff] mb-1">INITIALIZE ACCESS</h2>
+                <p className="text-xs text-[#cfc2d6] opacity-60 uppercase tracking-widest">Prepare for departure to your peak performance</p>
+              </div>
+
+              {/* Login Card */}
+              <div className="glass-panel inner-glow rounded-xl p-8 space-y-6">
+                {/* Toggle */}
+                <div className="flex bg-[#2d3449]/50 rounded-lg p-1 border border-[#988d9f]/30">
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange('login')}
+                    className={`flex-1 py-3 px-4 rounded-md text-xs font-bold uppercase tracking-widest transition-all ${
+                      mode === 'login'
+                        ? 'bg-[#ddb7ff] text-[#490080] shadow-lg'
+                        : 'text-[#cfc2d6] hover:text-[#dae2fd]'
+                    }`}
+                  >
+                    Login
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleModeChange('signup')}
+                    className={`flex-1 py-3 px-4 rounded-md text-xs font-bold uppercase tracking-widest transition-all ${
+                      mode === 'signup'
+                        ? 'bg-[#ddb7ff] text-[#490080] shadow-lg'
+                        : 'text-[#cfc2d6] hover:text-[#dae2fd]'
+                    }`}
+                  >
+                    Sign Up
+                  </button>
+                </div>
+
+                {/* Error Message */}
+                {mutation.error && (
+                  <div className="p-3 rounded-lg border border-red-500/50 text-red-400 text-sm bg-red-600/20">
+                    {mutation.error?.response?.data?.message || mutation.error?.message || 'Something went wrong'}
+                  </div>
+                )}
+
+                {/* Form */}
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                  {/* Username (Signup only) */}
+                  {mode === 'signup' && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-[#cfc2d6] px-1 uppercase tracking-widest">Username</label>
+                      <div className="relative bloom-border rounded-lg bg-[#060e20]/80 border border-[#988d9f]/30 transition-all flex items-center">
+                        <span className="ml-4 text-[#cfc2d6]">👤</span>
+                        <input
+                          {...register('username', { required: 'Username is required' })}
+                          className="bg-transparent border-none focus:ring-0 text-[#dae2fd] placeholder:text-[#988d9f] w-full py-4 px-3"
+                          placeholder="Choose a username"
+                        />
+                      </div>
+                      {errors.username && <p className="text-red-400 text-xs ml-1">{errors.username.message}</p>}
+                    </div>
+                  )}
+
+                  {/* Email */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-[#cfc2d6] px-1 uppercase tracking-widest">Email Address</label>
+                    <div className="relative bloom-border rounded-lg bg-[#060e20]/80 border border-[#988d9f]/30 transition-all flex items-center">
+                      <span className="ml-4 text-[#cfc2d6]">✉️</span>
+                      <input
+                        {...register('email', {
+                          required: 'Email is required',
+                          pattern: { value: /^\S+@\S+$/i, message: 'Invalid email address' }
+                        })}
+                        className="bg-transparent border-none focus:ring-0 text-[#dae2fd] placeholder:text-[#988d9f] w-full py-4 px-3"
+                        placeholder="commander@nebula.io"
+                        type="email"
+                      />
+                    </div>
+                    {errors.email && <p className="text-red-400 text-xs ml-1">{errors.email.message}</p>}
+                  </div>
+
+                  {/* Password */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center px-1">
+                      <label className="text-xs font-bold text-[#cfc2d6] uppercase tracking-widest">Access Key</label>
+                      {mode === 'login' && (
+                        <button
+                          type="button"
+                          onClick={() => setShowForgotModal(true)}
+                          className="text-xs font-bold text-[#ddb7ff] hover:text-[#f0dbff] transition-colors uppercase tracking-widest"
+                        >
+                          Forgot?
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative bloom-border rounded-lg bg-[#060e20]/80 border border-[#988d9f]/30 transition-all flex items-center">
+                      <span className="ml-4 text-[#cfc2d6]">🔐</span>
+                      <input
+                        {...register('password', {
+                          required: 'Password is required',
+                          minLength: { value: 8, message: 'Password must be at least 8 characters' }
+                        })}
+                        type={showPassword ? 'text' : 'password'}
+                        className="bg-transparent border-none focus:ring-0 text-[#dae2fd] placeholder:text-[#988d9f] w-full py-4 px-3"
+                        placeholder="••••••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="mr-4 text-[#cfc2d6] hover:text-[#ddb7ff] transition-colors"
+                      >
+                        {showPassword ? '🙈' : '👁️'}
+                      </button>
+                    </div>
+                    {errors.password && <p className="text-red-400 text-xs ml-1">{errors.password.message}</p>}
+                  </div>
+
+                  {/* Confirm Password (Signup only) */}
+                  {mode === 'signup' && (
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-[#cfc2d6] px-1 uppercase tracking-widest">Confirm Password</label>
+                      <div className="relative bloom-border rounded-lg bg-[#060e20]/80 border border-[#988d9f]/30 transition-all flex items-center">
+                        <span className="ml-4 text-[#cfc2d6]">🔐</span>
+                        <input
+                          {...register('passwordConfirm', {
+                            required: 'Please confirm your password',
+                          })}
+                          type={showConfirmPassword ? 'text' : 'password'}
+                          className="bg-transparent border-none focus:ring-0 text-[#dae2fd] placeholder:text-[#988d9f] w-full py-4 px-3"
+                          placeholder="••••••••••••"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="mr-4 text-[#cfc2d6] hover:text-[#ddb7ff] transition-colors"
+                        >
+                          {showConfirmPassword ? '🙈' : '👁️'}
+                        </button>
+                      </div>
+                      {errors.passwordConfirm && <p className="text-red-400 text-xs ml-1">{errors.passwordConfirm.message}</p>}
+                    </div>
+                  )}
+
+                  {/* CTA Button */}
+                  <button
+                    type="submit"
+                    disabled={mutation.isPending}
+                    className="w-full btn-gradient py-4 rounded-lg text-lg font-bold text-white shadow-[0_0_20px_rgba(183,109,255,0.4)] hover:shadow-[0_0_30px_rgba(183,109,255,0.6)] hover:scale-[1.02] active:scale-95 transition-all uppercase tracking-widest disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {mutation.isPending ? 'Processing...' : (mode === 'login' ? 'Log In' : 'Create Account')}
+                  </button>
+                </form>
+              </div>
+
+              {/* Footer Help */}
+              <p className="text-center mt-8 text-[#cfc2d6]/60 text-sm">
+                By entering the hub, you agree to the{' '}
+                <a href="#" className="text-[#adc6ff] hover:underline underline-offset-4">
+                  Terms of Service
+                </a>
+                .
               </p>
             </div>
+          </section>
+        </main>
 
-            {/* Tab Toggle */}
-            <div className="flex gap-2 mb-5 p-1 rounded-lg bg-slate-700/50">
-              <button
-                type="button"
-                onClick={() => handleModeChange('login')}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${mode === 'login'
-                  ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
-                  : 'text-slate-400 hover:text-white'
-                  }`}
-              >
-                Login
-              </button>
-              <button
-                type="button"
-                onClick={() => handleModeChange('signup')}
-                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${mode === 'signup'
-                  ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
-                  : 'text-slate-400 hover:text-white'
-                  }`}
-              >
-                Sign Up
-              </button>
-            </div>
-
-            {/* Error Message */}
-            {mutation.error && (
-              <div className="mb-3 p-2 rounded-lg border border-red-500 text-red-500 text-xs">
-                {mutation.error?.response?.data?.message || mutation.error?.message || 'Something went wrong'}
-              </div>
-            )}
-
-            {/* Form */}
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-              {/* Username (Signup only) */}
-              {mode === 'signup' && (
-                <Input
-                  id="username"
-                  label="Username"
-                  placeholder="Choose a username"
-                  leftIcon={User}
-                  error={errors.username?.message}
-                  {...register('username', { required: 'Username is required' })}
-                />
-              )}
-
-              {/* Email */}
-              <Input
-                id="email"
-                type="email"
-                label="Email"
-                placeholder="Enter your email"
-                leftIcon={Mail}
-                error={errors.email?.message}
-                {...register('email', {
-                  required: 'Email is required',
-                  pattern: { value: /^\S+@\S+$/i, message: 'Invalid email address' }
-                })}
-              />
-
-              {/* Password */}
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  label="Password"
-                  placeholder="Enter your password"
-                  leftIcon={Lock}
-                  error={errors.password?.message}
-                  {...register('password', {
-                    required: 'Password is required',
-                    minLength: { value: 8, message: 'Password must be at least 8 characters' }
-                  })}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-9 text-slate-500 hover:text-slate-300"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-
-              {/* Confirm Password (Signup only) */}
-              {mode === 'signup' && (
-                <div className="relative">
-                  <Input
-                    id="passwordConfirm"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    label="Confirm Password"
-                    placeholder="Confirm your password"
-                    leftIcon={Lock}
-                    error={errors.passwordConfirm?.message}
-                    {...register('passwordConfirm', {
-                      required: 'Please confirm your password',
-                    })}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-9 text-slate-500 hover:text-slate-300"
-                  >
-                    {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              )}
-
-              {/* Forgot Password (Login only) */}
-              {mode === 'login' && (
-                <div className="text-right">
-                  <button
-                    type="button"
-                    onClick={() => setShowForgotModal(true)}
-                    className="text-sm text-indigo-400 hover:text-indigo-300 hover:underline"
-                  >
-                    Forgot Password?
-                  </button>
-                </div>
-              )}
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={mutation.isPending}
-                className="w-full py-2.5 rounded-lg font-medium text-sm text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
-              >
-                {mutation.isPending ? 'Loading...' : (mode === 'login' ? 'Log In' : 'Create Account')}
-              </button>
-            </form>
+        {/* Footer */}
+        <footer className="relative z-10 py-12 text-center border-t border-[#988d9f]/20 bg-[#0b1326]">
+          <div className="flex flex-col items-center gap-3">
+            <span className="text-2xl text-[#ddb7ff]/40">🚀</span>
+            <p className="text-[#cfc2d6]/40 text-xs tracking-[0.3em] uppercase">© 2024 YASTA FOCUS • GALACTIC PRODUCTIVITY SYSTEM</p>
           </div>
-        </div>
+        </footer>
       </div>
 
       {/* Forgot Password Modal */}
       {showForgotModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#1a1c24] border border-white/10 rounded-2xl p-8 max-w-md w-full relative">
+          <div className="bg-[#171f33] border border-[#988d9f]/20 rounded-2xl p-8 max-w-md w-full relative glass-panel">
             {/* Close Button */}
             <button
               onClick={() => {
@@ -322,15 +454,15 @@ export default function AuthPage() {
                 setNewPassword('')
                 setConfirmPassword('')
               }}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-[#cfc2d6] hover:text-white transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
 
             {/* Header */}
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">Reset Password</h2>
-              <p className="text-sm text-slate-400">
+              <h2 className="text-2xl font-bold text-[#dae2fd] mb-2">Reset Password</h2>
+              <p className="text-sm text-[#cfc2d6]">
                 {emailVerified ? 'Enter your new password' : 'Enter your email to verify your account'}
               </p>
             </div>
@@ -338,10 +470,11 @@ export default function AuthPage() {
             {/* Message */}
             {forgotMessage.text && (
               <div
-                className={`mb-4 p-3 rounded-lg border text-sm ${forgotMessage.type === 'success'
-                  ? 'bg-green-600/20 border-green-500/50 text-green-400'
-                  : 'bg-red-600/20 border-red-500/50 text-red-400'
-                  }`}
+                className={`mb-4 p-3 rounded-lg border text-sm ${
+                  forgotMessage.type === 'success'
+                    ? 'bg-green-600/20 border-green-500/50 text-green-400'
+                    : 'bg-red-600/20 border-red-500/50 text-red-400'
+                }`}
               >
                 {forgotMessage.text}
               </div>
@@ -349,72 +482,66 @@ export default function AuthPage() {
 
             {/* Form */}
             <form onSubmit={handleForgotPassword} className="space-y-6">
-              {/* Email Field - Always visible but disabled after verification */}
+              {/* Email Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Email Address
-                </label>
+                <label className="block text-sm font-medium text-[#cfc2d6] mb-2">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#cfc2d6]">✉️</span>
                   <input
                     type="email"
                     value={forgotEmail}
                     onChange={(e) => setForgotEmail(e.target.value)}
                     disabled={emailVerified}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full pl-10 pr-4 py-3 bg-[#2d3449] border border-[#4d4354] rounded-lg text-white placeholder-[#988d9f] focus:outline-none focus:border-[#ddb7ff] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     placeholder="Enter your email"
                     required
                   />
                 </div>
               </div>
 
-              {/* New Password Fields - Only show after email verification */}
+              {/* New Password Fields */}
               {emailVerified && (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      New Password
-                    </label>
+                    <label className="block text-sm font-medium text-[#cfc2d6] mb-2">New Password</label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#cfc2d6]">🔐</span>
                       <input
-                        type={showForgotNewPassword ? "text" : "password"}
+                        type={showForgotNewPassword ? 'text' : 'password'}
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full pl-10 pr-12 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition-colors"
+                        className="w-full pl-10 pr-12 py-3 bg-[#2d3449] border border-[#4d4354] rounded-lg text-white placeholder-[#988d9f] focus:outline-none focus:border-[#ddb7ff] transition-colors"
                         placeholder="Enter new password"
                         required
                       />
                       <button
                         type="button"
                         onClick={() => setShowForgotNewPassword(!showForgotNewPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#cfc2d6] hover:text-white transition-colors"
                       >
-                        {showForgotNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        {showForgotNewPassword ? '🙈' : '👁️'}
                       </button>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Confirm Password
-                    </label>
+                    <label className="block text-sm font-medium text-[#cfc2d6] mb-2">Confirm Password</label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#cfc2d6]">🔐</span>
                       <input
-                        type={showForgotConfirmPassword ? "text" : "password"}
+                        type={showForgotConfirmPassword ? 'text' : 'password'}
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full pl-10 pr-12 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition-colors"
+                        className="w-full pl-10 pr-12 py-3 bg-[#2d3449] border border-[#4d4354] rounded-lg text-white placeholder-[#988d9f] focus:outline-none focus:border-[#ddb7ff] transition-colors"
                         placeholder="Confirm new password"
                         required
                       />
                       <button
                         type="button"
                         onClick={() => setShowForgotConfirmPassword(!showForgotConfirmPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-[#cfc2d6] hover:text-white transition-colors"
                       >
-                        {showForgotConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        {showForgotConfirmPassword ? '🙈' : '👁️'}
                       </button>
                     </div>
                   </div>
@@ -424,28 +551,14 @@ export default function AuthPage() {
               <button
                 type="submit"
                 disabled={forgotLoading}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-lg font-medium text-base text-white bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+                className="w-full btn-gradient py-3 rounded-lg font-bold text-white shadow-[0_0_20px_rgba(183,109,255,0.4)] hover:shadow-[0_0_30px_rgba(183,109,255,0.6)] disabled:opacity-60 disabled:cursor-not-allowed transition-all uppercase tracking-widest"
               >
-                {emailVerified ? <Lock className="w-5 h-5" /> : <Send className="w-5 h-5" />}
                 {forgotLoading ? 'Processing...' : (emailVerified ? 'Reset Password' : 'Verify Email')}
               </button>
             </form>
           </div>
         </div>
       )}
-
-      {/* Right Side - Infinite Scrolling Pattern */}
-      <div className='w-1/2 bg-[#3D2B58] px-8'>
-        <div className="h-full overflow-hidden relative">
-          <div
-            className="absolute animate-scroll"
-            style={{ top: 0, right: 0, width: '100%' }}
-          >
-            <img src="/ArtGroupBig.svg" alt="" className="w-full block pb-8" />
-            <img src="/ArtGroupBig.svg" alt="" className="w-full block pb-8" />
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
